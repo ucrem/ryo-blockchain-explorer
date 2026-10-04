@@ -84,6 +84,27 @@ See [the measured reference and its limits](NATIVE_QUERY_BASELINE.md).
 
 ## Coverage required as functionality is brought over
 
+The v0.3 preparation provides a proposed OpenAPI contract and
+[public examples](api-v2.examples.json). Check their local references, schema
+shapes, fixture amounts/keys/raw bytes, precision and privacy rejection cases:
+
+```bash
+sudo apt-get install -y --no-install-recommends python3-jsonschema python3-yaml
+python3 scripts/check-api-v2-contract.py
+```
+
+These are developer/CI dependencies, not C++ runtime dependencies. The separate
+Ubuntu 24.04 contract workflow performs this bounded check without building Ryo.
+The draft was also checked locally against the official
+[OpenAPI 3.1 structural schema](https://spec.openapis.org/oas/3.1/schema/2025-09-15).
+The recurring check validates DTOs/references/examples and selected structural
+invariants; it is not a complete OpenAPI standards validator. Examples project
+the known genesis onto a one-block chain and use explicit example software
+metadata. The hidden-output example is a known public RingCT output, and the
+pool/error examples describe proposed semantics. These checks do not exercise
+v2 HTTP routes, native cursor/reorg behavior or a new network service: those
+remain acceptance tests for the [pending implementation](V0_3_API_PROPOSAL.md).
+
 - Historical ordinary versions, current RingCT, payment IDs, subaddresses,
   additional keys, different ring sizes, unusual objects, and public raw blobs.
 - Pool add/remove/confirm/reorg/failure transitions and stale snapshots.

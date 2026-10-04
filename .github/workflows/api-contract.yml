@@ -1,0 +1,36 @@
+name: Proposed API v2 contract
+
+on:
+  pull_request:
+    paths:
+      - docs/api-v2.openapi.yaml
+      - docs/api-v2.examples.json
+      - scripts/check-api-v2-contract.py
+      - tests/fixtures/**
+      - .github/workflows/api-contract.yml
+  push:
+    branches: [main]
+    paths:
+      - docs/api-v2.openapi.yaml
+      - docs/api-v2.examples.json
+      - scripts/check-api-v2-contract.py
+      - tests/fixtures/**
+      - .github/workflows/api-contract.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  schemas-and-examples:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out project
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install contract check dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends python3-jsonschema python3-yaml
+      - name: Validate proposed schemas and public examples
+        run: python3 scripts/check-api-v2-contract.py

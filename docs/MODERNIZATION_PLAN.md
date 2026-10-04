@@ -14,8 +14,10 @@ native development foundation, without importing the legacy website. The prior
 legacy runtime probe remains discovery evidence. v0.2 adds a focused read-only
 HTTP subset described in [HTTP_SERVER.md](HTTP_SERVER.md), following the user-approved
 [service proposal](V0_2_SERVICE_PROPOSAL.md).
-Publish the foundation only after native build, fixture, CI, and documentation
-checks pass; do not describe it as a usable HTTP explorer.
+v0.1.0 and v0.2.0 are released. The foundation is a native library; the v0.2
+executable is a usable JSON subset with the separately documented limitations.
+The next concrete milestone is the [v0.3 API proposal](V0_3_API_PROPOSAL.md) and
+its [proposed OpenAPI contract](api-v2.openapi.yaml), pending scoped architecture approval.
 
 ## Target data flow
 
@@ -71,14 +73,14 @@ The roadmap may change as measurements and protocol evidence warrant.
 7. Publish v0.1.0 only when all mandatory checks pass; otherwise retain an
    unreleased change list and explicitly list unmet gates.
 
-## First service extraction proposal
+## Completed service extraction and next proposal
 
-Candidate: extract native block lookup/metadata into a concrete BlockService
-from `MicroCore`/`page.h`. Reuse the existing Ryo objects and DB accessor semantics;
-define a tested native result before introducing new HTTP response selection.
-The legacy HTML-bound code remains an upstream reference, outside this project.
-Other real candidates are transaction metadata/rings, pool snapshots, network
-snapshots, emission scanning, search dispatch, and verification.
+The approved [v0.2 proposal](V0_2_SERVICE_PROPOSAL.md) is implemented: native
+block/transaction metadata and owned snapshots, legacy JSON adaptation, and
+separate bounded HTTP transport. The legacy HTML-bound code remains an upstream
+reference, outside this project. The proposed v0.3 increment adds a native chain
+snapshot, bounded block-summary pagination, v2 serialization/routing and OpenAPI;
+pool listing, search, emission and verification remain later focused extraction.
 
 Before implementation, provide a focused proposal with current behavior,
 problem, affected files, compatibility impact, migration/reorg/thread risks,
@@ -90,7 +92,8 @@ are separate from architectural work.
 
 Use documented legacy route names, aliases, flags, field names, units,
 null/array behavior, and optional-feature gates as compatibility references when
-HTTP functionality is introduced. No such routes exist in the native foundation.
+HTTP functionality is extended. The v0.2 supported subset already protects these
+contracts; remaining inventory entries are migration references, not shipped routes.
 Preserve testnet and
 stagenet isolation, Ryo native serialization, transaction extra, historical
 versions, RingCT, payment-ID variants, subaddresses, wallet export tools, and
@@ -135,4 +138,5 @@ lookups from full scans and record reorg/failure correctness alongside latency.
 Investigate native Ryo/LMDB indexes and actual bottlenecks first. Only then propose
 an embedded auxiliary index with rebuild/reorg semantics. Consider PostgreSQL
 later for measured historical/relational analytics needs; do not duplicate the
-entire chain. No numeric performance claims exist yet.
+entire chain. [Native genesis/service diagnostics](NATIVE_QUERY_BASELINE.md)
+provide limited measurements, not full-chain or production capacity evidence.

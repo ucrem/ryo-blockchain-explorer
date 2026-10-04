@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check proposed schemas/examples without claiming a running v2 implementation."""
+"""Check API v2 schemas/examples and provide offline HTTP response validators."""
 import copy
 import json
 from pathlib import Path
@@ -50,8 +50,8 @@ def expect_invalid(checker, value, label):
 
 def main():
     spec = load_spec()
-    if spec["openapi"] != "3.1.1" or spec.get("x-contract-status") != "proposed":
-        raise ValueError("Preparation contract must remain explicitly proposed")
+    if spec["openapi"] != "3.1.1" or spec["info"]["version"] != "0.3.0":
+        raise ValueError("Unexpected OpenAPI/product version")
     check_references(spec)
     for schema in spec["components"]["schemas"].values():
         Draft202012Validator.check_schema(schema)
@@ -122,9 +122,9 @@ def main():
     expect_invalid(validator(spec, "Inclusion"), confirmed, "confirmed state without inclusion")
     invalid_cursor = "0." + "0" * 64 + ".01"
     expect_invalid(validator(spec, "Cursor"), invalid_cursor, "noncanonical cursor")
-    print(f"PASS: {len(operations)} proposed operations, {len(examples)} examples, "
+    print(f"PASS: {len(operations)} operations, {len(examples)} examples, "
           "local references, DTO schemas, precision and privacy rejection cases")
-    print("Runtime v2 routes, native cursor semantics and HTTP schemas still require implementation tests.")
+
 
 
 if __name__ == "__main__":

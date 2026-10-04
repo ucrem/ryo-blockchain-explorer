@@ -1,9 +1,9 @@
 #pragma once
 #include "services/BlockService.h"
 #include "services/TransactionService.h"
+#include "ApiResponse.h"
 
 namespace ryo_explorer {
-struct ApiResponse { unsigned status; xmreg::json body; };
 class LegacyJson {
     BlockService& blocks_;
     TransactionService& transactions_;

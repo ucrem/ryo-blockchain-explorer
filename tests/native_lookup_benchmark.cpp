@@ -3,6 +3,7 @@
 #include "MempoolStatus.h"
 #include "CurrentBlockchainStatus.h"
 #include "LegacyJson.h"
+#include "ApiRouter.h"
 
 #include <algorithm>
 #include <chrono>
@@ -105,6 +106,9 @@ int main(int argc, char** argv)
         ryo_explorer::BlockService blocks(context);
         ryo_explorer::TransactionService transactions(context);
         ryo_explorer::LegacyJson legacy(blocks, transactions, true, "mainnet");
+        ryo_explorer::NetworkService network(context);
+        ryo_explorer::ApiV2 v2(blocks, transactions, network, true, "mainnet", xmreg::json::object());
+        ryo_explorer::ApiRouter api(legacy, v2);
         const std::string genesis_tx_hash = epee::string_tools::pod_to_hex(tx_hash);
         queries["service.block_snapshot"] = measure([&] {
             return blocks.get("0").chain_height == 1;
@@ -115,6 +119,20 @@ int main(int argc, char** argv)
         queries["legacy.block_query_and_serialization"] = measure([&] {
             const auto response = legacy.get("/api/block/0");
             return response.status == 200 && response.body["status"] == "success" && !response.body.dump().empty();
+        });
+        queries["service.block_page"] = measure([&] {
+            return blocks.list(20).items.size() == 1;
+        });
+        queries["service.network_snapshot"] = measure([&] {
+            return network.get().chain_height == 1;
+        });
+        queries["v2.block_page_query_and_serialization"] = measure([&] {
+            const auto response = api.get("/api/v2/blocks?limit=20");
+            return response.status == 200 && !response.body.dump().empty();
+        });
+        queries["v2.transaction_query_and_serialization"] = measure([&] {
+            const auto response = api.get("/api/v2/transactions/" + genesis_tx_hash);
+            return response.status == 200 && !response.body.dump().empty();
         });
         const xmreg::json report {
             {"network", "mainnet"}, {"chain_height", 1},

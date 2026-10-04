@@ -1,9 +1,9 @@
 openapi: 3.1.1
 info:
   title: Ryo Explorer API v2
-  version: 0.3.0-proposed
+  version: 0.3.0
   description: |
-    Proposed, not implemented in v0.2.0. Opt-in read-only API using native Ryo
+    Opt-in read-only API using native Ryo
     LMDB snapshots. Decimal-string DTOs preserve integer precision; raw native
     JSON retains Ryo's number conventions. No private keys or propagation data.
   license:
@@ -12,7 +12,6 @@ info:
 servers:
   - url: /
 security: []
-x-contract-status: proposed
 paths:
   /api/v2/network:
     get:

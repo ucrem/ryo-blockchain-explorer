@@ -3,12 +3,12 @@
 #include <string>
 
 namespace ryo_explorer {
-class LegacyJson;
+class ApiRouter;
 class HttpServer {
     class Implementation;
     std::unique_ptr<Implementation> implementation_;
 public:
-    HttpServer(LegacyJson& api, const std::string& address, unsigned short port);
+    HttpServer(ApiRouter& api, const std::string& address, unsigned short port);
     ~HttpServer();
     void run();
 };

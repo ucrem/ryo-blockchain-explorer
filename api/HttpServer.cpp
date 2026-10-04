@@ -1,5 +1,5 @@
 #include "HttpServer.h"
-#include "LegacyJson.h"
+#include "ApiRouter.h"
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
 #include <set>
@@ -16,7 +16,7 @@ class HttpServer::Implementation {
     tcp::acceptor acceptor_;
     asio::signal_set signals_;
     asio::thread_pool queries_{2};
-    LegacyJson& api_;
+    ApiRouter& api_;
     class Session;
     std::set<std::shared_ptr<Session>> sessions_;
     bool stopping_ = false;
@@ -52,21 +52,20 @@ class HttpServer::Implementation {
             http::async_read(stream_, buffer_, parser_, [self = shared_from_this()](beast::error_code ec, size_t) {
                 if (ec) {
                     if (ec == http::error::header_limit || ec == http::error::body_limit || ec == http::error::bad_method)
-                        self->send(400, "{\"status\":\"fail\",\"data\":{\"title\":\"Invalid or oversized request.\"}}");
+                        self->fail(400, "Invalid or oversized request.");
                     else self->close();
                     return;
                 }
                 const auto& request = self->parser_.get();
                 if (request.method() != http::verb::get) {
-                    self->send(405, "{\"status\":\"fail\",\"data\":{\"title\":\"GET required.\"}}"); return;
+                    self->fail(405, "GET required."); return;
                 }
                 std::string target(request.target());
-                if (target.size() > 1024 || target.find_first_of("?%#") != std::string::npos ||
-                    target.empty() || target[0] != '/') {
-                    self->send(400, "{\"status\":\"fail\",\"data\":{\"title\":\"Invalid request target.\"}}"); return;
+                if (!self->owner_.api_.valid_target(target)) {
+                    self->fail(400, "Invalid request target."); return;
                 }
                 if (self->owner_.pending_queries_ >= 64) {
-                    self->send(503, "{\"status\":\"error\",\"message\":\"Query capacity reached.\"}"); return;
+                    self->fail(503, "Query capacity reached."); return;
                 }
                 ++self->owner_.pending_queries_;
                 asio::post(self->owner_.queries_, [self, target] {
@@ -76,17 +75,21 @@ class HttpServer::Implementation {
                         const auto response = self->owner_.api_.get(target);
                         status = response.status; body = response.body.dump();
                     } catch (const std::exception&) {
-                        body = "{\"status\":\"error\",\"message\":\"Query failed.\"}";
+                        body = ApiRouter::failure(target, 503, "Query failed.").body.dump();
                     }
                     asio::post(self->owner_.io_, [self, status, body = std::move(body)] {
                         --self->owner_.pending_queries_;
                         if (self->closed_) return;
                         if (body.size() > 8 * 1024 * 1024)
-                            self->send(503, "{\"status\":\"error\",\"message\":\"Response resource limit.\"}");
+                            self->fail(503, "Response resource limit.");
                         else self->send(status, body);
                     });
                 });
             });
+        }
+        void fail(unsigned status, const std::string& message) {
+            const auto target = parser_.get().target();
+            send(status, ApiRouter::failure(std::string(target), status, message).body.dump());
         }
         void send(unsigned status, const std::string& body) {
             if (closed_) return;
@@ -111,7 +114,7 @@ class HttpServer::Implementation {
         });
     }
 public:
-    Implementation(LegacyJson& api, const std::string& address, unsigned short port)
+    Implementation(ApiRouter& api, const std::string& address, unsigned short port)
         : acceptor_(io_), signals_(io_, SIGINT, SIGTERM), api_(api) {
         const tcp::endpoint endpoint(asio::ip::make_address(address), port);
         acceptor_.open(endpoint.protocol()); acceptor_.set_option(tcp::acceptor::reuse_address(true));
@@ -128,7 +131,7 @@ public:
         accept(); io_.run(); queries_.stop(); queries_.join();
     }
 };
-HttpServer::HttpServer(LegacyJson& api, const std::string& address, unsigned short port)
+HttpServer::HttpServer(ApiRouter& api, const std::string& address, unsigned short port)
     : implementation_(new Implementation(api, address, port)) {}
 HttpServer::~HttpServer() = default;
 void HttpServer::run() { implementation_->run(); }

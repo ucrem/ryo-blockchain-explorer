@@ -3,6 +3,7 @@
 import argparse
 import math
 import json
+import runpy
 from pathlib import Path
 import socket
 import subprocess
@@ -25,6 +26,8 @@ def main():
     parser.add_argument("fixture_executable", type=Path)
     parser.add_argument("--http", action="store_true",
                         help="Run HTTP contracts using the supplied server executable.")
+    parser.add_argument("--api-v2-contracts", action="store_true",
+                        help="Validate native service fixture responses against API v2 DTO schemas.")
     parser.add_argument("--result-file", type=Path,
                         help="Save the native executable's stdout to this diagnostic file.")
     parser.add_argument("--timeout", type=float, default=30,
@@ -72,6 +75,13 @@ def main():
                         subprocess.run(command, stdout=result, check=True, timeout=args.timeout)
                 else:
                     subprocess.run(command, check=True, timeout=args.timeout)
+                if args.api_v2_contracts:
+                    helpers = runpy.run_path(str(Path(__file__).with_name("check-api-v2-contract.py")))
+                    specification = helpers["load_spec"]()
+                    cases = json.loads((work / "chain/v2-native-responses.json").read_text())
+                    for case in cases:
+                        helpers["validator"](specification, case["schema"]).validate(case["body"])
+                    print(f"Validated {len(cases)} native API v2 responses against DTO schemas.")
                 print("Disposable offline native integration checks passed.")
             except Exception:
                 log.flush()

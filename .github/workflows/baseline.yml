@@ -22,7 +22,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential cmake git ca-certificates pkg-config python3 \
+            build-essential cmake git ca-certificates pkg-config python3 python3-jsonschema python3-yaml \
             libboost-system-dev libboost-filesystem-dev libboost-thread-dev \
             libboost-date-time-dev libboost-chrono-dev libboost-regex-dev \
             libboost-serialization-dev libboost-program-options-dev libboost-locale-dev \
@@ -45,4 +45,4 @@ jobs:
       - name: Check script syntax
         run: |
           bash -n scripts/environment-report.sh scripts/build-ryo-core.sh scripts/build-baseline.sh
-          python3 -m py_compile scripts/offline-native-test.py scripts/http-contract-test.py
+          python3 -m py_compile scripts/offline-native-test.py scripts/http-contract-test.py scripts/check-api-v2-contract.py scripts/bundle-openapi.py

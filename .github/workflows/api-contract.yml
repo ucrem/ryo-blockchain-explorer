@@ -1,4 +1,4 @@
-name: Proposed API v2 contract
+name: API v2 contract
 
 on:
   pull_request:
@@ -32,5 +32,5 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends python3-jsonschema python3-yaml
-      - name: Validate proposed schemas and public examples
+      - name: Validate schemas and public examples
         run: python3 scripts/check-api-v2-contract.py

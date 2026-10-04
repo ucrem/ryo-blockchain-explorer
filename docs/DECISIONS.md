@@ -26,6 +26,9 @@ Recorded: 2026-10-04. See [the migration plan](MODERNIZATION_PLAN.md).
 | ADR-019 | Real native block/transaction services and a separate opt-in Beast/Asio HTTP executable. | The user approved the concrete v0.2 proposal; reuse the installed Boost package, keep owned results and JSON/transport separate, and publish an explicit compatible subset. |
 | ADR-020 | Pass `DBF_RDONLY` to the pinned Ryo DB API and retain registered LMDB readers. | Raw `MDB_*` values passed by the imported MicroCore did not select read-only mode. Native assertions protect the corrected flag interface; live mapping-growth recovery still needs coverage. |
 | ADR-021 | Pool transaction responses omit node-local receive/relay times. | Preserve native hash/object provenance and zero confirmations, while documenting zero/epoch timestamp fields as a deliberate legacy privacy difference. |
+| ADR-022 | Add the user-approved v0.3 API v2/OpenAPI scope beside the legacy adapter. | Concrete native network snapshots and bounded block pagination feed a separate serializer/router; API enablement remains explicit and independent. |
+| ADR-023 | V2 uint64 quantities use canonical decimal strings, hidden output amounts use null, and raw native JSON retains its original conventions. | Preserve exact Ryo 9-decimal units and distinguish public knowledge, absence and pool provenance; native crypto/parsing remain authoritative. |
+| ADR-024 | Anchor block pagination to a native height/hash and reject changed anchors with HTTP 409. | Appends do not move existing pages; avoid retained transactions, caches, scans or a new index. |
 
 Substantial architecture or behavior changes require a proposal covering current behavior,
 affected components, compatibility, migration risk, and tests, followed by approval.

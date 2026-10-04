@@ -1,8 +1,9 @@
 # v0.3.0 proposal: public API v2 and OpenAPI
 
-Status: **proposed; implementation awaits the architecture approval required by
-the initial request**. This preparation adds documentation and contract checks
-only. The released runtime remains v0.2.0.
+Status: **approved by the user on 2026-10-04; implemented, release validation in progress**.
+The user authorized the complete proposed milestone through release publication.
+The preparation PR added documentation and contract checks only, preserving the
+v0.2.0 runtime. The sections below record the approved scope and acceptance gates.
 
 ## Current behavior and problem
 
@@ -161,14 +162,16 @@ Native sources: pinned Ryo core
 `185dd1fa33ba88c88bb22df9069ad368c0f9a27e`, especially
 `src/cryptonote_config.h`, the native BlockchainDB API and serialization helpers;
 the selected services and [fixture provenance](../tests/fixtures/README.md).
-The draft targets [OpenAPI 3.1.1](https://spec.openapis.org/oas/v3.1.1.html), using
+The contract targets [OpenAPI 3.1.1](https://spec.openapis.org/oas/v3.1.1.html), using
 JSON Schema 2020-12-compatible DTOs. This stable tooling choice does not imply it
 is the newest OpenAPI revision.
 
 The original request states: **"wait for approval before implementing if the
 change materially alters architecture or behavior"**. The previous approval
 covered v0.2's service/legacy HTTP scope. This proposal adds public contracts,
-query parsing and a new native snapshot/list operation, so implementation waits
-for approval of this concrete v0.3 scope. Documentation and non-invasive contract
-checks are authorized preparation. Approval covers implementation, validation
-and publication of the resulting v0.3.0 milestone without per-command prompts.
+query parsing and a new native snapshot/list operation. The user approved the
+concrete v0.3 scope on 2026-10-04 and instructed completion through publication.
+Documentation and non-invasive contract checks preceded approval; implementation,
+validation and the resulting v0.3.0 release are now authorized without per-command
+prompts. This proposal remains the scope reference, with [API_V2.md](API_V2.md)
+describing the final behavior.

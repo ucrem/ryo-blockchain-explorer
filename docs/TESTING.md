@@ -50,6 +50,18 @@ state, block removal/replacement, owned results after a reorg, concurrent querie
 and closed-database failures. A modified block container tests storage semantics,
 not consensus/PoW validity. It never submits a transaction or mines a public block.
 
+v0.3 extends this fixture with native tip/difficulty snapshots, bounded anchored
+pagination at genesis/block 1, append above an anchor, anchor removal/replacement,
+and owned results. It exercises v2 RingCT/pool/confirmed JSON, native raw bytes,
+synthetic public ring references, native additional-key/payment-ID construction
+(including present all-zero IDs), and 503 after DB close. Synthetic extra/ring
+cases test native interpretation and storage, not signature/consensus validity.
+When HTTP testing is enabled, the offline runner validates the saved native
+responses against the exact DTO schemas through `--api-v2-contracts`.
+An oversized native pool container is first read successfully, then rejected by
+the API raw-size bound; this distinguishes resource rejection from a parse/DB
+failure. Native raw block bytes are decoded and hashed again for a roundtrip check.
+
 With `RYO_BUILD_HTTP=ON`, `ryo_http_contracts` starts the real HTTP executable
 alongside the offline daemon. It compares all four block/transaction/raw genesis
 contracts with captured JSON, normalizing only changing chain height/confirmations.
@@ -58,6 +70,14 @@ configuration, non-GET/body/header/target rejection, 24 concurrent queries, a sl
 partial client deadline, health after errors, and signal shutdown with an open
 client. The runner owns all temporary files/processes; no supplied DB is modified.
 See [the implemented HTTP subset and limits](HTTP_SERVER.md).
+
+The HTTP test additionally checks every v2 route and response schema, exact
+genesis amounts/raw bytes, uppercase hash equivalence, the bundled OpenAPI JSON,
+400/404/409/405 mappings, v2 body/header errors, duplicate/unknown/empty/encoded
+parameters, concurrent v2 pages and all four combinations of independent API
+flags. `ryo_api_v2_schema` checks the repository schemas/examples. With HTTP
+enabled, CTest therefore contains five checks; the default library build retains
+the three native checks without requiring the HTTP Python packages.
 
 Actual mapping-growth recovery, larger/live pool ring lookups, external-writer
 load/reorg stress, full-chain capacity, broader historical fixtures, and positive
@@ -82,9 +102,9 @@ result path must have an existing parent directory. CI compiles the diagnostic
 with the other native targets but does not use timing as a pass/fail threshold.
 See [the measured reference and its limits](NATIVE_QUERY_BASELINE.md).
 
-## Coverage required as functionality is brought over
+## OpenAPI and DTO checks
 
-The v0.3 preparation provides a proposed OpenAPI contract and
+The v0.3 API provides an OpenAPI contract and
 [public examples](api-v2.examples.json). Check their local references, schema
 shapes, fixture amounts/keys/raw bytes, precision and privacy rejection cases:
 
@@ -95,15 +115,17 @@ python3 scripts/check-api-v2-contract.py
 
 These are developer/CI dependencies, not C++ runtime dependencies. The separate
 Ubuntu 24.04 contract workflow performs this bounded check without building Ryo.
-The draft was also checked locally against the official
+The document was also checked locally against the official
 [OpenAPI 3.1 structural schema](https://spec.openapis.org/oas/3.1/schema/2025-09-15).
 The recurring check validates DTOs/references/examples and selected structural
 invariants; it is not a complete OpenAPI standards validator. Examples project
 the known genesis onto a one-block chain and use explicit example software
 metadata. The hidden-output example is a known public RingCT output, and the
-pool/error examples describe proposed semantics. These checks do not exercise
-v2 HTTP routes, native cursor/reorg behavior or a new network service: those
-remain acceptance tests for the [pending implementation](V0_3_API_PROPOSAL.md).
+pool/error examples describe API semantics. This static check alone does not
+exercise runtime behavior; the native response/schema and HTTP checks described
+above provide separate coverage for [API v2](API_V2.md).
+
+## Coverage required as functionality is brought over
 
 - Historical ordinary versions, current RingCT, payment IDs, subaddresses,
   additional keys, different ring sizes, unusual objects, and public raw blobs.
@@ -112,8 +134,8 @@ remain acceptance tests for the [pending implementation](V0_3_API_PROPOSAL.md).
   and deep reorgs. The synchronous genesis adjustment test does not prove these.
 - Native read-only LMDB lifecycle, mapping growth, concurrency, and reorgs.
 - Testnet/stagenet-specific fixtures and database isolation.
-- Future HTTP contracts, privacy-safe DTOs, bounded pagination/input, and optional
-  submission gates when the server is implemented.
+- Contracts/DTOs for later API groups, additional input/resource cases, and
+  optional submission gates when those features are implemented.
 - Browser key isolation/parity only when local verification is implemented.
 
 The Phase 0 legacy website smoke was run separately as discovery evidence. Its

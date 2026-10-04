@@ -1,5 +1,13 @@
 # Privacy model
 
+The v0.3 [API v2 contract](API_V2.md) makes hidden output amounts `null`, pool
+inclusion height/timestamp `null`, and ring candidates alternatives without a
+real-spend marker. Network responses describe this native reader's chain.
+Payment IDs/public extra remain public native bytes; encrypted short IDs are
+not described as decrypted recipient information. Read-only GETs accept only
+bounded public block-list parameters; no private-key input or propagation data
+is exposed. Existing [legacy privacy differences](HTTP_SERVER.md) remain explicit.
+
 The active project has native services and an opt-in read-only HTTP subset,
 without a browser flow. Its block/transaction/raw/version routes accept no
 private keys, wallet uploads, or transaction submission, and omit local pool

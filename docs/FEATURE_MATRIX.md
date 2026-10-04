@@ -6,6 +6,11 @@ The new server implements the read-only block/transaction/raw/version subset
 listed in [HTTP_SERVER.md](HTTP_SERVER.md). The old server/website and the full
 upstream route set below are not shipped.
 
+v0.3 also implements the [API v2 subset](API_V2.md): native-reader chain state,
+anchored block pagination, block/transaction details, native raw JSON/hex and
+bundled OpenAPI. The legacy subset remains independently enabled. Unsupported
+future groups are not advertised as completed.
+
 Source: upstream `2e334724`, inspected 2026-10-04. All explicit registrations are
 in `main.cpp`; handlers below are in `src/page.h` unless another file is named.
 **Implemented** means found in source, not runtime-certified. All optional flags

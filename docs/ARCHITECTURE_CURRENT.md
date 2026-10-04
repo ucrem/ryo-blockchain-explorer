@@ -38,6 +38,14 @@ queries, read-only routes, loopback defaults, and signal shutdown. It does not
 start the old pool/network/emission monitors, copy `page.h`, or use legacy caches.
 See [the actual HTTP contract and limits](HTTP_SERVER.md).
 
+v0.3 adds `NetworkService` for an owned native tip/difficulty snapshot and
+bounded anchored `BlockService::list` queries. `api/ApiV2.*` serializes precise,
+privacy-aware DTOs; `api/ApiRouter.*` dispatches legacy/health/v2 requests and
+route-aware transport failures. Native timestamp reads for ring candidates share
+the transaction's read scope. A build-time YAML-to-JSON helper bundles OpenAPI
+into the executable; it adds no runtime file/network dependency. The two API
+enable flags are independent. See [API_V2.md](API_V2.md).
+
 The remaining sections document the inspected upstream application, which is
 the compatibility reference for later imports and service implementation.
 

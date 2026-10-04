@@ -6,6 +6,52 @@ retroactively.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-04
+
+### Added
+
+- Independently enabled read-only API v2 for native-reader chain state, anchored
+  recent-block pagination, block/transaction detail and native raw JSON/hex.
+- OpenAPI 3.1.1 contract bundled into the HTTP executable and available through
+  `/api/v2/openapi.json`, plus public examples and actual-response schema checks.
+- Native tip/difficulty snapshots and bounded header pagination, including
+  explicit errors after a pagination anchor is removed or replaced.
+- Historical/RingCT/pool/native-extra/ring-reference contract tests, independent
+  API flag combinations and exact integer/privacy regression checks.
+
+### Changed
+
+- API v2 uses decimal strings for uint64 quantities, exact native Ryo atomic
+  units, null for hidden output amounts, and explicit confirmed/mempool inclusion.
+- A concrete router keeps legacy JSON and v2 serialization separate while
+  preserving supported legacy response and error contracts.
+
+### Security
+
+- V2 omits node-local mempool receive/relay times and uses bounded public query
+  parameters and concise errors. Ring candidates never identify a real spend.
+- Raw native bytes are bounded before hex expansion; existing connection/query/
+  parsing/deadline and serialized-response limits remain enforced.
+
+### Upgrade Notes
+
+- The Ryo core pin and compatibility patch are unchanged from v0.2. Rebuild the
+  explorer; HTTP build/tests add `python3-yaml` and `python3-jsonschema` development
+  packages. Neither package is needed to run the compiled server.
+- Add `--enable-api-v2`; keep `--enable-json-api` to serve the legacy subset too.
+  Both default to off. Legacy packed API version remains 65537.
+- Raw `native_json` keeps Ryo's original number conventions and requires an
+  integer-preserving JSON client; the normalized DTO precision guarantee applies
+  to the surrounding documented fields. See `docs/API_V2.md`.
+
+### Known Issues
+
+- This is a progressive API subset: pool listing, search, emission, tools, SSE
+  and the Next.js frontend remain later milestones.
+- Full-chain capacity, live mapping growth, external-writer stress, broader
+  historical coverage and positive testnet/stagenet fixtures remain follow-up
+  work. Synthetic storage/extra/ring cases do not validate consensus or signatures.
+
 ## [0.2.0] - 2026-10-04
 
 ### Added

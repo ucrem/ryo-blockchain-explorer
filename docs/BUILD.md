@@ -109,11 +109,19 @@ development does not require Docker.
 ## Optional read-only HTTP executable
 
 ```bash
+sudo apt-get install -y --no-install-recommends python3-yaml python3-jsonschema
 RYO_BUILD_HTTP=ON bash scripts/build-baseline.sh .deps/ryo-core build/native 2
 ```
 
 The default is `OFF`, preserving the native-library development workflow. The
 opt-in builds `ryo_explorer_http` and runs its real HTTP contract test in addition
-to the three native fixtures. Existing Boost 1.83 provides Beast/Asio; no new
+to the three native fixtures and an OpenAPI/DTO schema check. PyYAML bundles
+the OpenAPI contract into the executable at build time; jsonschema validates
+actual native/HTTP responses in tests. These Python packages are development
+dependencies for the HTTP option, not runtime dependencies of the binary or
+requirements of the default native-library build. Existing Boost 1.83 provides Beast/Asio; no new
 vendored library is required. See [HTTP_SERVER.md](HTTP_SERVER.md) for startup,
 implemented routes, compatibility changes, resource limits, and deployment gaps.
+API v2 is independently enabled with `--enable-api-v2`; see [API_V2.md](API_V2.md).
+Upgrading from v0.2 needs no new core pin or compatibility patch, only a rebuilt
+explorer and the documented HTTP build/test dependencies.

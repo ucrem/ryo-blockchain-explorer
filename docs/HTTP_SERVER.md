@@ -1,4 +1,4 @@
-# v0.2.0 native services and read-only HTTP server
+# Native services and read-only HTTP server
 
 The executable is an opt-in, usable read-only API subset. It does not include the
 old website, HTML templates, browser assets, or frontend. The remaining legacy
@@ -41,10 +41,13 @@ production capacity validation remain later work.
 | `/api/rawtransaction/{hash}` | Native Ryo transaction JSON object |
 | `/api/version` | Legacy packed API version 65537, source/core version fields, chain height |
 
-All `/api/` routes require `--enable-json-api`; `/health` is always available.
-Unknown, disabled, and unimplemented routes return 404. `/api/v2/`, OpenAPI,
-dashboard, latest-block pagination, network/mempool lists, search, emission API,
-tools, and transaction submission are not implemented in v0.2.0.
+The legacy routes above require `--enable-json-api`; `/health` is always available.
+v0.3 adds independently enabled `/api/v2/` routes with `--enable-api-v2`:
+native-reader network state, bounded block pagination, block/transaction detail,
+raw JSON/hex and bundled OpenAPI. See [API_V2.md](API_V2.md) for the exact contract.
+Both flags default to off and can be enabled together. Unknown, disabled and
+unimplemented routes return 404. Dashboard, mempool listing, search, emission
+API, tools and transaction submission remain future work.
 
 ## Compatibility and deliberate differences
 
@@ -60,7 +63,10 @@ Malformed/missing block or transaction queries retain HTTP 200 with JSend
 serialization, and resource failures use HTTP 503 with `status: error` rather
 than becoming an uncaught server failure. Error text is concise and does not
 expose native exception details. HTTP methods other than GET return 405; bodies,
-oversized headers/targets, and query/fragment/encoded targets are rejected.
+oversized headers/targets, and legacy query/fragment/encoded targets are rejected.
+Only enabled v2 block pagination accepts its bounded `limit`/`cursor` parameters;
+other v2 queries and private-key parameters remain rejected. V2 transport errors
+use its own documented error envelope. Existing legacy error shapes remain.
 
 Pool lookup preserves native object/hash provenance and zero confirmations.
 Unlike the old explorer, **node-local receive/relay times are not exposed**:
@@ -80,6 +86,9 @@ transaction API. Services do not nest read scopes or call each other while one
 is held. Results remain valid after the read transaction ends or a tip changes.
 
 `LegacyJson` owns field names, JSend, raw-object JSON, and UTC presentation.
+`ApiV2` owns the independent v2 DTOs and error mapping; `ApiRouter` dispatches
+both adapters. `NetworkService` reads native chain state and `BlockService::list`
+provides bounded anchored headers without loading all ordinary transactions.
 Boost.Beast/Asio owns transport in a separate executable. There is one process,
 one application-owned native reader, one I/O loop, and two fixed query workers.
 No legacy pool/network/emission monitor or application cache is started.
@@ -104,4 +113,4 @@ full-chain capacity, mapping-growth recovery, comprehensive historical/ring
 coverage, testnet/stagenet fixture coverage, consensus validity of synthetic
 storage transitions, or production readiness. No new database or index is justified.
 
-OpenAPI/API v2 and Next.js remain v0.3.0 and v0.4.0 milestones respectively.
+OpenAPI/API v2 is implemented in v0.3.0; Next.js remains the v0.4.0 milestone.

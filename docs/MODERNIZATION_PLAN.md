@@ -17,7 +17,8 @@ HTTP subset described in [HTTP_SERVER.md](HTTP_SERVER.md), following the user-ap
 v0.1.0 and v0.2.0 are released. The foundation is a native library; the v0.2
 executable is a usable JSON subset with the separately documented limitations.
 The next concrete milestone is the [v0.3 API proposal](V0_3_API_PROPOSAL.md) and
-its [proposed OpenAPI contract](api-v2.openapi.yaml), pending scoped architecture approval.
+its [OpenAPI contract](api-v2.openapi.yaml). The user approved this scope through
+release publication; [API_V2.md](API_V2.md) documents its implementation.
 
 ## Target data flow
 

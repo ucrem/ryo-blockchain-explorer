@@ -12,8 +12,11 @@ mempool snapshots, and emission calculation. The official Ryo core is a pinned
 external dependency. Cryptographic and consensus logic remain native Ryo code.
 
 The new HTTP executable implements legacy block/transaction/raw/version JSON
-routes, plus health. Its supported subset, privacy differences, bounds, and
-configuration are documented in [HTTP_SERVER.md](docs/HTTP_SERVER.md).
+routes, plus health. v0.3 adds independently enabled [API v2](docs/API_V2.md)
+for native-reader chain state, anchored recent-block pagination, block/transaction
+details and raw JSON/hex, with OpenAPI bundled into the executable. Its supported
+subset, privacy differences, bounds and configuration are documented in
+[HTTP_SERVER.md](docs/HTTP_SERVER.md).
 
 ## Build and test
 
@@ -36,8 +39,10 @@ are required. See [TESTING.md](docs/TESTING.md) for coverage limits.
 Build the opt-in HTTP server and its contract tests:
 
 ```bash
+sudo apt-get install -y --no-install-recommends python3-yaml python3-jsonschema
 RYO_BUILD_HTTP=ON bash scripts/build-baseline.sh .deps/ryo-core build/native 2
-build/native/ryo_explorer_http --bc-path /path/to/ryo/lmdb02 --enable-json-api
+build/native/ryo_explorer_http --bc-path /path/to/ryo/lmdb02 --enable-json-api --enable-api-v2
+curl http://127.0.0.1:8081/api/v2/openapi.json
 ```
 
 The executable defaults to `127.0.0.1:8081` and validates the selected network's
@@ -57,7 +62,8 @@ production readiness claim follows from the disposable fixtures.
 - [Privacy model](docs/PRIVACY_MODEL.md)
 - [Modernization plan](docs/MODERNIZATION_PLAN.md)
 - [v0.2.0 service/HTTP proposal](docs/V0_2_SERVICE_PROPOSAL.md)
-- [Proposed v0.3.0 API scope](docs/V0_3_API_PROPOSAL.md) and [OpenAPI draft](docs/api-v2.openapi.yaml)
+- [Approved v0.3.0 API scope](docs/V0_3_API_PROPOSAL.md)
+- [API v2 guide](docs/API_V2.md), [OpenAPI](docs/api-v2.openapi.yaml) and [examples](docs/api-v2.examples.json)
 - [Native query diagnostic baseline](docs/NATIVE_QUERY_BASELINE.md)
 - [Architecture decisions](docs/DECISIONS.md)
 - [Build setup](docs/BUILD.md), [testing](docs/TESTING.md), [release process](docs/RELEASING.md)

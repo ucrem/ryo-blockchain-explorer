@@ -78,6 +78,30 @@ diagnostic, not a sampled latency distribution or capacity test. Host scheduling
 PRoot, cache order, and the changed DB open mode prevent attributing differences
 between the two native runs to an optimization.
 
+## API v2 diagnostic
+
+At explorer source `3aabfb2`, the same disposable genesis method measured 16
+operations, including native bounded headers, native tip/difficulty, and v2
+query-plus-JSON serialization. [The complete report](benchmarks/native-api-v2-2026-10-04.json)
+records the source/core/build context. A targeted fixture compilation/test ran
+concurrently on the shared PRoot host; this is explicitly **not an idle-host
+comparison** with earlier measurements and does not demonstrate an optimization.
+
+| Added operation (microseconds) | p50 | p95 | p99 |
+| --- | ---: | ---: | ---: |
+| Bounded block page (one genesis result, limit 20) | 5.548 | 9.828 | 19.026 |
+| Native tip/difficulty snapshot | 9.241 | 11.009 | 22.192 |
+| V2 block page query plus JSON construction/serialization | 13.660 | 25.270 | 37.813 |
+| V2 genesis transaction query plus JSON construction/serialization | 15.316 | 31.549 | 65.427 |
+
+The page contains only one block and the transaction is coinbase. These are
+actual checked operations, not representative 20-block/full-chain or ordinary
+RingCT costs. JSON measurements include the query and serialization together;
+they exclude sockets. The local five-check CTest run passed in 26.45 seconds;
+a subsequent targeted resource check passed after proving the oversized object
+was natively readable before API rejection. Neither timing nor these fixtures
+justify an index/database or establish production capacity.
+
 ## Missing scenarios and next measurements
 
 Genesis has no spent key-image inputs, no ordinary transactions, and an empty

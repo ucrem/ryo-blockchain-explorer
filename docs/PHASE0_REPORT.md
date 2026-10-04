@@ -5,6 +5,15 @@ containing reusable native C++ components, tests, and documentation, without the
 old website/templates. [IMPORT_SCOPE.md](IMPORT_SCOPE.md) defines that boundary.
 This report distinguishes upstream discovery from the active project's results.
 
+**v0.2 correction:** Phase 0 described MicroCore's requested raw
+`MDB_RDONLY | MDB_NOLOCK` flags. The pinned Ryo `BlockchainLMDB::open` actually
+accepts `DBF_*` flags, so those raw values did not make its environment read-only.
+The v0.2 change uses `DBF_RDONLY`, keeps registered LMDB readers, and adds a native
+`is_read_only()` assertion. Earlier disposable tests exercised read operations
+but did not prove the open mode. No supplied user chain was used for them.
+The core compatibility patch now skips native sync for a read-only environment,
+preventing permission failures during close. Cryptography and consensus are unchanged.
+
 ## Environment, Git, and ownership
 
 The initially empty workspace is `/home/dev/projects/ryo-blockchain-explorer`.

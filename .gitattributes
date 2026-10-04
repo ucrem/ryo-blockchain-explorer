@@ -1,0 +1,2 @@
+# Unified patch context contains intentional leading spaces before native tabs.
+scripts/patches/*.patch whitespace=-blank-at-eol,-space-before-tab

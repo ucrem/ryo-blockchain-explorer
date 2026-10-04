@@ -100,6 +100,18 @@ index 9ae6f49..33ae413 100644
  	}
  
  #define CHAIN_INVOKE_MAP2(func)                                                  \
+diff --git a/src/blockchain_db/lmdb/db_lmdb.cpp b/src/blockchain_db/lmdb/db_lmdb.cpp
+index 6943a65..b7e9857 100644
+--- a/src/blockchain_db/lmdb/db_lmdb.cpp
++++ b/src/blockchain_db/lmdb/db_lmdb.cpp
+@@ -1360,6 +1360,7 @@ void BlockchainLMDB::sync()
+ {
+ 	GULPS_LOG_L3("BlockchainLMDB::", __func__);
+ 	check_open();
++	if(is_read_only()) return;
+ 
+ 	// Does nothing unless LMDB environment was opened with MDB_NOSYNC or in part
+ 	// MDB_NOMETASYNC. Force flush to be synchronous.
 diff --git a/src/checkpoints/checkpoints.cpp b/src/checkpoints/checkpoints.cpp
 index f0c7be4..2d19cfb 100644
 --- a/src/checkpoints/checkpoints.cpp

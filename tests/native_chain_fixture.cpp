@@ -13,6 +13,7 @@ int main(int argc, char** argv)
     }
     xmreg::MicroCore core;
     if (!core.init(argv[1], cryptonote::MAINNET)) return 1;
+    if (!core.get_core().get_db().is_read_only()) return 1;
     if (core.get_core().get_current_blockchain_height() != 1) return 1;
 
     cryptonote::block block;

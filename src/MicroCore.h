@@ -34,12 +34,13 @@ namespace xmreg
         hw::device* m_device;
 
         network_type nettype;
+        BlockchainDB* attached_db = nullptr;
 
     public:
         MicroCore();
 
         bool
-        init(const string& _blockchain_path, network_type nt);
+        init(const string& _blockchain_path, network_type nt, bool validate_network = false);
 
         Blockchain&
         get_core();

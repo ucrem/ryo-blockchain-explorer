@@ -35,16 +35,15 @@ MicroCore::MicroCore():
  * Initialize m_blockchain_storage with the BlockchainLMDB object.
  */
 bool
-MicroCore::init(const string& _blockchain_path, network_type nt)
+MicroCore::init(const string& _blockchain_path, network_type nt, bool validate_network)
 {
-    int db_flags = 0;
+    if (attached_db) return false;
+    // BlockchainDB::open takes Ryo DBF flags, not raw MDB flags.
+    const int db_flags = DBF_RDONLY;
 
     blockchain_path = _blockchain_path;
 
     nettype = nt;
-
-    db_flags |= MDB_RDONLY;
-    db_flags |= MDB_NOLOCK;
 
     BlockchainDB* db = nullptr;
     db = new BlockchainLMDB();
@@ -53,20 +52,41 @@ MicroCore::init(const string& _blockchain_path, network_type nt)
     {
         // try opening lmdb database files
         db->open(blockchain_path, db_flags);
+        if (validate_network)
+        {
+            // The HTTP reader registers with LMDB and validates the selected network.
+            block genesis;
+            const char* genesis_tx = nt == TESTNET ? config<TESTNET>::GENESIS_TX :
+                nt == STAGENET ? config<STAGENET>::GENESIS_TX : config<MAINNET>::GENESIS_TX;
+            const uint32_t nonce = nt == TESTNET ? config<TESTNET>::GENESIS_NONCE :
+                nt == STAGENET ? config<STAGENET>::GENESIS_NONCE : config<MAINNET>::GENESIS_NONCE;
+            if (!generate_genesis_block(nt, genesis, genesis_tx, nonce) || db->height() == 0 ||
+                db->get_block_hash_from_height(0) != get_block_hash(genesis))
+            {
+                delete db;
+                cerr << "Database genesis does not match the selected network.\n";
+                return false;
+            }
+        }
     }
     catch (const std::exception& e)
     {
         cerr << "Error opening database: " << e.what();
+        delete db;
         return false;
     }
 
     // check if the blockchain database
     // is successful opened
     if(!db->is_open())
+    {
+        delete db;
         return false;
+    }
 
     // initialize Blockchain object to manage
     // the database.
+    attached_db = db;
     return m_blockchain_storage.init(db, nettype);
 }
 
@@ -315,8 +335,12 @@ MicroCore::get_blk_timestamp(uint64_t blk_height)
  */
 MicroCore::~MicroCore()
 {
-    //m_blockchain_storage.get_db().close();
-    delete &m_blockchain_storage.get_db();
+    if (attached_db)
+    {
+        // Native deinit stops its worker and releases DB/hard-fork ownership.
+        try { m_blockchain_storage.deinit(); }
+        catch (...) { delete attached_db; }
+    }
 }
 
 

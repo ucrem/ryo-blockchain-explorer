@@ -1,0 +1,15 @@
+{
+  "block_size": 79,
+  "depth": 1197130,
+  "difficulty": 1,
+  "hash": "82e8f378ea29d152146b6317903249751b809e97c0b6655f86e120b9de95c38a",
+  "height": 1,
+  "major_version": 1,
+  "minor_version": 1,
+  "nonce": 3212448700,
+  "num_txes": 0,
+  "orphan_status": false,
+  "prev_hash": "6eb04b6b8c68049a76206fe2805ede5f7465c03b7112850d3262a067b9914dac",
+  "reward": 32000000000,
+  "timestamp": 1492486495
+}

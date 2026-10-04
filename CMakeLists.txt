@@ -19,7 +19,9 @@ target_compile_features(ryo_fmt PUBLIC cxx_std_14)
 
 add_library(ryo_explorer_core STATIC
     src/MicroCore.cpp src/tools.cpp src/rpccalls.cpp
-    src/MempoolStatus.cpp src/CurrentBlockchainStatus.cpp)
+    src/MempoolStatus.cpp src/CurrentBlockchainStatus.cpp
+    src/services/TransactionMetadata.cpp src/services/BlockService.cpp
+    src/services/TransactionService.cpp)
 target_include_directories(ryo_explorer_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_compile_features(ryo_explorer_core PUBLIC cxx_std_14)
 target_link_libraries(ryo_explorer_core PUBLIC ryo_fmt Ryo::core)
@@ -43,4 +45,12 @@ if(BUILD_TESTING)
         "${CMAKE_CURRENT_SOURCE_DIR}/scripts/offline-native-test.py"
         "${RYO_CORE_BUILD_DIR}/bin/ryod" $<TARGET_FILE:ryo_native_chain_fixture>)
     set_tests_properties(ryo_native_offline PROPERTIES TIMEOUT 180)
+    add_executable(ryo_service_fixture tests/service_fixture.cpp)
+    target_link_libraries(ryo_service_fixture PRIVATE ryo_explorer_core)
+    target_compile_definitions(ryo_service_fixture PRIVATE
+        RYO_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures")
+    add_test(NAME ryo_native_services COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/offline-native-test.py"
+        "${RYO_CORE_BUILD_DIR}/bin/ryod" $<TARGET_FILE:ryo_service_fixture>)
+    set_tests_properties(ryo_native_services PROPERTIES TIMEOUT 180)
 endif()

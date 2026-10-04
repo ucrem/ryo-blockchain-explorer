@@ -10,7 +10,19 @@ Discovery date: 2026-10-04. Explorer source: official upstream
 commits and a non-shallow clone. This document describes source behavior, not a
 claim that every path has passed runtime testing. See [validation status](PHASE0_REPORT.md).
 
-## Repository and build graph
+## Active native foundation
+
+`src/` contains the selected MicroCore, utility, RPC, pool/network, and emission
+implementations plus their headers. CMake builds `ryo_explorer_core`, linking
+separately built official Ryo archives and fmt. The only copied vendored library
+is the required JSON header. Native fixture executables exercise this code; no
+HTTP server, renderer, browser assets, or background worker is started by the
+library itself. See [IMPORT_SCOPE.md](IMPORT_SCOPE.md) and [BUILD.md](BUILD.md).
+
+The remaining sections document the inspected upstream application, which is
+the compatibility reference for later imports and service implementation.
+
+## Upstream reference tree and build graph
 
 ```text
 main.cpp                         startup, Crow routes, HTTP responses
@@ -173,8 +185,9 @@ the working directory (`./templates`); run from the build/install directory.
 
 An explicit `/static/style.css` handler returns stored CSS, while Crow also
 registers `/static/<path>` rooted at `static/`. Upstream copied assets only to
-`templates/static/`, causing local logo/icon requests to return 404. The baseline
-copies/installs both locations and checks delivery independently of page HTML.
+`templates/static/`, causing local logo/icon requests to return 404. A packaging
+correction in the separate discovery probe made image delivery pass. Website
+assets and that packaging are excluded from the active native foundation.
 The header includes images and links to optional tools even when disabled.
 
 `--enable-js` serves bundled jQuery, CRC32, big integers, NaCl/CryptoNote helpers,

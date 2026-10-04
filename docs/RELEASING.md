@@ -3,9 +3,11 @@
 Use Semantic Versioning for modernization releases. A tag alone is insufficient:
 every release includes a published GitHub Release with its publication timestamp.
 No v0.1.0 tag/release should be created while mandatory baseline checks are open.
-The selected native-only foundation has no HTTP explorer. The original v0.1.0
-usable-explorer milestone must be explicitly revised before this foundation can
-be published under that version. Current changes remain Unreleased.
+The user-selected native-only scope refines v0.1.0 to a development foundation
+with compiled reusable components and real native tests. Release notes must
+clearly state that the old website/HTTP server is excluded. The v0.1.0 native
+foundation passed the documented build/fixture/CI gates; later releases must
+repeat checks appropriate to their changes.
 
 ## Gates
 

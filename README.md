@@ -64,7 +64,9 @@ The project is public and independent of GitHub's fork network. Original source
 history and attribution are preserved; active source is selected rather than a
 copy of the entire upstream website. Never push to upstream or force-push.
 
-Changes remain **Unreleased**. This native foundation is not the original v0.1.0
-milestone's usable HTTP explorer. Its revised milestone/release scope must be
-settled before tagging or publishing that version. Each eventual release will
-include validation, a dated changelog, an annotated tag, and a real GitHub Release.
+[v0.1.0 — Native Foundation](https://github.com/ucrem/ryo-blockchain-explorer/releases/tag/v0.1.0)
+follows the user-selected import scope: compiled native components, fixtures,
+reproducible build, and discovery documentation. Its Ubuntu 24.04
+[build and native tests passed](https://github.com/ucrem/ryo-blockchain-explorer/actions/runs/37230032831).
+HTTP services and the frontend follow in later milestones. Each release includes
+validation, a dated changelog, an annotated tag, and a real GitHub Release.

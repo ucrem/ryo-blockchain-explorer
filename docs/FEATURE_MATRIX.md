@@ -33,7 +33,7 @@ fixture-backed refactoring; no feature removal is authorized by this inventory.
 | CSS | GET `/static/style.css` | `get_js_file("css_styles")` | Startup asset map | Local CSS | Keep; verify content type and static-route precedence |
 | Robots policy | GET `/robots.txt` | Inline `main.cpp` | Constant text | Plain text | Implemented; empty Disallow does not protect sensitive tool URLs |
 | JavaScript assets | GET `/js/jquery.min.js`, `/js/crc32.js`, `/js/biginteger.js`, `/js/crypto.js`, `/js/config.js`, `/js/nacl-fast-cn.js`, `/js/base58.js`, `/js/cn_util.js`, `/js/sha3.js`, `/js/all_in_one.js` | `get_js_file` / page constructor | Bundled sources, network-adjusted config | Browser scripts | Requires `--enable-js`; bundle assembled at startup; individual cn_util route uses the same map key |
-| Static images/files | GET `/static/<path>` | Implicit Crow route, `ext/crow/crow/app.h` | Files under relative `static/` | Header images/icons | Keep; baseline packages both static directories and verifies logo/icon delivery |
+| Static images/files | GET `/static/<path>` | Implicit Crow route, `ext/crow/crow/app.h` | Files under relative `static/` | Header images/icons | Upstream reference only; delivery was checked in discovery, old assets are excluded from the native import |
 | API documentation page | GET `/api` | `api` | Template | `api.html` | Requires `--enable-json-api`; legacy reference, no OpenAPI |
 | Alternate blocks | No active route (`/altblocks` commented out) | `altblocks`, RPC helper | Daemon alternate-block RPC | `altblocks.html` | Dormant; do not advertise as currently reachable or remove code without review |
 

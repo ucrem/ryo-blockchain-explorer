@@ -1,6 +1,6 @@
 # Phase 0 discovery and native foundation report
 
-Recorded 2026-10-04. **Unreleased.** The user selected an independent repository
+Recorded 2026-10-04. **v0.1.0 native foundation validated.** The user selected an independent repository
 containing reusable native C++ components, tests, and documentation, without the
 old website/templates. [IMPORT_SCOPE.md](IMPORT_SCOPE.md) defines that boundary.
 This report distinguishes upstream discovery from the active project's results.
@@ -21,8 +21,9 @@ upstream https://github.com/ryo-currency/ryo-blockchain-explorer.git
 GitHub CLI login was verified as `ucrem`. The target repository is independent and
 public: GitHub reports `isFork=false`, `isPrivate=false`, and no parent. `main` is
 the project's integration branch, with `remote.pushDefault=origin`. No upstream
-push, force push, or history rewrite was performed. Copied topic branches are not
-part of the project's development model.
+push, force push, or history rewrite was performed. The copied `master` and topic branches were removed from the target after
+verifying that they contained only the original imports; `main` is its only branch.
+Their original refs/history remain available locally and in official upstream.
 
 An initial setup fork was renamed and archived as `ryo-blockchain-explorer-setup-fork`
 when the user clarified that the project must be independent. It contains no
@@ -45,7 +46,8 @@ published SHA256SUMS: `6fb36aacf06bfa77b8b624c63f07c04b85d76ad66d3bd3d9f10146253
 It reports Ubuntu 24.04.5 LTS, GCC 13.3.0, CMake 3.28.3, Boost 1.83, and OpenSSL 3.
 PRoot ran with acceleration disabled after an initial signal-4 failure. This is
 Ubuntu 24.04 userspace sharing the Ubuntu 26.04 host kernel, not a native boot/VM
-validation. Native Ubuntu 24.04 CI is separately recorded when it completes.
+validation. The native GitHub Ubuntu 24.04 runner also passed; its kernel was
+6.17.0-1022-azure, GCC 13.3.0, and CMake 3.31.6.
 
 ## Requested discovery inventory
 
@@ -123,8 +125,12 @@ newer default active and break Ryo's older serialization headers.
 
 The documented native build helper completed successfully under Ubuntu 24.04
 userspace. Both CTest checks passed: `ryo_mainnet_genesis` (1.03 seconds) and
-`ryo_native_offline` (3.57 seconds), 2/2 total. Native CI results will be recorded
-after their actual completion. The fixture suite checks native parser/hash/round-trip/rejection behavior and real
+`ryo_native_offline` (3.57 seconds), 2/2 total. The clean native Ubuntu 24.04
+[CI run](https://github.com/ucrem/ryo-blockchain-explorer/actions/runs/37230032831)
+passed on source commit `47b120b459a3b41909835a5afa88c479ca320da2`: core build,
+selected components, both CTest checks (1.02 and 3.39 seconds), and syntax checks.
+The release documentation commit changes Markdown only; the validated code,
+workflow, dependency pin, and patch are identical. The fixture suite checks native parser/hash/round-trip/rejection behavior and real
 MicroCore, pool/network RPC, and genesis emission code against an offline LMDB.
 No HTTP server, legacy assets, frontend, database service, or crypto rewrite is
 introduced. Scripts/syntax, documentation links, and tracked diffs are checked
@@ -132,10 +138,12 @@ separately. Build/probe logs stay under ignored `build/`.
 
 ## Milestone and follow-up scope
 
-The initial usable-HTTP-explorer v0.1.0 definition is not fulfilled by a native
-library alone. The user selected a narrower foundation without the website;
-revise that milestone's release scope explicitly before publishing that version.
-No tag or GitHub Release is claimed. [The plan](MODERNIZATION_PLAN.md) records
+The user explicitly selected a native-only foundation without the old website.
+The v0.1.0 milestone is refined accordingly: usable native components, real
+fixtures/offline integration, reproducible Ubuntu 24.04 build, and discovery docs.
+Its [v0.1.0 release notes](https://github.com/ucrem/ryo-blockchain-explorer/releases/tag/v0.1.0)
+state this scope clearly. This is a native development foundation; it does not
+provide HTTP pages/API or a frontend. [The plan](MODERNIZATION_PLAN.md) records
 concrete native build/test work and the later service/API/frontend sequence.
 
 Remaining coverage includes full-chain/reorg/concurrency/performance, historical

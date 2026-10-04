@@ -9,10 +9,11 @@ Current behavior is documented in [ARCHITECTURE_CURRENT.md](ARCHITECTURE_CURRENT
 The user selected an independent repository containing only reusable native C++
 components, tests, and documentation. [IMPORT_SCOPE.md](IMPORT_SCOPE.md) defines
 that implemented foundation. The old website and templates are not shipped.
-The original v0.1.0 usable-legacy-explorer definition below is retained as roadmap
-context, but is not satisfied by a native library alone. Revise its release scope
-explicitly before publishing; discovery success is not a substitute for a usable
-HTTP product. No release is currently claimed.
+The v0.1.0 milestone is refined to match that explicitly selected scope: a usable
+native development foundation, without importing the legacy website. The prior
+legacy runtime probe remains discovery evidence. HTTP delivery is later work.
+Publish the foundation only after native build, fixture, CI, and documentation
+checks pass; do not describe it as a usable HTTP explorer.
 
 ## Target data flow
 
@@ -33,7 +34,7 @@ move the current source tree mechanically or add empty service abstractions.
 
 | Version | Usable result | Exit criteria / dependencies |
 | --- | --- | --- |
-| v0.1.0 | Modern baseline, existing explorer | Preserved history/public ucrem origin, Ubuntu 24.04 build and local runtime checks, discovery/build/privacy docs, baseline tests/CI, changelog and release procedure |
+| v0.1.0 | Selected native C++ foundation | Preserved provenance/history, independent public ucrem repo, Ubuntu 24.04 native library build, offline LMDB/RPC/genesis tests, discovery/privacy/build docs, CI, changelog/tag/GitHub Release |
 | v0.2.0 | Core/services/HTTP separation | Extract one real responsibility at a time with unchanged legacy routes/models; fixture and reorg tests pass |
 | v0.3.0 | API v2 and OpenAPI | Typed public DTOs/errors/pagination/units, documented privacy-safe output, legacy API retained, schema/contract tests |
 | v0.4.0 | Next.js foundation/design system/dashboard | Next.js + TypeScript + Tailwind + shadcn/ui, Server Components by default, bundled assets, accessibility/light/dark/mobile verification |

@@ -6,7 +6,9 @@ It is enabled for this repository. Do not publish private keys, wallet exports,
 sensitive verification inputs, peer metadata, or exploit details in public issues.
 No dedicated security mailbox or response SLA has been established.
 
-This unreleased foundation provides native components and tests. It exposes no
+v0.1.0 provides native components and tests. Security fixes target the latest
+modernization release; earlier upstream deployments are not a maintained support
+branch of this independent project. It exposes no
 public HTTP server, browser verification flow, or transaction submission endpoint.
 The library still contains legacy sensitive/submission helpers; review and gate
 those functions before using them in a future public service. Imported code has

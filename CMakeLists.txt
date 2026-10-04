@@ -1,160 +1,40 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.24)
+project(RyoExplorerFoundation LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(PROJECT_NAME
-        xmrblocks)
-
-
-project(${PROJECT_NAME})
-
-set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -std=c++14")
-
-
-if (WIN32)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wa,-mbig-obj -O3")
+set(RYO_CORE_DIR "" CACHE PATH "Separately compiled official Ryo source checkout")
+if(NOT EXISTS "${RYO_CORE_DIR}/src/cryptonote_config.h")
+    message(FATAL_ERROR "Set RYO_CORE_DIR to the pinned Ryo checkout; see docs/BUILD.md.")
 endif()
+set(RYO_CORE_BUILD_DIR "${RYO_CORE_DIR}/build/release" CACHE PATH "Compiled Ryo build directory")
+include(cmake/RyoCore.cmake)
 
+add_library(ryo_fmt STATIC
+    "${RYO_CORE_DIR}/external/fmt/src/format.cc"
+    "${RYO_CORE_DIR}/external/fmt/src/posix.cc")
+target_include_directories(ryo_fmt SYSTEM PUBLIC "${RYO_CORE_DIR}/external/fmt/include")
+target_compile_features(ryo_fmt PUBLIC cxx_std_14)
 
-if (NOT MONERO_DIR)
-    set(MONERO_DIR ~/monero)
+add_library(ryo_explorer_core STATIC
+    src/MicroCore.cpp src/tools.cpp src/rpccalls.cpp
+    src/MempoolStatus.cpp src/CurrentBlockchainStatus.cpp)
+target_include_directories(ryo_explorer_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_compile_features(ryo_explorer_core PUBLIC cxx_std_14)
+target_link_libraries(ryo_explorer_core PUBLIC ryo_fmt Ryo::core)
+
+include(CTest)
+if(BUILD_TESTING)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_executable(ryo_genesis_fixture tests/genesis_fixture.cpp)
+    target_link_libraries(ryo_genesis_fixture PRIVATE ryo_explorer_core)
+    add_test(NAME ryo_mainnet_genesis COMMAND ryo_genesis_fixture
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/genesis-transaction.hex")
+    add_executable(ryo_native_chain_fixture tests/native_chain_fixture.cpp)
+    target_link_libraries(ryo_native_chain_fixture PRIVATE ryo_explorer_core)
+    add_test(NAME ryo_native_offline COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/offline-native-test.py"
+        "${RYO_CORE_BUILD_DIR}/bin/ryod" $<TARGET_FILE:ryo_native_chain_fixture>)
+    set_tests_properties(ryo_native_offline PROPERTIES TIMEOUT 180)
 endif()
-
-message(STATUS MONERO_DIR ": ${MONERO_DIR}")
-
-set(MONERO_SOURCE_DIR ${MONERO_DIR}
-        CACHE PATH "Path to the root directory for Monero")
-
-# set location of monero build tree
-set(MONERO_BUILD_DIR ${MONERO_SOURCE_DIR}/build/release/
-        CACHE PATH "Path to the build directory for Monero")
-
-set(MY_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}/cmake"
-        CACHE PATH "The path to the cmake directory of the current project")
-
-list(APPEND CMAKE_MODULE_PATH "${MY_CMAKE_DIR}")
-
-set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "${MONERO_BUILD_DIR}"
-        CACHE PATH "Add Monero directory for library searching")
-
-include(MyUtils)
-
-find_package(Monero)
-
-# find boost
-find_package(Boost COMPONENTS
-        system
-        filesystem
-        thread
-        date_time
-        chrono
-        regex
-        serialization
-        program_options
-        date_time
-        locale
-        REQUIRED)
-
-#info https://github.com/arsenm/sanitizers-cmake
-find_package(Sanitizers)
-
-if(APPLE)
-    include_directories(/usr/local/opt/openssl/include)
-    link_directories(/usr/local/opt/openssl/lib)
-endif()
-
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin" OR WIN32)
-    add_library(unbound STATIC IMPORTED)
-    set_property(TARGET unbound PROPERTY IMPORTED_LOCATION ${MONERO_BUILD_DIR}/external/unbound/libunbound.a)
-endif()
-
-# include boost headers
-include_directories(${Boost_INCLUDE_DIRS})
-include_directories("ext/mstch/include")
-include_directories("ext/crow")
-include_directories(${MONERO_SOURCE_DIR}/external/fmt/include)
-
-# add ext/ subfolder
-add_subdirectory(ext/)
-
-# add src/ subfolder
-add_subdirectory(src/)
-
-
-set(SOURCE_FILES
-        main.cpp)
-
-#ADD_CUSTOM_TARGET(driver DEPENDS src/templates/index.html)
-
-add_executable(${PROJECT_NAME}
-        ${SOURCE_FILES})
-
-add_sanitizers(${PROJECT_NAME})
-
-create_git_version()
-
-configure_files(${CMAKE_CURRENT_SOURCE_DIR}/src/templates ${CMAKE_CURRENT_BINARY_DIR}/templates)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/src/templates/static DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/templates)
-configure_files(${CMAKE_CURRENT_SOURCE_DIR}/src/templates/partials ${CMAKE_CURRENT_BINARY_DIR}/templates/partials)
-configure_files(${CMAKE_CURRENT_SOURCE_DIR}/src/templates/js ${CMAKE_CURRENT_BINARY_DIR}/templates/js)
-
-set(LIBRARIES
-        myxrm
-        myext
-        mstch
-        wallet
-        blockchain_db
-        cryptonote_core
-        cryptonote_protocol
-        cryptonote_basic
-        multisig
-        daemonizer
-        cncrypto
-        lmdb
-        ringct
-        ringct_basic
-        device
-        common
-        mnemonics
-        checkpoints
-        version
-        epee
-        ${Boost_LIBRARIES}
-        pthread
-        unbound
-        curl
-        crypto
-        ssl)
-
-if(APPLE)
-    set(LIBRARIES ${LIBRARIES} "-framework IOKit -framework PCSC")
-else()
-    set(LIBRARIES ${LIBRARIES} atomic)
-endif()
-
-if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND NOT WIN32)
-    set(LIBRARIES ${LIBRARIES} unwind)
-endif()
-
-if (WIN32)
-    set(LIBRARIES ${LIBRARIES}
-            wsock32
-            ntdll
-            ws2_32
-            Iphlpapi
-            )
-else()
-    set(LIBRARIES ${LIBRARIES} dl)
-endif()
-
-target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
-
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/xmrblocks
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
-    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-)
-
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/templates/
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/templates
-    FILES_MATCHING PATTERN "*"
-)

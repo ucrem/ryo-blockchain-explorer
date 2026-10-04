@@ -1,0 +1,45 @@
+name: Ubuntu 24.04 native foundation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-native-fixtures:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out project history
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake git ca-certificates pkg-config python3 \
+            libboost-system-dev libboost-filesystem-dev libboost-thread-dev \
+            libboost-date-time-dev libboost-chrono-dev libboost-regex-dev \
+            libboost-serialization-dev libboost-program-options-dev libboost-locale-dev \
+            libssl-dev libunbound-dev libminiupnpc-dev libunwind-dev liblzma-dev \
+            libreadline-dev libldns-dev libexpat1-dev libcurl4-openssl-dev \
+            cppzmq-dev libzmq3-dev libsodium-dev
+      - name: Record build environment
+        run: bash scripts/environment-report.sh
+      - name: Check out pinned official Ryo core
+        run: |
+          git clone https://github.com/ryo-currency/ryo-currency.git .deps/ryo-core
+          git -C .deps/ryo-core checkout "$(cat scripts/ryo-core-revision.txt)"
+      - name: Build Ryo native dependencies
+        run: bash scripts/build-ryo-core.sh .deps/ryo-core 2
+      - name: Build imported components and run native offline checks
+        run: bash scripts/build-baseline.sh .deps/ryo-core build/native 2
+      - name: Check script syntax
+        run: |
+          bash -n scripts/environment-report.sh scripts/build-ryo-core.sh scripts/build-baseline.sh
+          python3 -m py_compile scripts/offline-native-test.py

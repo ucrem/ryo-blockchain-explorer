@@ -5,6 +5,7 @@
 .idea/
 *.log
 *.orig
-tests/
 build/
+.deps/
+__pycache__/
 cmake-build-debug/

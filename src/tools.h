@@ -17,7 +17,7 @@
 
 #include "monero_headers.h"
 
-#include "../ext/json.hpp"
+#include "../third_party/json/json.hpp"
 
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem.hpp>

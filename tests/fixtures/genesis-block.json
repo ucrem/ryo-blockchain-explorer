@@ -1,0 +1,27 @@
+{
+  "data": {
+    "block_height": 0,
+    "current_height": 1197102,
+    "hash": "6eb04b6b8c68049a76206fe2805ede5f7465c03b7112850d3262a067b9914dac",
+    "size": 82,
+    "timestamp": 0,
+    "timestamp_utc": "1970-01-01 00:00:00",
+    "txs": [
+      {
+        "coinbase": true,
+        "extra": "013402fc7071230f1f86f33099119105a7b1f64a898526060ab871e685059c2231",
+        "mixin": 0,
+        "payment_id": "",
+        "payment_id8": "",
+        "rct_type": 0,
+        "tx_fee": 0,
+        "tx_hash": "ef9edde12f78ce1776ce1886b3e448d8f3575bc25111231370989baeae4a2d88",
+        "tx_size": 82,
+        "tx_version": 2,
+        "xmr_inputs": 0,
+        "xmr_outputs": 8800000000000000
+      }
+    ]
+  },
+  "status": "success"
+}

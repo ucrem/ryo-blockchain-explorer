@@ -15,6 +15,9 @@
 
 #define FEE_ESTIMATE_GRACE_BLOCKS 10 // estimate fee valid for that many blocks
 
+// fmt's stream formatter must precede Ryo headers that instantiate formatters.
+#include <fmt/ostream.h>
+
 #include "version.h"
 
 #include "net/http_client.h"

@@ -37,6 +37,24 @@ JSON captures retain real public genesis and version-3 RingCT response types.
 limits. These captures establish references; they are not native signature or
 secret-key decoding tests. No real private keys or wallet exports are included.
 
+## Optional native query diagnostics
+
+The diagnostic executable is disabled by default and does not change the library
+or CTest suite. Build it explicitly and run it against a disposable offline daemon:
+
+```bash
+RYO_BUILD_BENCHMARKS=ON bash scripts/build-baseline.sh .deps/ryo-core build/native 2
+python3 scripts/offline-native-test.py \
+  .deps/ryo-core/build/release/bin/ryod build/native/ryo_native_lookup_benchmark \
+  --timeout 120 --result-file build/native-query-baseline.json
+```
+
+The runner's existing fixture timeout remains 30 seconds; the diagnostic needs a
+longer explicit timeout because it repeats daemon RPC requests. The optional
+result path must have an existing parent directory. CI compiles the diagnostic
+with the other native targets but does not use timing as a pass/fail threshold.
+See [the measured reference and its limits](NATIVE_QUERY_BASELINE.md).
+
 ## Coverage required as functionality is brought over
 
 - Historical ordinary versions, current RingCT, payment IDs, subaddresses,

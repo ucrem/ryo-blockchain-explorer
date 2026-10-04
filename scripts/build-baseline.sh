@@ -9,6 +9,11 @@ task_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 task_core=$(cd -- "$1" && pwd)
 task_build=${2:-"$task_root/build/native"}
 task_jobs=${3:-2}
+task_benchmarks=${RYO_BUILD_BENCHMARKS:-OFF}
+if [[ "$task_benchmarks" != ON && "$task_benchmarks" != OFF ]]; then
+    printf 'RYO_BUILD_BENCHMARKS must be ON or OFF.\n' >&2
+    exit 2
+fi
 if [[ ! "$task_jobs" =~ ^[1-9][0-9]*$ ]]; then
     printf 'JOBS must be a positive integer.\n' >&2
     exit 2
@@ -30,6 +35,6 @@ if [[ ! -f "$task_core/build/release/bin/ryod" ]]; then
 fi
 cmake -S "$task_root" -B "$task_build" -DCMAKE_BUILD_TYPE=Release \
     -DRYO_CORE_DIR="$task_core" -DRYO_CORE_BUILD_DIR="$task_core/build/release" \
-    -DBUILD_TESTING=ON
+    -DBUILD_TESTING=ON -DRYO_BUILD_BENCHMARKS="$task_benchmarks"
 cmake --build "$task_build" --parallel "$task_jobs"
 ctest --test-dir "$task_build" --output-on-failure

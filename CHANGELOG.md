@@ -6,6 +6,13 @@ retroactively.
 
 ## [Unreleased]
 
+### Added
+
+- Optional read-only native query diagnostics with disposable offline execution
+  and a documented genesis-only measurement reference.
+- A concrete v0.2.0 service/HTTP proposal for architectural review; implementation
+  remains pending approval and is not part of this preparation change.
+
 ## [0.1.0] - 2026-10-04
 
 ### Added

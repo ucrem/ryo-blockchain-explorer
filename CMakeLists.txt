@@ -24,6 +24,12 @@ target_include_directories(ryo_explorer_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}
 target_compile_features(ryo_explorer_core PUBLIC cxx_std_14)
 target_link_libraries(ryo_explorer_core PUBLIC ryo_fmt Ryo::core)
 
+option(RYO_BUILD_BENCHMARKS "Build read-only native query diagnostics" OFF)
+if(RYO_BUILD_BENCHMARKS)
+    add_executable(ryo_native_lookup_benchmark tests/native_lookup_benchmark.cpp)
+    target_link_libraries(ryo_native_lookup_benchmark PRIVATE ryo_explorer_core)
+endif()
+
 include(CTest)
 if(BUILD_TESTING)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)

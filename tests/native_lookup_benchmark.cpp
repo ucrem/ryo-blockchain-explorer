@@ -2,6 +2,7 @@
 #include "MicroCore.h"
 #include "MempoolStatus.h"
 #include "CurrentBlockchainStatus.h"
+#include "LegacyJson.h"
 
 #include <algorithm>
 #include <chrono>
@@ -99,6 +100,21 @@ int main(int argc, char** argv)
         queries["network.cached_snapshot"] = measure([&] {
             const auto info = xmreg::MempoolStatus::current_network_info.load();
             return info.current && info.height == 1;
+        });
+        ryo_explorer::QueryContext context(core);
+        ryo_explorer::BlockService blocks(context);
+        ryo_explorer::TransactionService transactions(context);
+        ryo_explorer::LegacyJson legacy(blocks, transactions, true, "mainnet");
+        const std::string genesis_tx_hash = epee::string_tools::pod_to_hex(tx_hash);
+        queries["service.block_snapshot"] = measure([&] {
+            return blocks.get("0").chain_height == 1;
+        });
+        queries["service.transaction_snapshot"] = measure([&] {
+            return transactions.get(genesis_tx_hash).confirmations == 1;
+        });
+        queries["legacy.block_query_and_serialization"] = measure([&] {
+            const auto response = legacy.get("/api/block/0");
+            return response.status == 200 && response.body["status"] == "success" && !response.body.dump().empty();
         });
         const xmreg::json report {
             {"network", "mainnet"}, {"chain_height", 1},

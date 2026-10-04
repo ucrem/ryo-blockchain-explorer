@@ -40,8 +40,9 @@ jobs:
       - name: Build imported components and run native offline checks
         env:
           RYO_BUILD_BENCHMARKS: "ON"
+          RYO_BUILD_HTTP: "ON"
         run: bash scripts/build-baseline.sh .deps/ryo-core build/native 2
       - name: Check script syntax
         run: |
           bash -n scripts/environment-report.sh scripts/build-ryo-core.sh scripts/build-baseline.sh
-          python3 -m py_compile scripts/offline-native-test.py
+          python3 -m py_compile scripts/offline-native-test.py scripts/http-contract-test.py

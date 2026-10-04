@@ -23,6 +23,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("ryod", type=Path)
     parser.add_argument("fixture_executable", type=Path)
+    parser.add_argument("--http", action="store_true",
+                        help="Run HTTP contracts using the supplied server executable.")
     parser.add_argument("--result-file", type=Path,
                         help="Save the native executable's stdout to this diagnostic file.")
     parser.add_argument("--timeout", type=float, default=30,
@@ -63,6 +65,8 @@ def main():
                 else:
                     raise RuntimeError("Offline daemon readiness timed out.")
                 command = [str(fixture), str(work / "chain" / "lmdb02"), base]
+                if args.http:
+                    command = [sys.executable, str(Path(__file__).with_name("http-contract-test.py"))] + command
                 if args.result_file:
                     with args.result_file.open("wb") as result:
                         subprocess.run(command, stdout=result, check=True, timeout=args.timeout)

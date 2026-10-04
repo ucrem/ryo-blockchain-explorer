@@ -8,6 +8,13 @@ The import includes only native LMDB, utility, RPC, mempool, and emission code.
 The previous website, Crow server, mstch renderer, templates, browser crypto,
 images, and upstream build-helper collection are not included in the active tree.
 
+`src/services/TransactionMetadata.cpp` and `api/LegacyJson.cpp` selectively
+extract the native calculations and legacy JSON field definitions from that
+commit's `src/page.h` (`get_tx_details`, `get_tx_json`, and block/transaction JSON
+handlers). The BSD license and original source attribution continue to apply.
+The full HTML renderer is not imported. Boost.Beast/Asio comes from the existing
+system Boost dependency; no new HTTP library is vendored.
+
 `third_party/json/json.hpp` is the upstream-vendored nlohmann JSON header. Its
 MIT license and copyright notice remain embedded in the file. It is required
 by the imported native utility code; no other upstream vendored library is copied.

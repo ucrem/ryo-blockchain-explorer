@@ -1,9 +1,11 @@
 # Privacy model
 
-The active foundation is a native library with no public HTTP server or browser
-flow. Legacy endpoint/browser risks below describe the inspected upstream
-reference and constraints for future implementation, not currently exposed APIs.
-See [IMPORT_SCOPE.md](IMPORT_SCOPE.md).
+The active project has native services and an opt-in read-only HTTP subset,
+without a browser flow. Its block/transaction/raw/version routes accept no
+private keys, wallet uploads, or transaction submission, and omit local pool
+receive/relay times. See [HTTP_SERVER.md](HTTP_SERVER.md) for the explicit legacy
+privacy differences. Legacy endpoint/browser risks below describe the inspected
+upstream reference, not the entire current API. See [IMPORT_SCOPE.md](IMPORT_SCOPE.md).
 
 This document separates observed legacy behavior from modernization requirements.
 It is not a claim that the existing explorer already meets every target guarantee.

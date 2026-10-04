@@ -1,9 +1,11 @@
 # Legacy API reference
 
 **Scope:** This document inventories the inspected official upstream explorer.
-The active project contains selected native C++ components only; its source
-boundary is described in [IMPORT_SCOPE.md](IMPORT_SCOPE.md). The legacy HTTP
-server, website, and routes below are not shipped by this foundation.
+The active project's source boundary is described in [IMPORT_SCOPE.md](IMPORT_SCOPE.md).
+Its new read-only HTTP executable implements only the block, transaction, raw,
+and version subset listed in [HTTP_SERVER.md](HTTP_SERVER.md), including explicit
+privacy/error differences. The old server/website and full route set below are
+not shipped.
 
 Inventory of upstream `2e334724` on 2026-10-04. All handlers are in
 `src/page.h`; route registration and query extraction are in `main.cpp`.

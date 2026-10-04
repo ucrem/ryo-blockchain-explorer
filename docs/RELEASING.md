@@ -34,18 +34,21 @@ a file, then create an annotated tag and push only the intended branch/tag.
 ```bash
 gh api user --jq .login
 gh repo view ucrem/ryo-blockchain-explorer --json nameWithOwner,isPrivate
-git tag -a v0.1.0 -m 'Release v0.1.0: modern baseline'
+git tag -a v0.2.0 -m 'Release v0.2.0: native services and read-only HTTP'
 git push origin HEAD
-git push origin v0.1.0
-gh release create v0.1.0 --repo ucrem/ryo-blockchain-explorer \
-  --verify-tag --title 'v0.1.0 — Modern Baseline' \
-  --notes-file build/release-notes-v0.1.0.md
-gh release view v0.1.0 --repo ucrem/ryo-blockchain-explorer \
+git push origin v0.2.0
+gh release create v0.2.0 --repo ucrem/ryo-blockchain-explorer \
+  --verify-tag --title 'v0.2.0 — Native Services and Read-only HTTP' \
+  --notes-file build/release-notes-v0.2.0.md
+gh release view v0.2.0 --repo ucrem/ryo-blockchain-explorer \
   --json url,publishedAt,tagName,isDraft
 ```
 
-The notes file must exist and be reviewed before publication. Attach only
-artifacts that have been validated, together with checksums and dependency/license
+The notes file must exist and be reviewed before publication.
+Before copying the example, select an unused intended version; never rerun it
+against a published tag. v0.1.0 is already published.
+
+Attach only artifacts that have been validated, together with checksums and dependency/license
 information. A failed release command must not be reported as publication.
 Do not overwrite an existing tag/release or publish a pre-release baseline under
 the final v0.1.0 name just to meet the roadmap.

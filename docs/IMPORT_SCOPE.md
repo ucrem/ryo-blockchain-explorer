@@ -15,10 +15,19 @@ JSON header, tests, and project documentation. It does not ship the old website.
 | `third_party/json/json.hpp` | The single required upstream-vendored dependency, with embedded MIT notice |
 
 `ryo_explorer_core` is a real static library built from these implementations.
-No empty service classes, public HTTP server, frontend, or new cryptographic
-implementation is introduced. Only the JSON include path and fmt compatibility
-include differ in the imported native sources. No background worker starts
-automatically merely by linking the library.
+Concrete block/transaction services now selectively reuse the metadata
+calculations from upstream `get_tx_details`; the separate JSON adapter reuses
+field definitions from its JSON handlers. The full `page.h` is not imported.
+MicroCore fixes the Ryo DB flag interface, validates the selected network for the
+HTTP application, and stops native DB/worker ownership through native teardown.
+There are no empty service classes or new cryptographic implementations.
+Linking alone starts no process or worker; native Blockchain initialization
+retains its internal worker. No legacy monitor is automatically started.
+
+The opt-in `ryo_explorer_http` is a new bounded Boost.Beast/Asio transport for
+the implemented read-only legacy JSON subset. It is not the removed Crow website.
+See [HTTP_SERVER.md](HTTP_SERVER.md) for actual routes, compatibility differences,
+configuration, and validation limits. No frontend or old templates are included.
 
 Excluded: `main.cpp`, `page.h`, `CmdLineOptions`, Crow, mstch, cache templates,
 all legacy HTML/JavaScript/styles/images, generated version templates, unrelated
@@ -27,9 +36,9 @@ an external dependency. Source provenance and notices are in
 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
 The requested architecture/feature/API inventories describe the **upstream
-reference**, not APIs or pages implemented by this native foundation. Ryo logic
-still coupled inside upstream `page.h` will be brought over in focused, tested
-increments when the corresponding services are implemented. Those capabilities
+reference**; the currently implemented subset is listed separately. Ryo logic
+still coupled inside upstream `page.h` is brought over in focused, tested
+increments as the corresponding services are implemented. Other capabilities
 are inventoried rather than silently declared removed from the product roadmap.
 The original complete history remains preserved; the imported website is absent
 from the current project tree. Copied topic branches are not integration branches.

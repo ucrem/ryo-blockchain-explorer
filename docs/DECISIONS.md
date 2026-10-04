@@ -23,6 +23,9 @@ Recorded: 2026-10-04. See [the migration plan](MODERNIZATION_PLAN.md).
 | ADR-016 | Keep native Ubuntu development supported. | Docker is optional; temporary build environments are validation aids, not mandatory deployment infrastructure. |
 | ADR-017 | Keep transaction submission separately configurable and disabled by default. | Read-only inspection and network-affecting actions need distinct UI and operational controls. |
 | ADR-018 | Independent repository with a selective native C++ import. | User explicitly chose reusable native components, tests, and documentation without the old website/templates. Preserve provenance/history; bring coupled legacy logic over in focused increments. |
+| ADR-019 | Real native block/transaction services and a separate opt-in Beast/Asio HTTP executable. | The user approved the concrete v0.2 proposal; reuse the installed Boost package, keep owned results and JSON/transport separate, and publish an explicit compatible subset. |
+| ADR-020 | Pass `DBF_RDONLY` to the pinned Ryo DB API and retain registered LMDB readers. | Raw `MDB_*` values passed by the imported MicroCore did not select read-only mode. Native assertions protect the corrected flag interface; live mapping-growth recovery still needs coverage. |
+| ADR-021 | Pool transaction responses omit node-local receive/relay times. | Preserve native hash/object provenance and zero confirmations, while documenting zero/epoch timestamp fields as a deliberate legacy privacy difference. |
 
 Substantial architecture or behavior changes require a proposal covering current behavior,
 affected components, compatibility, migration risk, and tests, followed by approval.

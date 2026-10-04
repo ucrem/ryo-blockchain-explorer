@@ -1,8 +1,10 @@
 # v0.2.0 proposal: native services and a separate read-only HTTP adapter
 
-Status: **proposed; architectural implementation awaits user approval**.
+Status: **approved by the user on 2026-10-04; implemented, release validation underway**.
 Reference baseline: v0.1.0 / `afe5a8e`. Source changes in this preparation branch
-add optional read-only diagnostics and testing support only.
+added optional read-only diagnostics and testing support only. The subsequent
+implementation follows this approved scope; [HTTP_SERVER.md](HTTP_SERVER.md)
+records the concrete supported subset and validation limits.
 
 ## Current implementation and problem
 
@@ -162,6 +164,14 @@ environment; no additional HTTP library needs vendoring. See
 
 The initial user request explicitly requires: **"wait for approval before
 implementing if the change materially alters architecture or behavior"**.
-This proposal introduces the service/HTTP boundary, so implementation waits for
-approval of this concrete scope. Optional diagnostics, testing support, and
-proposal documentation do not implement that architecture.
+This proposal introduces the service/HTTP boundary. The user explicitly approved
+the proposed v0.2 scope before implementation. Optional diagnostics, testing
+support, and proposal documentation preceded that approval.
+
+During implementation, native tests identified a flag-interface mismatch:
+the pinned Ryo DB accepts `DBF_*`, so the imported raw `MDB_*` flags did not open
+the environment read-only. MicroCore now passes `DBF_RDONLY`, retains registered
+readers, and validates the selected network for HTTP startup. Native assertions
+verify the actual mode. This narrowly demonstrated fix replaces the initial
+assumption about `MDB_NOLOCK`; native read-scope/mapping limitations remain
+explicit in the implementation documentation.

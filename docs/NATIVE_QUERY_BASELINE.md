@@ -4,6 +4,11 @@ Measured on 2026-10-04, before service/HTTP extraction. This is a diagnostic of 
 selected v0.1.0 implementations, not a production performance claim. No auxiliary
 index or database is justified by this run.
 
+This reference predates the v0.2 DB flag correction. The diagnostic made read
+queries, but the imported raw flags did not prove an actual read-only environment.
+Current MicroCore uses `DBF_RDONLY` and native tests assert the effective mode.
+Do not treat these pre-fix timings as measured service/HTTP or production capacity.
+
 ## Environment and method
 
 - Baseline: v0.1.0 / `afe5a8e`, pinned Ryo core
@@ -49,6 +54,29 @@ this environment. This identifies a scenario to profile on native Linux, not
 the cause of the cost or evidence that a new store is needed. A known-block output
 scan and a latest-single-block read are deliberately narrow operations; they are
 not unrestricted output search or paginated latest-block performance.
+
+## Post-fix service reference
+
+The same diagnostic was rerun after the read-only open/close fixes and service/
+JSON extraction at `f61de27`, using the same PRoot environment and disposable
+genesis method. [The saved output](benchmarks/native-services-2026-10-04.json)
+contains 12 operations, 100 samples and ten warmups each. All four native/HTTP
+CTest checks passed in the same validation run (25.59 seconds total).
+
+| Added operation (microseconds) | p50 | p95 | p99 |
+| --- | ---: | ---: | ---: |
+| Owned block service snapshot | 6.566 | 10.251 | 13.210 |
+| Owned transaction service snapshot | 6.223 | 6.266 | 6.285 |
+| Legacy block query plus JSON construction/serialization | 12.153 | 23.505 | 44.388 |
+
+The last row includes both the native service query and JSON work; it does not
+isolate serialization cost or include HTTP transport. HTTP contracts separately
+time one batch of 24 successful block requests with eight client workers and
+report the elapsed time in the CTest log (49.687 ms in this local run). That single
+loopback batch is a transport
+diagnostic, not a sampled latency distribution or capacity test. Host scheduling,
+PRoot, cache order, and the changed DB open mode prevent attributing differences
+between the two native runs to an optimization.
 
 ## Missing scenarios and next measurements
 

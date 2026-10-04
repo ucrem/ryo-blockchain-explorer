@@ -1,9 +1,11 @@
 # Current architecture
 
 **Scope:** This document inventories the inspected official upstream explorer.
-The active project contains selected native C++ components only; its source
-boundary is described in [IMPORT_SCOPE.md](IMPORT_SCOPE.md). The legacy HTTP
-server, website, and routes below are not shipped by this foundation.
+The active project contains selected native C++ components, concrete services,
+and an opt-in read-only HTTP executable; its source boundary is described in
+[IMPORT_SCOPE.md](IMPORT_SCOPE.md). The old website/server is not shipped.
+[HTTP_SERVER.md](HTTP_SERVER.md) lists the implemented JSON subset. The remaining
+sections below inventory the upstream reference.
 
 Discovery date: 2026-10-04. Explorer source: official upstream
 `2e334724f9921e813e787b09f9365d53020a6286` (2025-08-04), with 970 reachable
@@ -16,8 +18,25 @@ claim that every path has passed runtime testing. See [validation status](PHASE0
 implementations plus their headers. CMake builds `ryo_explorer_core`, linking
 separately built official Ryo archives and fmt. The only copied vendored library
 is the required JSON header. Native fixture executables exercise this code; no
-HTTP server, renderer, browser assets, or background worker is started by the
-library itself. See [IMPORT_SCOPE.md](IMPORT_SCOPE.md) and [BUILD.md](BUILD.md).
+public HTTP server, renderer, browser assets, or legacy monitor is started by the
+library itself. Native Blockchain initialization has its own internal worker,
+which is stopped by native teardown. See [IMPORT_SCOPE.md](IMPORT_SCOPE.md) and
+[BUILD.md](BUILD.md).
+
+The native library now includes real transaction metadata and block/transaction
+services. A shared query context brackets serialized DB reads in a native read
+transaction; results own their data. `MicroCore` passes the correct `DBF_RDONLY`
+flag to Ryo, with registered LMDB readers. Its optional network validation is
+required by the HTTP application. The original raw `MDB_*` values were not the
+flag interface expected by the pinned Ryo DB; see the correction in
+[PHASE0_REPORT.md](PHASE0_REPORT.md).
+
+`api/LegacyJson.*` serializes the supported legacy subset independently of the
+services. `api/HttpServer.*` and `app/main.cpp` build a separate opt-in Beast/Asio
+server. It has one I/O loop and two fixed query workers, bounded connections and
+queries, read-only routes, loopback defaults, and signal shutdown. It does not
+start the old pool/network/emission monitors, copy `page.h`, or use legacy caches.
+See [the actual HTTP contract and limits](HTTP_SERVER.md).
 
 The remaining sections document the inspected upstream application, which is
 the compatibility reference for later imports and service implementation.
@@ -97,17 +116,20 @@ future destruction and RPC timeout behavior require runtime measurements.
 ## Chain and LMDB access
 
 `MicroCore` owns mutually dependent Ryo `tx_memory_pool` and `Blockchain`
-objects. It allocates a `BlockchainLMDB`, opens it with `MDB_RDONLY | MDB_NOLOCK`,
-and passes it to `Blockchain::init`. This process is not another mining daemon.
-It reads the same chain schema using native Ryo objects and indexes.
+objects. The upstream source passes raw `MDB_RDONLY | MDB_NOLOCK` values to
+`BlockchainLMDB::open`, then passes it to `Blockchain::init`. Those are requested
+flags, not proof of the effective mode: the pinned Ryo API accepts `DBF_*`.
+The active implementation corrects this to `DBF_RDONLY`. It is not another mining
+daemon and reads the same schema using native Ryo objects and indexes.
 
 `tools.cpp::get_default_lmdb_folder` uses Ryo's default data directory, adds
 `testnet` or `stagenet` as appropriate, and appends `lmdb02`. Prefer an explicit
 `--bc-path` during validation; README examples referring to `lmdb` are stale.
 The explorer must read a database compatible with its linked Ryo revision.
-`MDB_NOLOCK` means synchronization assumptions with the daemon need explicit
-review, including mapping growth and reorg consistency. Read-only opening alone
-does not prove safe concurrent operation.
+The upstream intent to bypass locking requires synchronization review. The active
+HTTP reader retains registered LMDB readers; mapping growth, external-writer load,
+and deeper reorg consistency still need coverage. Read-only opening alone does
+not prove safe concurrent operation.
 
 Block/transaction reads, output global-index resolution, input rings, key-image
 spent checks, and coinbase inspection use Ryo chain/library calls. Helpers can

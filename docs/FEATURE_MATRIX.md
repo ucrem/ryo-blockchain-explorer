@@ -1,9 +1,10 @@
 # Existing features and HTTP routes
 
 **Scope:** This document inventories the inspected official upstream explorer.
-The active project contains selected native C++ components only; its source
-boundary is described in [IMPORT_SCOPE.md](IMPORT_SCOPE.md). The legacy HTTP
-server, website, and routes below are not shipped by this foundation.
+The active source boundary is described in [IMPORT_SCOPE.md](IMPORT_SCOPE.md).
+The new server implements the read-only block/transaction/raw/version subset
+listed in [HTTP_SERVER.md](HTTP_SERVER.md). The old server/website and the full
+upstream route set below are not shipped.
 
 Source: upstream `2e334724`, inspected 2026-10-04. All explicit registrations are
 in `main.cpp`; handlers below are in `src/page.h` unless another file is named.

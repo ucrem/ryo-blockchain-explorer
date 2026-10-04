@@ -6,12 +6,47 @@ retroactively.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-04
+
 ### Added
 
 - Optional read-only native query diagnostics with disposable offline execution
   and a documented genesis-only measurement reference.
-- A concrete v0.2.0 service/HTTP proposal for architectural review; implementation
-  remains pending approval and is not part of this preparation change.
+- Concrete block/transaction services with native metadata, owned snapshot
+  results, and explicit query failures.
+- A separate opt-in read-only HTTP executable for legacy block, transaction,
+  raw, and version JSON routes, plus health.
+- Public native RingCT and historical block blobs, isolated pool/confirmation/
+  reorg tests, and real HTTP compatibility, limit, concurrency, and shutdown checks.
+
+### Fixed
+
+- MicroCore passes the correct Ryo `DBF_RDONLY` flag, rather than raw LMDB flags,
+  and native read-only assertions protect the actual open mode.
+- Native shutdown releases its internal worker/DB ownership; the pinned core
+  patch skips sync of read-only environments to prevent close permission failures.
+
+### Security
+
+- The server validates network genesis, defaults to loopback, and bounds HTTP
+  parsing, connections, queued queries, response size, and client deadlines.
+- Pool transaction timestamps omit node-local receive/relay information;
+  secret-key input, submission, and peer/propagation endpoints are not exposed.
+
+### Upgrade Notes
+
+- Rebuild the pinned core with the updated compatibility patch, then opt in with
+  `RYO_BUILD_HTTP=ON`. JSON endpoints require `--enable-json-api`.
+- Successful supported legacy shapes are preserved. Pool timestamps are zero/
+  epoch; temporary native/resource failures use HTTP 503. See `docs/HTTP_SERVER.md`.
+
+### Known Issues
+
+- This is an incremental API subset without the old website or new frontend.
+  API v2/OpenAPI and Next.js remain later milestones.
+- Full-chain capacity, mapping-growth recovery, external-writer load/reorg stress,
+  broader historical/ring fixtures, and positive testnet/stagenet coverage remain
+  follow-up work. Synthetic storage transitions are not consensus validation.
 
 ## [0.1.0] - 2026-10-04
 
@@ -46,3 +81,4 @@ retroactively.
   and frontend delivery remain later milestones.
 
 [0.1.0]: https://github.com/ucrem/ryo-blockchain-explorer/releases/tag/v0.1.0
+[0.2.0]: https://github.com/ucrem/ryo-blockchain-explorer/releases/tag/v0.2.0

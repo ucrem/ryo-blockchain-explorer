@@ -1,0 +1,149 @@
+{
+  "cache": "warm; 10 warmups per operation",
+  "chain_height": 1,
+  "network": "mainnet",
+  "not_measured": {
+    "full_chain_or_cold_cache": "Requires a representative database and controlled environment.",
+    "key_image.lookup": "Genesis has no spent key-image inputs.",
+    "mempool.nonempty": "The offline genesis pool is empty.",
+    "search.dispatch": "The native foundation has no search service."
+  },
+  "percentiles": "nearest rank",
+  "queries": {
+    "block.by_hash": {
+      "latency_us": {
+        "max": 191137.375,
+        "min": 116.124,
+        "p50": 137.969,
+        "p95": 797.432,
+        "p99": 27154.376
+      },
+      "samples": 100,
+      "warmup": 10
+    },
+    "block.by_height": {
+      "latency_us": {
+        "max": 3.151,
+        "min": 1.39,
+        "p50": 1.416,
+        "p95": 1.502,
+        "p99": 2.331
+      },
+      "samples": 100,
+      "warmup": 10
+    },
+    "emission.genesis_range": {
+      "latency_us": {
+        "max": 347.328,
+        "min": 116.679,
+        "p50": 135.88,
+        "p95": 259.415,
+        "p99": 291.192
+      },
+      "samples": 100,
+      "warmup": 10
+    },
+    "latest.single_block": {
+      "latency_us": {
+        "max": 4.181,
+        "min": 2.221,
+        "p50": 2.245,
+        "p95": 2.293,
+        "p99": 3.408
+      },
+      "samples": 100,
+      "warmup": 10
+    },
+    "legacy.block_query_and_serialization": {
+      "latency_us": {
+        "max": 52.838,
+        "min": 11.905,
+        "p50": 12.153,
+        "p95": 23.505,
+        "p99": 44.388
+      },
+      "samples": 100,
+      "warmup": 10
+    },
+    "mempool.empty_refresh": {
+      "latency_us": {
+        "max": 2459.794,
+        "min": 1233.272,
+        "p50": 1392.969,
+        "p95": 1830.055,
+        "p99": 2256.083
+      },
+      "samples": 100,
+      "warmup": 10
+    },
+    "network.cached_snapshot": {
+      "latency_us": {
+        "max": 0.068,
+        "min": 0.059,
+        "p50": 0.06,
+        "p95": 0.061,
+        "p99": 0.061
+      },
+      "samples": 100,
+      "warmup": 10
+    },
+    "network.rpc_refresh": {
+      "latency_us": {
+        "max": 1119258.549,
+        "min": 114686.164,
+        "p50": 168823.515,
+        "p95": 802499.444,
+        "p99": 981307.083
+      },
+      "samples": 100,
+      "warmup": 10
+    },
+    "output.in_known_block": {
+      "latency_us": {
+        "max": 311.06,
+        "min": 123.74,
+        "p50": 139.279,
+        "p95": 221.866,
+        "p99": 271.573
+      },
+      "samples": 100,
+      "warmup": 10
+    },
+    "service.block_snapshot": {
+      "latency_us": {
+        "max": 37.572,
+        "min": 6.492,
+        "p50": 6.566,
+        "p95": 10.251,
+        "p99": 13.21
+      },
+      "samples": 100,
+      "warmup": 10
+    },
+    "service.transaction_snapshot": {
+      "latency_us": {
+        "max": 6.31,
+        "min": 6.166,
+        "p50": 6.223,
+        "p95": 6.266,
+        "p99": 6.285
+      },
+      "samples": 100,
+      "warmup": 10
+    },
+    "transaction.by_hash": {
+      "latency_us": {
+        "max": 2.632,
+        "min": 2.527,
+        "p50": 2.561,
+        "p95": 2.579,
+        "p99": 2.593
+      },
+      "samples": 100,
+      "warmup": 10
+    }
+  },
+  "scope": "Genesis diagnostics; not representative mainnet capacity or index justification.",
+  "threads": 1,
+  "tip_hash": "6eb04b6b8c68049a76206fe2805ede5f7465c03b7112850d3262a067b9914dac"
+}

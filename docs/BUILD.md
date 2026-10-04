@@ -1,7 +1,8 @@
 # Native foundation build
 
 Reference: Ubuntu 24.04 LTS, GCC 13, CMake 3.28, Boost 1.83, OpenSSL 3.
-The current project builds a selected native C++ library and fixture executables.
+The current project builds selected native C++ services and fixture executables,
+with a separate opt-in HTTP executable.
 It does not build or install the old explorer website. See
 [IMPORT_SCOPE.md](IMPORT_SCOPE.md) for the exact source boundary.
 
@@ -41,6 +42,8 @@ The pin is recorded in `scripts/ryo-core-revision.txt`. The helper applies
 that exact patch already applied. It refuses staged/unexpected tracked changes.
 Compatibility fixes add a direct Boost MPL include, qualify bind placeholders,
 correct indentation, and supply a missing explicit native template instantiation.
+The patch also makes native LMDB sync a no-op for a read-only environment, so
+native shutdown does not fail by trying to flush a `DBF_RDONLY` database.
 Consensus and cryptographic algorithms are unchanged. GCC's `deprecated-copy`
 and `misleading-indentation` diagnostics remain visible as warnings; other
 existing warning/error settings remain in effect.
@@ -53,6 +56,26 @@ binary alone is insufficient. Use Ryo, not current Monero. Start with two jobs
 on modest machines because compilation consumes substantial RAM.
 
 ## Build and validate this project
+
+If upgrading an existing v0.1.0 core checkout, the helper intentionally refuses
+its older applied patch as an unexpected difference. Remove only that exact
+reviewed patch before applying the new one; stop if `cmp` reports any difference:
+
+```bash
+set -e
+mkdir -p build
+git show v0.1.0:scripts/patches/ryo-ubuntu24.patch > build/ryo-v0.1.patch
+git -C .deps/ryo-core diff --binary > build/ryo-core-current.patch
+cmp build/ryo-v0.1.patch build/ryo-core-current.patch
+git -C .deps/ryo-core diff --cached --exit-code
+git -C .deps/ryo-core apply --reverse --check "$PWD/build/ryo-v0.1.patch"
+git -C .deps/ryo-core apply --reverse "$PWD/build/ryo-v0.1.patch"
+bash scripts/build-ryo-core.sh .deps/ryo-core 2
+```
+
+This requires the project's existing v0.1.0 tag and the pinned core revision.
+Do not reset an independently modified dependency checkout. A fresh separate
+checkout using the earlier instructions is also supported.
 
 ```bash
 bash scripts/build-baseline.sh .deps/ryo-core build/native 2
@@ -80,5 +103,17 @@ ctest --test-dir build/native --output-on-failure
 The offline test creates its own temporary genesis-only LMDB, binds loopback
 ports, performs native read-only checks, and cleans up only its own processes and
 files. It never synchronizes or submits to mainnet. No supplied database, wallet,
-or secret input is needed. Production packaging and HTTP deployment are future
-work; native development does not require Docker.
+or secret input is needed. Production packaging is future work; native
+development does not require Docker.
+
+## Optional read-only HTTP executable
+
+```bash
+RYO_BUILD_HTTP=ON bash scripts/build-baseline.sh .deps/ryo-core build/native 2
+```
+
+The default is `OFF`, preserving the native-library development workflow. The
+opt-in builds `ryo_explorer_http` and runs its real HTTP contract test in addition
+to the three native fixtures. Existing Boost 1.83 provides Beast/Asio; no new
+vendored library is required. See [HTTP_SERVER.md](HTTP_SERVER.md) for startup,
+implemented routes, compatibility changes, resource limits, and deployment gaps.

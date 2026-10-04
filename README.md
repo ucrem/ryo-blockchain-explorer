@@ -2,13 +2,18 @@
 
 An independent public project for the incremental modernization of Ryo's
 blockchain explorer. This repository starts with **selected native C++ components,
-real Ryo fixtures, and technical discovery documentation**. It does not include
-the old website, templates, browser assets, or a Next.js application.
+real Ryo fixtures, and technical discovery documentation**, now extended with
+concrete block/transaction services and a separate opt-in read-only HTTP server.
+It does not include the old website, templates, browser assets, or a Next.js application.
 
 The current build produces `ryo_explorer_core`, a native static library for
 read-only LMDB access, existing Ryo parsing/metadata utilities, daemon RPC,
 mempool snapshots, and emission calculation. The official Ryo core is a pinned
 external dependency. Cryptographic and consensus logic remain native Ryo code.
+
+The new HTTP executable implements legacy block/transaction/raw/version JSON
+routes, plus health. Its supported subset, privacy differences, bounds, and
+configuration are documented in [HTTP_SERVER.md](docs/HTTP_SERVER.md).
 
 ## Build and test
 
@@ -28,6 +33,19 @@ empty mempool, daemon network RPC, and Ryo's existing genesis emission adjustmen
 No synchronization, transaction submission, private keys, or supplied chain
 are required. See [TESTING.md](docs/TESTING.md) for coverage limits.
 
+Build the opt-in HTTP server and its contract tests:
+
+```bash
+RYO_BUILD_HTTP=ON bash scripts/build-baseline.sh .deps/ryo-core build/native 2
+build/native/ryo_explorer_http --bc-path /path/to/ryo/lmdb02 --enable-json-api
+```
+
+The executable defaults to `127.0.0.1:8081` and validates the selected network's
+genesis. Native services return owned results from read-only LMDB snapshots.
+Tests add real historical/RingCT blobs, isolated storage transitions, concurrent
+queries, HTTP contracts, input limits, and shutdown. No full-chain capacity or
+production readiness claim follows from the disposable fixtures.
+
 ## Project documentation
 
 - [Selective import and boundaries](docs/IMPORT_SCOPE.md)
@@ -35,6 +53,7 @@ are required. See [TESTING.md](docs/TESTING.md) for coverage limits.
 - [Upstream architecture reference](docs/ARCHITECTURE_CURRENT.md)
 - [Upstream feature inventory](docs/FEATURE_MATRIX.md)
 - [Legacy API reference](docs/API_LEGACY.md)
+- [Implemented read-only HTTP subset](docs/HTTP_SERVER.md)
 - [Privacy model](docs/PRIVACY_MODEL.md)
 - [Modernization plan](docs/MODERNIZATION_PLAN.md)
 - [v0.2.0 service/HTTP proposal](docs/V0_2_SERVICE_PROPOSAL.md)
@@ -45,7 +64,7 @@ are required. See [TESTING.md](docs/TESTING.md) for coverage limits.
 - [Changelog](CHANGELOG.md), [license](LICENSE), [source attribution](THIRD_PARTY_NOTICES.md)
 
 The architecture, feature, and API inventories describe the inspected official
-explorer. Those HTTP endpoints and pages are **not implemented by this foundation**.
+explorer. The new server implements only the separately documented JSON subset.
 Logic still coupled to upstream HTML will be imported in focused, tested changes
 when its services are built. Phase 0 does not claim browser crypto parity,
 full-chain/reorg correctness, production readiness, or completed analytics.
@@ -70,5 +89,7 @@ copy of the entire upstream website. Never push to upstream or force-push.
 follows the user-selected import scope: compiled native components, fixtures,
 reproducible build, and discovery documentation. Its Ubuntu 24.04
 [build and native tests passed](https://github.com/ucrem/ryo-blockchain-explorer/actions/runs/37230032831).
-HTTP services and the frontend follow in later milestones. Each release includes
+[v0.2.0 — Native Services and Read-only HTTP](https://github.com/ucrem/ryo-blockchain-explorer/releases/tag/v0.2.0)
+adds native services and the opt-in HTTP subset; the frontend follows later.
+Each release includes
 validation, a dated changelog, an annotated tag, and a real GitHub Release.

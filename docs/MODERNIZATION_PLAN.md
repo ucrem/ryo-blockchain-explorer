@@ -11,7 +11,9 @@ components, tests, and documentation. [IMPORT_SCOPE.md](IMPORT_SCOPE.md) defines
 that implemented foundation. The old website and templates are not shipped.
 The v0.1.0 milestone is refined to match that explicitly selected scope: a usable
 native development foundation, without importing the legacy website. The prior
-legacy runtime probe remains discovery evidence. HTTP delivery is later work.
+legacy runtime probe remains discovery evidence. v0.2 adds a focused read-only
+HTTP subset described in [HTTP_SERVER.md](HTTP_SERVER.md), following the user-approved
+[service proposal](V0_2_SERVICE_PROPOSAL.md).
 Publish the foundation only after native build, fixture, CI, and documentation
 checks pass; do not describe it as a usable HTTP explorer.
 
@@ -35,7 +37,7 @@ move the current source tree mechanically or add empty service abstractions.
 | Version | Usable result | Exit criteria / dependencies |
 | --- | --- | --- |
 | v0.1.0 | Selected native C++ foundation | Preserved provenance/history, independent public ucrem repo, Ubuntu 24.04 native library build, offline LMDB/RPC/genesis tests, discovery/privacy/build docs, CI, changelog/tag/GitHub Release |
-| v0.2.0 | Core/services/HTTP separation | Extract one real responsibility at a time with unchanged legacy routes/models; fixture and reorg tests pass |
+| v0.2.0 | Core/services/HTTP separation | Concrete block/transaction services and opt-in HTTP subset; captured supported contracts, explicit privacy/error differences, native fixture/storage-reorg/HTTP tests |
 | v0.3.0 | API v2 and OpenAPI | Typed public DTOs/errors/pagination/units, documented privacy-safe output, legacy API retained, schema/contract tests |
 | v0.4.0 | Next.js foundation/design system/dashboard | Next.js + TypeScript + Tailwind + shadcn/ui, Server Components by default, bundled assets, accessibility/light/dark/mobile verification |
 | v0.5.0 | Modern block/transaction views | Preserve low-level data; basic/advanced presentation, API/raw links, historical transaction coverage |
@@ -109,7 +111,7 @@ new frontend send private keys to legacy endpoints by default.
 
 - Ryo archive/header/ABI drift, modern Boost/OpenSSL/GCC compatibility, generated
   headers, and ambiguous source/build paths.
-- Shared read-only `MDB_NOLOCK` access, mapping growth, daemon/explorer state
+- The original raw DB flag mismatch (fixed with `DBF_RDONLY` in v0.2), mapping growth, daemon/explorer state
   divergence, incomplete chain snapshots, and reorganizations.
 - Cache temporary locks/reference lifetimes, background state freshness,
   asynchronous request work, and shutdown/error paths.

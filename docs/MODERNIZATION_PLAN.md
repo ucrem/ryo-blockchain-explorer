@@ -14,11 +14,12 @@ native development foundation, without importing the legacy website. The prior
 legacy runtime probe remains discovery evidence. v0.2 adds a focused read-only
 HTTP subset described in [HTTP_SERVER.md](HTTP_SERVER.md), following the user-approved
 [service proposal](V0_2_SERVICE_PROPOSAL.md).
-v0.1.0 and v0.2.0 are released. The foundation is a native library; the v0.2
+v0.1.0, v0.2.0 and v0.3.0 are released. The foundation is a native library; the v0.2
 executable is a usable JSON subset with the separately documented limitations.
-The next concrete milestone is the [v0.3 API proposal](V0_3_API_PROPOSAL.md) and
-its [OpenAPI contract](api-v2.openapi.yaml). The user approved this scope through
-release publication; [API_V2.md](API_V2.md) documents its implementation.
+The approved [v0.3 API scope](V0_3_API_PROPOSAL.md) and its
+[OpenAPI contract](api-v2.openapi.yaml) are implemented;
+[API_V2.md](API_V2.md) documents the released subset. The next milestone is
+v0.4's server-first Next.js foundation/design system and initial dashboard.
 
 ## Target data flow
 
@@ -79,7 +80,7 @@ The roadmap may change as measurements and protocol evidence warrant.
 The approved [v0.2 proposal](V0_2_SERVICE_PROPOSAL.md) is implemented: native
 block/transaction metadata and owned snapshots, legacy JSON adaptation, and
 separate bounded HTTP transport. The legacy HTML-bound code remains an upstream
-reference, outside this project. The proposed v0.3 increment adds a native chain
+reference, outside this project. The approved v0.3 increment adds a native chain
 snapshot, bounded block-summary pagination, v2 serialization/routing and OpenAPI;
 pool listing, search, emission and verification remain later focused extraction.
 

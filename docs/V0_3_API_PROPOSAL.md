@@ -1,6 +1,12 @@
 # v0.3.0 proposal: public API v2 and OpenAPI
 
-Status: **approved by the user on 2026-10-04; implemented, release validation in progress**.
+Status: **approved by the user on 2026-10-04; implemented and released as v0.3.0**.
+The [release](https://github.com/ucrem/ryo-blockchain-explorer/releases/tag/v0.3.0)
+was published at 2026-10-04 22:27:03 UTC. Source commit
+`b335672544d7d0de84175ad31e0d246e6f535ea0` passed the native Ubuntu 24.04
+[build and all five tests](https://github.com/ucrem/ryo-blockchain-explorer/actions/runs/37239326835)
+(25.74 seconds for CTest), plus the separate
+[schema/example workflow](https://github.com/ucrem/ryo-blockchain-explorer/actions/runs/37239326900).
 The user authorized the complete proposed milestone through release publication.
 The preparation PR added documentation and contract checks only, preserving the
 v0.2.0 runtime. The sections below record the approved scope and acceptance gates.

@@ -99,5 +99,9 @@ reproducible build, and discovery documentation. Its Ubuntu 24.04
 [v0.2.0 — Native Services and Read-only HTTP](https://github.com/ucrem/ryo-blockchain-explorer/releases/tag/v0.2.0)
 adds native services and the opt-in HTTP subset; the frontend follows later.
 [Its release source passed Ubuntu 24.04 CI and all four native/HTTP tests](https://github.com/ucrem/ryo-blockchain-explorer/actions/runs/37234982307).
+[v0.3.0 — API v2 and OpenAPI](https://github.com/ucrem/ryo-blockchain-explorer/releases/tag/v0.3.0)
+adds exact public DTOs, native-reader chain state, anchored block pages and
+native raw JSON/hex while preserving the legacy subset.
+[Its release source passed Ubuntu 24.04 CI and all five tests](https://github.com/ucrem/ryo-blockchain-explorer/actions/runs/37239326835).
 Each release includes
 validation, a dated changelog, an annotated tag, and a real GitHub Release.

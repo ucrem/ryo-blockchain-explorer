@@ -235,6 +235,8 @@ int main(int argc, char** argv) {
         oversized.invalidate_hashes();
         const auto oversized_hash = cryptonote::get_transaction_hash(oversized);
         writer.block_txn_start(false); writer.add_txpool_tx(oversized, meta); writer.block_txn_stop();
+        check(transactions.get(epee::string_tools::pod_to_hex(oversized_hash), false).metadata.size > 4 * 1024 * 1024,
+              "Oversized native fixture was not readable before API resource rejection.");
         const auto limited = api.get("/api/v2/raw/transaction/" + epee::string_tools::pod_to_hex(oversized_hash));
         check(limited.status == 503 && limited.body["error"]["code"] == "unavailable",
               "Oversized native raw object was not rejected.");

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Validate imported C++ implementations using a temporary offline Ryo genesis DB."""
 import argparse
+import math
 import json
 from pathlib import Path
 import socket
@@ -22,7 +23,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("ryod", type=Path)
     parser.add_argument("fixture_executable", type=Path)
+    parser.add_argument("--result-file", type=Path,
+                        help="Save the native executable's stdout to this diagnostic file.")
+    parser.add_argument("--timeout", type=float, default=30,
+                        help="Native executable timeout in seconds (default: 30).")
     args = parser.parse_args()
+    if not math.isfinite(args.timeout) or args.timeout <= 0:
+        parser.error("--timeout must be finite and positive.")
     daemon = args.ryod.resolve(strict=True)
     fixture = args.fixture_executable.resolve(strict=True)
     ports = set()
@@ -55,8 +62,12 @@ def main():
                         time.sleep(0.25)
                 else:
                     raise RuntimeError("Offline daemon readiness timed out.")
-                subprocess.run([str(fixture), str(work / "chain" / "lmdb02"), base],
-                               check=True, timeout=30)
+                command = [str(fixture), str(work / "chain" / "lmdb02"), base]
+                if args.result_file:
+                    with args.result_file.open("wb") as result:
+                        subprocess.run(command, stdout=result, check=True, timeout=args.timeout)
+                else:
+                    subprocess.run(command, check=True, timeout=args.timeout)
                 print("Disposable offline native integration checks passed.")
             except Exception:
                 log.flush()

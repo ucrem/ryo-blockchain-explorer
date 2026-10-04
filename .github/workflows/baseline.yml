@@ -38,6 +38,8 @@ jobs:
       - name: Build Ryo native dependencies
         run: bash scripts/build-ryo-core.sh .deps/ryo-core 2
       - name: Build imported components and run native offline checks
+        env:
+          RYO_BUILD_BENCHMARKS: "ON"
         run: bash scripts/build-baseline.sh .deps/ryo-core build/native 2
       - name: Check script syntax
         run: |

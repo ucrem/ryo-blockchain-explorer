@@ -37,6 +37,8 @@ are required. See [TESTING.md](docs/TESTING.md) for coverage limits.
 - [Legacy API reference](docs/API_LEGACY.md)
 - [Privacy model](docs/PRIVACY_MODEL.md)
 - [Modernization plan](docs/MODERNIZATION_PLAN.md)
+- [v0.2.0 service/HTTP proposal](docs/V0_2_SERVICE_PROPOSAL.md)
+- [Native query diagnostic baseline](docs/NATIVE_QUERY_BASELINE.md)
 - [Architecture decisions](docs/DECISIONS.md)
 - [Build setup](docs/BUILD.md), [testing](docs/TESTING.md), [release process](docs/RELEASING.md)
 - [Contributing](CONTRIBUTING.md), [security reporting](SECURITY.md), [conduct](CODE_OF_CONDUCT.md)

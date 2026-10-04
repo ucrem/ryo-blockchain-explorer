@@ -64,6 +64,10 @@ and runs CTest. A failed required archive lookup aborts configuration.
 CTest includes native parsing/hash checks and offline LMDB/RPC integration;
 see [TESTING.md](TESTING.md) for the exact coverage and limitations.
 
+An optional native query diagnostic can be built with
+`RYO_BUILD_BENCHMARKS=ON`. The default is `OFF`; timing runs are separate from
+CTest. See [TESTING.md](TESTING.md#optional-native-query-diagnostics).
+
 Equivalent manual commands:
 
 ```bash

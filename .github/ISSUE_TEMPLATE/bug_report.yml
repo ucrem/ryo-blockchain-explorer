@@ -1,0 +1,22 @@
+name: Bug report
+description: Report a reproducible explorer problem without sensitive data.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and reproduction
+      description: Include expected/actual behavior and steps. Never include private keys or wallet exports.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Explorer/core revisions, OS/compiler, network, feature flags, and public fixture references.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Validation and public evidence
+      description: Redacted diagnostics and relevant documentation links; report vulnerabilities privately.

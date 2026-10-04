@@ -1,0 +1,26 @@
+name: Implementation task
+description: Propose a focused, verifiable modernization task.
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective and scope
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and compatibility
+      description: Link canonical architecture/privacy/API documents; explain behavior changes and approval needs.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria and validation
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies

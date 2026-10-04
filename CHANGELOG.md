@@ -1,0 +1,32 @@
+# Changelog
+
+Modernization releases follow Semantic Versioning and Keep a Changelog categories.
+Upstream history remains preserved; it is not assigned modernization versions
+retroactively. No modernization release has been published.
+
+## [Unreleased]
+
+### Added
+
+- Selected native C++ implementations for LMDB, Ryo parsing/metadata, daemon RPC,
+  mempool/network snapshots, and existing emission calculation.
+- A CMake static-library build with pinned official Ryo dependencies and isolated
+  Ubuntu 24.04 compiler compatibility fixes.
+- Real public Ryo fixtures, native parser/hash checks, and disposable offline
+  integration tests for the imported implementations.
+- Ubuntu 24.04 CI, discovery/API/privacy documentation, import provenance, roadmap,
+  and public contributor/security/release guidance.
+
+### Changed
+
+- The active repository is a native foundation for the new project. The old HTTP
+  server, website/templates/browser assets, and unrelated vendored libraries are
+  excluded. Legacy feature/API inventories remain reference documentation.
+
+### Known Issues
+
+- No HTTP explorer or frontend is currently provided by this foundation.
+- Historical/browser parity, full-chain/reorg/performance, checkpoint behavior,
+  and testnet/stagenet coverage remain follow-up work.
+- The original usable-HTTP-explorer v0.1.0 scope must be revised explicitly before
+  publishing that version for this selective native foundation.

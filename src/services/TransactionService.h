@@ -10,6 +10,8 @@ struct TransactionResult {
     bool in_pool = false;
     // Each input's native ring candidates; never identifies the real spend.
     std::vector<std::vector<cryptonote::output_data_t>> ring_members;
+    // Public originating block times, sampled inside the same native read scope.
+    std::vector<std::vector<uint64_t>> ring_timestamps;
 };
 class TransactionService {
     QueryContext& context_;

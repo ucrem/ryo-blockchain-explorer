@@ -33,7 +33,10 @@ TransactionResult TransactionService::get(const std::string& id, bool include_ri
                 std::vector<cryptonote::output_data_t> members;
                 if (!offsets.empty() && offsets.back() < db.get_num_outputs(input.amount))
                     db.get_output_key(input.amount, offsets, members);
+                std::vector<uint64_t> timestamps;
+                for (const auto& member : members) timestamps.push_back(db.get_block_timestamp(member.height));
                 result.ring_members.push_back(std::move(members));
+                result.ring_timestamps.push_back(std::move(timestamps));
             }
         }
         return result;

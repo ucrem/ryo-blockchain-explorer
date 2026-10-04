@@ -91,5 +91,6 @@ reproducible build, and discovery documentation. Its Ubuntu 24.04
 [build and native tests passed](https://github.com/ucrem/ryo-blockchain-explorer/actions/runs/37230032831).
 [v0.2.0 — Native Services and Read-only HTTP](https://github.com/ucrem/ryo-blockchain-explorer/releases/tag/v0.2.0)
 adds native services and the opt-in HTTP subset; the frontend follows later.
+[Its release source passed Ubuntu 24.04 CI and all four native/HTTP tests](https://github.com/ucrem/ryo-blockchain-explorer/actions/runs/37234982307).
 Each release includes
 validation, a dated changelog, an annotated tag, and a real GitHub Release.

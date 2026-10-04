@@ -1,6 +1,10 @@
 # v0.2.0 proposal: native services and a separate read-only HTTP adapter
 
-Status: **approved by the user on 2026-10-04; implemented, release validation underway**.
+Status: **approved by the user on 2026-10-04; implemented and released as v0.2.0**.
+The [release](https://github.com/ucrem/ryo-blockchain-explorer/releases/tag/v0.2.0)
+was published at 2026-10-04 21:23:35 UTC. The exact integration commit
+`a3f7834c979d29be95e031c554d5d91a5de6059c` passed the clean native Ubuntu 24.04
+[CI build and all four tests](https://github.com/ucrem/ryo-blockchain-explorer/actions/runs/37234982307).
 Reference baseline: v0.1.0 / `afe5a8e`. Source changes in this preparation branch
 added optional read-only diagnostics and testing support only. The subsequent
 implementation follows this approved scope; [HTTP_SERVER.md](HTTP_SERVER.md)

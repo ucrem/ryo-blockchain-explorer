@@ -3,6 +3,51 @@ import AxeBuilder from "@axe-core/playwright";
 test.beforeEach(async ({ request }) => {
   await request.get("http://127.0.0.1:3101/__control?mode=normal");
 });
+test("live reader changes refresh blocks; unchanged tips, pause, outage and earlier pages stay stable", async ({
+  page,
+  request,
+}) => {
+  await page.clock.install();
+  await page.goto("/");
+  const live = page.getByRole("button", { name: "Pause live updates" });
+  await expect(live).toHaveAttribute("aria-pressed", "true");
+  const metric = page.locator(".metric-card").first();
+  await expect(metric).toContainText("9,007,199,254,741,023");
+  // Confirm an unchanged tip causes only one network read, not a route refresh.
+  const before = await (await request.get("http://127.0.0.1:3101/__control")).json();
+  await page.clock.runFor(10_100);
+  await expect.poll(async () =>
+    (await (await request.get("http://127.0.0.1:3101/__control")).json()).reads,
+  ).toBe(before.reads + 1);
+  await page.getByLabel("Search the Ryo blockchain", { exact: true }).fill("12345");
+  await page.evaluate(() => window.scrollTo(0, 350));
+  const scroll = await page.evaluate(() => window.scrollY);
+  await request.get("http://127.0.0.1:3101/__control?mode=advanced");
+  await page.clock.runFor(10_100);
+  await expect(metric).toContainText("9,007,199,254,741,024");
+  await expect(page.getByRole("link", { name: "Block 9007199254741024", exact: true })).toBeVisible();
+  await expect(page.getByLabel("Search the Ryo blockchain", { exact: true })).toHaveValue("12345");
+  expect(await page.evaluate(() => window.scrollY)).toBe(scroll);
+  await expect(page.getByRole("status")).toContainText("Reader advanced to block");
+  await live.click();
+  await request.get("http://127.0.0.1:3101/__control?mode=normal");
+  await page.clock.runFor(30_100);
+  expect((await (await request.get("http://127.0.0.1:3101/__control")).json()).reads).toBe(0);
+  await expect(metric).toContainText("9,007,199,254,741,024");
+  await page.getByRole("button", { name: "Resume live updates" }).click();
+  await request.get("http://127.0.0.1:3101/__control?mode=outage");
+  await page.clock.runFor(10_100);
+  await expect(page.getByRole("status")).toContainText("Reader unavailable");
+  await expect(metric).toContainText("9,007,199,254,741,024");
+  await request.get("http://127.0.0.1:3101/__control?mode=normal");
+  await page.clock.runFor(10_100);
+  await expect(metric).toContainText("9,007,199,254,741,023");
+  await page.getByRole("link", { name: "Earlier blocks", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Pause live updates" })).toHaveCount(0);
+  const earlier = await (await request.get("http://127.0.0.1:3101/__control")).json();
+  await page.clock.runFor(30_100);
+  expect((await (await request.get("http://127.0.0.1:3101/__control")).json()).reads).toBe(earlier.reads);
+});
 test("server-rendered exact data, safe raw proxy, theme persistence, desktop accessibility", async ({
   page,
   request,

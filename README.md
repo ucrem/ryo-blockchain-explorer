@@ -113,6 +113,6 @@ validation, a dated changelog, an annotated tag, and a real GitHub Release.
 The v0.4 implementation provides a responsive light/dark
 dashboard, readable block/transaction details, public height/hash search,
 embedded formatted JSON/raw views,
-native-reader chain status, recent block pagination, observed header
+native-reader chain status, ten-second live tip updates, recent block pagination, observed header
 intervals and developer API access. See
 [the scope](docs/V0_4_WEB_PROPOSAL.md) and [validation](docs/V0_4_VALIDATION.md).

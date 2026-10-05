@@ -111,7 +111,8 @@ createServer((req, res) => {
     res.end(JSON.stringify(result));
     return;
   }
-  const meta = { network: "mainnet", chain_height: (anchor + 1n).toString() };
+  const tip = mode === "advanced" ? anchor + 1n : anchor;
+  const meta = { network: "mainnet", chain_height: (tip + 1n).toString() };
   if (url.pathname === "/api/v2/network") {
     res.end(
       JSON.stringify({
@@ -119,7 +120,7 @@ createServer((req, res) => {
         meta,
         data: {
           ...examples.NetworkResponse.data,
-          tip: makeBlock(anchor, 0),
+          tip: makeBlock(tip, 0),
           tip_difficulty: "18446744073709551615",
         },
       }),
@@ -134,7 +135,7 @@ createServer((req, res) => {
       );
       return;
     }
-    const start = url.searchParams.has("cursor") ? anchor - 20n : anchor;
+    const start = url.searchParams.has("cursor") ? anchor - 20n : tip;
     const items = Array.from({ length: 20 }, (_, i) =>
       makeBlock(start - BigInt(i), i),
     );
@@ -143,9 +144,9 @@ createServer((req, res) => {
         meta,
         data: {
           items,
-          anchor_height: anchor.toString(),
-          anchor_hash: makeHash(anchor),
-          next_cursor: `${anchor}.${makeHash(anchor)}.${start - 20n}`,
+          anchor_height: tip.toString(),
+          anchor_hash: makeHash(tip),
+          next_cursor: `${tip}.${makeHash(tip)}.${start - 20n}`,
         },
       }),
     );

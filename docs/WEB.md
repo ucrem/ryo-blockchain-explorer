@@ -9,6 +9,13 @@ search and a developer API guide.
 
 - `/`: native-reader network and chain status, exact tip height/difficulty,
   configured block target, recent block summaries and anchored earlier pages.
+- Latest-block pages watch the native reader every ten seconds through the
+  same-origin network endpoint. A changed tip hash or network refreshes Server
+  Components while preserving browser state. Live updates can be paused; hidden
+  tabs do not poll, reads have a five-second deadline and failures retry while
+  retaining the displayed data. Earlier cursor pages stay anchored and do not poll.
+  This observes blocks entering the local reader, including historical sync;
+  it does not establish that a block was just mined or the node is synchronized.
 - An interval chart derived only from adjacent headers on the displayed page.
   Missing genesis timestamps and decreasing timestamps are excluded. At least
   two usable intervals are needed; the whole-second mean truncates division.
@@ -35,7 +42,7 @@ search and a developer API guide.
   keyboard skip link, focus indicators, bounded horizontal table/code scrolling,
   accessible SVG description and truthful unavailable/reorg/genesis states.
 
-There is no mempool listing, address search, auto-refresh/SSE, analytics store,
+There is no mempool listing, address search, SSE, analytics store,
 private-key verification, balance/history inference or transaction submission.
 The UI has no placeholder navigation advertising those capabilities.
 

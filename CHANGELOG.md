@@ -17,6 +17,8 @@ retroactively.
   fonts, light/dark themes, mobile navigation and a developer API guide.
 - Native-reader chain status, exact quantities, recent block pages, reorg recovery
   and a truthful observed-header interval chart.
+- Ten-second live tip observation on latest-block pages, with pause, hidden-tab
+  suspension, retained browser state and retry after reader outages.
 - Readable block/transaction detail pages and global public height/hash search,
   with exact fees, paginated rows and privacy-safe RingCT/input/output views.
 - Contextual explanations of structured/native JSON, hexadecimal serialization,
@@ -42,7 +44,7 @@ retroactively.
 
 ### Known Issues
 
-- Address search, pool listing, realtime, advanced analytics and verification
+- Address search, pool listing, SSE, advanced analytics and verification
   remain later milestones. Full-chain/deployment
   capacity is not established. The developer-only ESLint glob dependency has
   the unpatched braces advisory documented in `docs/V0_4_VALIDATION.md`.

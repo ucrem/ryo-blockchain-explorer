@@ -294,6 +294,17 @@ h1 {
   background: currentColor;
   border-radius: 50%;
 }
+.live-blocks {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: -8px 0 24px;
+}
+.live-status {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { IntervalChart } from "@/components/interval-chart";
+import { LiveBlocks } from "@/components/live-blocks";
 import { ApiError, readBlocks, readNetwork } from "@/lib/api";
 import { cursor } from "@/lib/contracts";
 import { bytes, integer, timestamp } from "@/lib/format";
@@ -124,6 +125,13 @@ export default async function Dashboard({
           </Button>
         </div>
       </div>
+      {valid && !query.cursor && (
+        <LiveBlocks
+          tipHash={network?.data.tip.hash ?? null}
+          tipHeight={network?.data.tip.height ?? null}
+          network={network?.meta.network ?? null}
+        />
+      )}
       {!network && (
         <div className="notice" role="alert">
           <Database aria-hidden="true" />
@@ -284,8 +292,10 @@ export default async function Dashboard({
             <div className="pagination">
               <p>
                 Anchored at block{" "}
-                <strong>{integer(page.data.anchor_height)}</strong>. New blocks
-                do not shift this page.
+                <strong>{integer(page.data.anchor_height)}</strong>.{" "}
+                {query.cursor
+                  ? "New blocks do not shift this page."
+                  : "Live updates follow the latest blocks unless paused."}
               </p>
               <div>
                 {query.cursor && (

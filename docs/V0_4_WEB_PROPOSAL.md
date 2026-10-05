@@ -15,7 +15,8 @@ reintroducing the legacy templates, browser cryptography or a second data store.
 
 Add a real `web/` Next.js application with TypeScript, Tailwind and shadcn/ui.
 Server Components read the existing native API. Small client components handle
-only theme selection and mobile navigation. The initial product provides a
+theme selection, mobile navigation, JSON formatting and live tip observation.
+The initial product provides a
 responsive light/dark dashboard, native-reader chain status, exact heights and
 difficulty, recent blocks, bounded cursor pagination, an observed block-interval
 chart when enough real samples exist, API/raw links and a developer guide.
@@ -25,6 +26,12 @@ existing native detail endpoints; no native architecture or schema change is
 introduced. Dedicated UI links open HTML, with JSON/raw as additional views
 inside the explorer layout. Token-preserving formatting and an Original toggle
 keep native quantities intact; explicit API endpoints and downloads remain available.
+The owner's subsequent synchronization request adds ten-second same-origin tip
+polling on the latest dashboard, with pause, hidden-tab suspension, bounded reads
+and Server Component refresh on hash/network changes. Existing cursor pages stay
+anchored. A limited real mainnet sync validates reader updates without claiming
+network-wide synchronization or freshly mined-block observation. SSE and live
+pool/network monitoring remain later milestones.
 
 A server-only API client uses a configured fixed upstream origin, deadlines,
 response size bounds, no redirect following and no persistent caching. A

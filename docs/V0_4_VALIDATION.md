@@ -39,7 +39,7 @@ Tailwind 4.3.3. Registry-resolved dependencies are pinned in the npm lockfile.
 
 - Clean lockfile installation succeeded; no API was needed at build time.
 - ESLint, route generation/TypeScript checks and the production build passed.
-- Thirteen Node tests passed: public native schema examples, exact values above
+- Fourteen Node tests passed: public native schema examples, exact values above
   2^53 and uint64 bounds, invalid/secret route queries, timestamp interpretation,
   trusted origins, raw numeric-token preservation, reorg status, redirect/content
   type/declared and streamed response-size rejection, concurrency and deadline.
@@ -48,6 +48,9 @@ Tailwind 4.3.3. Registry-resolved dependencies are pinned in the npm lockfile.
   JSON cases cover token preservation (including uint64, decimal spelling,
   exponents, negative zero, escapes and duplicate keys), malformed syntax and
   preview size/depth/expansion bounds.
+  The dashboard transaction case verifies bounded block-detail fan-out and row
+  count, no detail reads for coinbase-only headers, exact fees and rejection of
+  failed or mismatched block snapshots.
 - Production dependency audit reported zero vulnerabilities. The complete audit
   reported five high entries, all one developer-only `braces` advisory and its
   Next ESLint glob dependency chain. The advisory has no published patched version:
@@ -57,8 +60,8 @@ Tailwind 4.3.3. Registry-resolved dependencies are pinned in the npm lockfile.
 
 ## Production browser checks
 
-Eight Chromium Playwright scenarios passed against the production Next server
-in 17.4 seconds with the official-brand detail/search/JSON/live UI. Their isolated fixture
+Nine Chromium Playwright scenarios passed against the production Next server
+in 26.8 seconds with the official-brand detail/search/JSON/live UI. Their isolated fixture
 server uses explicitly synthetic headers and public genesis examples; it is never
 imported by application code.
 
@@ -79,6 +82,10 @@ Detail tables and JSON panels scroll with keyboard focus.
 The live scenario verifies exact heights above 2^53, a refreshed tip/list without
 losing a search draft or scroll position, no refresh for unchanged tips, paused
 polling, outage retry with retained data and no polling on earlier cursor pages.
+The paired-table scenario checks full viewport width at 1,920 px, side-by-side
+panels, stacked mobile layout without page overflow, native fee precision,
+coinbase labels/detail links and isolated transaction failures/network mismatch.
+The live scenario also verifies that the transaction table follows the new tip.
 The existing JSON browser scenario passed again in 4.4 seconds, including
 light/dark/mobile accessibility. Production build and ESLint also passed. Native
 genesis pages were inspected to confirm explanations are absent from primary
@@ -143,8 +150,9 @@ mainnet peers. CPU, bandwidth and block batches were bounded; RPC/P2P listeners
 remained on loopback with incoming peers disabled. The daemon was stopped
 gracefully after the sample. This did not modify a supplied database.
 
-The database now contains 1,138 real blocks, heights 0 through 1,137. Its final tip
-hash is `cf6f4df12145a43d4835d4c3b4da3c6328ceb34df05eb8ade36630d48b6fcc5b`.
+At the bounded sample's completion, the database contained 1,138 real blocks,
+heights 0 through 1,137, with tip hash
+`cf6f4df12145a43d4835d4c3b4da3c6328ceb34df05eb8ade36630d48b6fcc5b`.
 The native reader stayed open read-only while the daemon wrote blocks. API reads
 observed the increasing height without reopening the explorer. Some reads timed
 out during sync; the automatic update loop has bounded reads and retries.
@@ -163,12 +171,34 @@ Production build, TypeScript, ESLint and all thirteen Node tests also passed.
 Ignored local evidence is in `build/v04-native-smoke/`: `sync-observations.jsonl`,
 `sync-live-observations.jsonl`, `live-browser-result.json`, native logs and captures.
 The screenshot below uses real synchronized data, rather than fixture headers.
-The browser/API preview remains available using the sample database; the daemon
-is stopped. Reaching the mainnet tip is necessary to observe a newly mined block.
+The daemon was stopped after this bounded sample. The owner subsequently
+requested continued synchronization with no automatic stop, and it was resumed.
+Reaching the mainnet tip is necessary to observe a newly mined block.
 Historical blocks arriving during synchronization verify reader refresh, not
 fresh block discovery, peer-reported network synchronization or SSE delivery.
 
 ![Dashboard after a limited real mainnet sync](images/v0.4-mainnet-dashboard.png)
+
+## Full-width block and transaction preview
+
+At the owner's request, the dashboard now pairs blocks and confirmed transactions
+using the available horizontal space. The preview reuses native coinbase hashes
+and block-detail summaries, with at most four concurrent detail reads and twenty
+rows. It requires matching block identity/network/timestamp and fails truthfully
+when a related read is unavailable. Ordinary fees retain all nine decimal places;
+coinbase is labeled separately. No pool listing or new API/index is introduced.
+
+A production Chromium check ran while the real daemon continued synchronization.
+It opened an ordinary transaction directly from the new table:
+`82ac924723cb89b9ceb93e42ba57ff6f2426256f93c53bb10378b9762329925a`,
+confirmed in block 19,394, with native fee `0.018678700 RYO`.
+The HTML detail page opened successfully; mobile panels stacked without page
+overflow, and no page errors or external-origin requests occurred. Ignored evidence
+is `build/v04-native-smoke/dual-tables-result.json`. The native daemon was left
+running as instructed. Build/TypeScript, ESLint, fourteen Node tests and nine
+production browser scenarios passed; native sources and workflows are unchanged.
+
+![Paired block and confirmed-transaction tables using real mainnet data](images/v0.4-mainnet-tables.png)
 
 ## Limits and release gate
 

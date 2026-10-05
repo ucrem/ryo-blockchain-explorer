@@ -3,6 +3,58 @@ import AxeBuilder from "@axe-core/playwright";
 test.beforeEach(async ({ request }) => {
   await request.get("http://127.0.0.1:3101/__control?mode=normal");
 });
+test("full-width desktop block and transaction tables stack on mobile and preserve native fee and failure semantics", async ({
+  page,
+  request,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1200 });
+  await page.goto("/");
+  const blocks = page.getByRole("table", { name: "Recent blocks" });
+  const transactions = page.getByRole("table", { name: "Recent transactions" });
+  await expect(transactions.locator("tbody tr")).toHaveCount(15);
+  await expect(
+    transactions.getByText("9,007,199.254740993", { exact: true }).first(),
+  ).toBeVisible();
+  await expect(
+    transactions.getByText("Coinbase", { exact: true }).first(),
+  ).toBeVisible();
+  const panels = page.locator(".dashboard-tables > section");
+  const left = (await panels.nth(0).boundingBox())!;
+  const right = (await panels.nth(1).boundingBox())!;
+  expect(Math.abs(left.y - right.y)).toBeLessThan(1);
+  expect(right.x).toBeGreaterThan(left.x + left.width);
+  expect((await page.locator("main").boundingBox())!.width).toBe(1920);
+  await expect(
+    transactions.locator("a[href^='/transactions/']").first(),
+  ).toHaveAttribute("href", /^\/transactions\/[0-9a-f]{64}$/);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileLeft = (await panels.nth(0).boundingBox())!;
+  const mobileRight = (await panels.nth(1).boundingBox())!;
+  expect(mobileRight.y).toBeGreaterThan(mobileLeft.y + mobileLeft.height);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  for (const mode of ["tx-outage", "tx-mismatch"]) {
+    await request.get(`http://127.0.0.1:3101/__control?mode=${mode}`);
+    await page.goto("/");
+    await expect(
+      page.getByText("Transaction list unavailable", { exact: true }),
+    ).toBeVisible();
+    await expect(blocks.locator("tbody tr")).toHaveCount(20);
+    await expect(transactions).toHaveCount(0);
+  }
+  await request.get("http://127.0.0.1:3101/__control?mode=genesis");
+  await page.goto("/");
+  await expect(transactions.locator("tbody tr")).toHaveCount(1);
+  await transactions.locator("a[href^='/transactions/']").click();
+  await expect(
+    page.getByRole("heading", { name: "Transaction details", exact: true }),
+  ).toBeVisible();
+});
 test("live reader changes refresh blocks; unchanged tips, pause, outage and earlier pages stay stable", async ({
   page,
   request,
@@ -14,25 +66,44 @@ test("live reader changes refresh blocks; unchanged tips, pause, outage and earl
   const metric = page.locator(".metric-card").first();
   await expect(metric).toContainText("9,007,199,254,741,023");
   // Confirm an unchanged tip causes only one network read, not a route refresh.
-  const before = await (await request.get("http://127.0.0.1:3101/__control")).json();
+  const before = await (
+    await request.get("http://127.0.0.1:3101/__control")
+  ).json();
   await page.clock.runFor(10_100);
-  await expect.poll(async () =>
-    (await (await request.get("http://127.0.0.1:3101/__control")).json()).reads,
-  ).toBe(before.reads + 1);
-  await page.getByLabel("Search the Ryo blockchain", { exact: true }).fill("12345");
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get("http://127.0.0.1:3101/__control")).json())
+          .reads,
+    )
+    .toBe(before.reads + 1);
+  await page
+    .getByLabel("Search the Ryo blockchain", { exact: true })
+    .fill("12345");
   await page.evaluate(() => window.scrollTo(0, 350));
   const scroll = await page.evaluate(() => window.scrollY);
   await request.get("http://127.0.0.1:3101/__control?mode=advanced");
   await page.clock.runFor(10_100);
   await expect(metric).toContainText("9,007,199,254,741,024");
-  await expect(page.getByRole("link", { name: "Block 9007199254741024", exact: true })).toBeVisible();
-  await expect(page.getByLabel("Search the Ryo blockchain", { exact: true })).toHaveValue("12345");
+  await expect(
+    page.getByRole("table", { name: "Recent transactions" }).locator("tbody tr").first(),
+  ).toContainText("9,007,199,254,741,024");
+  await expect(
+    page.getByRole("link", { name: "Block 9007199254741024", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Search the Ryo blockchain", { exact: true }),
+  ).toHaveValue("12345");
   expect(await page.evaluate(() => window.scrollY)).toBe(scroll);
-  await expect(page.getByRole("status")).toContainText("Reader advanced to block");
+  await expect(page.getByRole("status")).toContainText(
+    "Reader advanced to block",
+  );
   await live.click();
   await request.get("http://127.0.0.1:3101/__control?mode=normal");
   await page.clock.runFor(30_100);
-  expect((await (await request.get("http://127.0.0.1:3101/__control")).json()).reads).toBe(0);
+  expect(
+    (await (await request.get("http://127.0.0.1:3101/__control")).json()).reads,
+  ).toBe(0);
   await expect(metric).toContainText("9,007,199,254,741,024");
   await page.getByRole("button", { name: "Resume live updates" }).click();
   await request.get("http://127.0.0.1:3101/__control?mode=outage");
@@ -43,10 +114,16 @@ test("live reader changes refresh blocks; unchanged tips, pause, outage and earl
   await page.clock.runFor(10_100);
   await expect(metric).toContainText("9,007,199,254,741,023");
   await page.getByRole("link", { name: "Earlier blocks", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Pause live updates" })).toHaveCount(0);
-  const earlier = await (await request.get("http://127.0.0.1:3101/__control")).json();
+  await expect(
+    page.getByRole("button", { name: "Pause live updates" }),
+  ).toHaveCount(0);
+  const earlier = await (
+    await request.get("http://127.0.0.1:3101/__control")
+  ).json();
   await page.clock.runFor(30_100);
-  expect((await (await request.get("http://127.0.0.1:3101/__control")).json()).reads).toBe(earlier.reads);
+  expect(
+    (await (await request.get("http://127.0.0.1:3101/__control")).json()).reads,
+  ).toBe(earlier.reads);
 });
 test("server-rendered exact data, safe raw proxy, theme persistence, desktop accessibility", async ({
   page,
@@ -159,7 +236,11 @@ test("outages and genesis render truthful empty states; invalid pagination never
   await expect(page.getByRole("table")).toHaveCount(0);
   await request.get("http://127.0.0.1:3101/__control?mode=genesis");
   await page.goto("/");
-  await expect(page.getByText("Genesis · time not recorded")).toBeVisible();
+  await expect(
+    page
+      .getByRole("table", { name: "Recent blocks" })
+      .getByText("Genesis · time not recorded"),
+  ).toBeVisible();
   await expect(page.getByText("Beginning of the chain")).toBeVisible();
   await expect(page.getByText("More blocks, more perspective.")).toBeVisible();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);

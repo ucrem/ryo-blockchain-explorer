@@ -23,8 +23,10 @@ v0.4's server-first Next.js foundation/design system and initial dashboard. That
 [implementation](WEB.md) now provides the first website, with
 [validation evidence](V0_4_VALIDATION.md). The owner extended v0.4 to include basic
 block/transaction HTML details, public height/hash search and bounded live tip
-polling, validated during a limited real mainnet sync. v0.5 follows with
-richer detail inspection, presentation and wider historical validation.
+polling, validated during a limited real mainnet sync.
+The dashboard also pairs full-width block and confirmed-transaction tables using
+existing bounded native reads, with mobile stacking and live updates.
+v0.5 follows with richer detail inspection, presentation and wider historical validation.
 
 ## Target data flow
 

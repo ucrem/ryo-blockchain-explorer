@@ -17,6 +17,7 @@ import { ApiError, upstreamOrigin, upstreamRead } from "../src/lib/upstream";
 import { viewPages, slicePage } from "../src/lib/view-pages";
 
 import { prettyJson, JsonPreviewLimit } from "../src/lib/pretty-json";
+import { recentTransactions } from "../src/lib/recent-transactions";
 
 const examples = JSON.parse(
   readFileSync(
@@ -49,6 +50,79 @@ test("public native examples parse; uint64 values never pass through floating po
   const hidden = structuredClone(examples.NetworkResponse);
   hidden.data.tip_difficulty = 9007199254740993;
   assert.equal(networkResponse.safeParse(hidden).success, false);
+});
+test("dashboard transaction reads are bounded, exact and tied to the displayed native blocks", async () => {
+  const genesis = blocksResponse.parse(examples.BlockPageResponse);
+  const noRead = () => {
+    throw new Error("Coinbase-only page should use its native headers");
+  };
+  const coinbase = await recentTransactions(genesis, noRead);
+  assert.equal(coinbase.items[0].hash, genesis.data.items[0].coinbase_hash);
+  assert.equal(coinbase.items[0].feeAtomic, null);
+  const page = structuredClone(genesis);
+  page.meta.chain_height = "20";
+  page.data.items = Array.from({ length: 20 }, (_, index) => ({
+    ...genesis.data.items[0],
+    height: String(19 - index),
+    hash: (index + 1).toString(16).padStart(64, "0"),
+    coinbase_hash: (index + 30).toString(16).padStart(64, "0"),
+    transaction_count: 2,
+  }));
+  let reads = 0;
+  const read = async (hash: string) => {
+    reads++;
+    const header = page.data.items.find((block) => block.hash === hash)!;
+    return {
+      meta: page.meta,
+      data: {
+        header,
+        transactions: [
+          {
+            ...examples.BlockResponse.data.transactions[0],
+            hash: header.coinbase_hash,
+          },
+          {
+            ...examples.BlockResponse.data.transactions[0],
+            hash: (BigInt(header.height) + 100n).toString(16).padStart(64, "0"),
+            coinbase: false,
+            fee_atomic: "9007199254740993",
+          },
+        ],
+      },
+    };
+  };
+  const result = await recentTransactions(page, read);
+  assert.equal(reads, 4);
+  assert.equal(result.items.length, 8);
+  assert.equal(result.limited, true);
+  assert.equal(result.items[1].feeAtomic, "9007199254740993");
+  assert.equal(result.items[1].blockHeight, "19");
+  await assert.rejects(
+    recentTransactions(page, async (hash) => {
+      const detail = await read(hash);
+      return {
+        ...detail,
+        meta: { ...detail.meta, network: "testnet" as const },
+      };
+    }),
+  );
+  await assert.rejects(
+    recentTransactions(page, async () => {
+      throw new Error("Missing block after reorg");
+    }),
+  );
+  page.data.items[0].transaction_count = 25;
+  const capped = await recentTransactions(page, async (hash) => {
+    const detail = await read(hash);
+    detail.data.transactions = Array.from({ length: 25 }, (_, index) => ({
+      ...detail.data.transactions[0],
+      hash: (200 + index).toString(16).padStart(64, "0"),
+      coinbase: index === 0,
+    }));
+    detail.data.transactions[0].hash = detail.data.header.coinbase_hash;
+    return detail;
+  });
+  assert.equal(capped.items.length, 20);
 });
 test("public route allowlist rejects secret queries, arbitrary targets and invalid pagination", () => {
   for (const path of [

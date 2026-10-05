@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import {
   ArrowDown,
   ArrowUpRight,
@@ -20,6 +21,10 @@ import {
 } from "@/components/ui/table";
 import { IntervalChart } from "@/components/interval-chart";
 import { LiveBlocks } from "@/components/live-blocks";
+import {
+  RecentTransactions,
+  TransactionsLoading,
+} from "@/components/recent-transactions";
 import { ApiError, readBlocks, readNetwork } from "@/lib/api";
 import { cursor } from "@/lib/contracts";
 import { bytes, integer, timestamp } from "@/lib/format";
@@ -192,133 +197,141 @@ export default async function Dashboard({
           </a>
         </section>
       </div>
-      <section className="blocks-section" aria-labelledby="blocks-title">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">BLOCK EXPLORER</span>
-            <h2 id="blocks-title">
-              {query.cursor ? "Earlier blocks" : "Recent blocks"}
-            </h2>
-          </div>
-          <span className="section-note">
-            {page
-              ? `${page.data.items.length} ${page.data.items.length === 1 ? "block" : "blocks"} · newest first`
-              : "Waiting for chain data"}
-          </span>
-        </div>
-        {pageError && (
-          <div className="notice" role="alert">
-            <Layers3 aria-hidden="true" />
+      <div className="dashboard-tables">
+        <section className="blocks-section" aria-labelledby="blocks-title">
+          <div className="section-heading">
             <div>
-              <strong>
-                {pageError instanceof ApiError && pageError.status === 409
-                  ? "The chain changed"
-                  : "Block page unavailable"}
-              </strong>
-              <p>
-                {pageError instanceof ApiError
-                  ? pageError.message
-                  : "Try refreshing shortly."}
-              </p>
-              <a href="/" className="text-link">
-                Restart from latest blocks{" "}
-                <ArrowUpRight size={15} aria-hidden="true" />
-              </a>
+              <span className="eyebrow">BLOCK EXPLORER</span>
+              <h2 id="blocks-title">
+                {query.cursor ? "Earlier blocks" : "Recent blocks"}
+              </h2>
             </div>
+            <span className="section-note">
+              {page
+                ? `${page.data.items.length} ${page.data.items.length === 1 ? "block" : "blocks"} · newest first`
+                : "Waiting for chain data"}
+            </span>
           </div>
-        )}
-        {page && (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Height</TableHead>
-                  <TableHead>Block hash</TableHead>
-                  <TableHead>Timestamp · UTC</TableHead>
-                  <TableHead className="text-right">Transactions</TableHead>
-                  <TableHead className="text-right">Size</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Public API views</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {page.data.items.map((b) => (
-                  <TableRow key={b.hash}>
-                    <TableCell>
-                      <a
-                        href={`/blocks/${b.hash}`}
-                        className="height-link"
-                        aria-label={`Block ${b.height}`}
-                      >
-                        {integer(b.height)}
-                      </a>
-                    </TableCell>
-                    <TableCell>
-                      <a
-                        href={`/blocks/${b.hash}`}
-                        className="hash-text"
-                        title={b.hash}
-                      >
-                        {b.hash.slice(0, 12)}
-                        <span aria-hidden="true">…</span>
-                        {b.hash.slice(-6)}
-                      </a>
-                    </TableCell>
-                    <TableCell className="timestamp-cell">
-                      {b.timestamp_unix === "0"
-                        ? "Genesis · time not recorded"
-                        : timestamp(b.timestamp_unix)}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {integer(b.transaction_count)}
-                    </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      {bytes(b.size_bytes)}
-                    </TableCell>
-                    <TableCell>
-                      <a
-                        href={`/json/raw/block/${b.hash}`}
-                        className="raw-link"
-                        aria-label={`Raw block ${b.height}`}
-                      >
-                        Raw <ArrowUpRight size={13} aria-hidden="true" />
-                      </a>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <div className="pagination">
-              <p>
-                Anchored at block{" "}
-                <strong>{integer(page.data.anchor_height)}</strong>.{" "}
-                {query.cursor
-                  ? "New blocks do not shift this page."
-                  : "Live updates follow the latest blocks unless paused."}
-              </p>
+          {pageError && (
+            <div className="notice" role="alert">
+              <Layers3 aria-hidden="true" />
               <div>
-                {query.cursor && (
-                  <Button asChild variant="outline">
-                    <a href="/">Latest blocks</a>
-                  </Button>
-                )}
-                {page.data.next_cursor ? (
-                  <Button asChild variant="outline">
-                    <a
-                      href={`/?cursor=${encodeURIComponent(page.data.next_cursor)}`}
-                    >
-                      Earlier blocks <ArrowDown aria-hidden="true" />
-                    </a>
-                  </Button>
-                ) : (
-                  <span className="end-label">Beginning of the chain</span>
-                )}
+                <strong>
+                  {pageError instanceof ApiError && pageError.status === 409
+                    ? "The chain changed"
+                    : "Block page unavailable"}
+                </strong>
+                <p>
+                  {pageError instanceof ApiError
+                    ? pageError.message
+                    : "Try refreshing shortly."}
+                </p>
+                <a href="/" className="text-link">
+                  Restart from latest blocks{" "}
+                  <ArrowUpRight size={15} aria-hidden="true" />
+                </a>
               </div>
             </div>
-          </>
-        )}
-      </section>
+          )}
+          {page && (
+            <>
+              <Table
+                scrollLabel="Recent blocks table"
+                aria-labelledby="blocks-title"
+              >
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Height</TableHead>
+                    <TableHead>Block hash</TableHead>
+                    <TableHead>Timestamp · UTC</TableHead>
+                    <TableHead className="text-right">Transactions</TableHead>
+                    <TableHead className="text-right">Size</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Public API views</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {page.data.items.map((b) => (
+                    <TableRow key={b.hash}>
+                      <TableCell>
+                        <a
+                          href={`/blocks/${b.hash}`}
+                          className="height-link"
+                          aria-label={`Block ${b.height}`}
+                        >
+                          {integer(b.height)}
+                        </a>
+                      </TableCell>
+                      <TableCell>
+                        <a
+                          href={`/blocks/${b.hash}`}
+                          className="hash-text"
+                          title={b.hash}
+                        >
+                          {b.hash.slice(0, 12)}
+                          <span aria-hidden="true">…</span>
+                          {b.hash.slice(-6)}
+                        </a>
+                      </TableCell>
+                      <TableCell className="timestamp-cell">
+                        {b.timestamp_unix === "0"
+                          ? "Genesis · time not recorded"
+                          : timestamp(b.timestamp_unix)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {integer(b.transaction_count)}
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        {bytes(b.size_bytes)}
+                      </TableCell>
+                      <TableCell>
+                        <a
+                          href={`/json/raw/block/${b.hash}`}
+                          className="raw-link"
+                          aria-label={`Raw block ${b.height}`}
+                        >
+                          Raw <ArrowUpRight size={13} aria-hidden="true" />
+                        </a>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="pagination">
+                <p>
+                  Anchored at block{" "}
+                  <strong>{integer(page.data.anchor_height)}</strong>.{" "}
+                  {query.cursor
+                    ? "New blocks do not shift this page."
+                    : "Live updates follow the latest blocks unless paused."}
+                </p>
+                <div>
+                  {query.cursor && (
+                    <Button asChild variant="outline">
+                      <a href="/">Latest blocks</a>
+                    </Button>
+                  )}
+                  {page.data.next_cursor ? (
+                    <Button asChild variant="outline">
+                      <a
+                        href={`/?cursor=${encodeURIComponent(page.data.next_cursor)}`}
+                      >
+                        Earlier blocks <ArrowDown aria-hidden="true" />
+                      </a>
+                    </Button>
+                  ) : (
+                    <span className="end-label">Beginning of the chain</span>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </section>
+        <Suspense fallback={<TransactionsLoading />}>
+          <RecentTransactions page={page} />
+        </Suspense>
+      </div>
       <footer className="page-footer">
         <span>Public data. Private by design.</span>
         <p>

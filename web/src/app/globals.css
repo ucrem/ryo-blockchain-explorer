@@ -116,7 +116,7 @@ summary:focus-visible,
   border-bottom: 1px solid var(--border);
 }
 .header-inner {
-  max-width: 1264px;
+  width: 100%;
   min-height: 94px;
   margin: auto;
   padding: 16px 32px;
@@ -182,7 +182,7 @@ summary:focus-visible,
   display: none;
 }
 .main-content {
-  max-width: 1264px;
+  width: 100%;
   margin: auto;
   padding: 24px 32px 28px;
   outline: none;
@@ -517,6 +517,47 @@ h2 {
 .blocks-section {
   min-width: 0;
 }
+.dashboard-tables {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 24px;
+}
+.dashboard-tables .section-heading {
+  flex-wrap: wrap;
+  min-height: 58px;
+}
+.dashboard-tables .blocks-section td,
+.dashboard-tables .blocks-section th {
+  padding-inline: 12px;
+}
+.transaction-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.transaction-link .hash-text,
+.transaction-link svg {
+  color: var(--primary);
+}
+.transaction-link:hover .hash-text {
+  text-decoration: underline;
+}
+.transaction-kind {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  margin-top: 3px;
+}
+.transaction-fee {
+  font-variant-numeric: tabular-nums;
+}
+.table-note {
+  color: var(--muted-foreground);
+  font-size: 11px;
+  line-height: 1.6;
+  margin-top: 18px;
+}
 .blocks-section [data-slot="table-container"] {
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -691,6 +732,12 @@ code {
 .not-found p {
   color: var(--muted-foreground);
   margin: 20px 0;
+}
+@media (max-width: 1199px) {
+  .dashboard-tables {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
 }
 @media (max-width: 1050px) {
   .header-inner {

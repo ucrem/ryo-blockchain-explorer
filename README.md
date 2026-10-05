@@ -111,7 +111,7 @@ Each release includes
 validation, a dated changelog, an annotated tag, and a real GitHub Release.
 
 The v0.4 implementation provides a responsive light/dark
-dashboard, readable block/transaction details, public height/hash search,
+dashboard with paired full-width block/transaction tables, readable details, public height/hash search,
 embedded formatted JSON/raw views,
 native-reader chain status, ten-second live tip updates, recent block pagination, observed header
 intervals and developer API access. See

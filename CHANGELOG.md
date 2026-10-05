@@ -17,6 +17,8 @@ retroactively.
   fonts, light/dark themes, mobile navigation and a developer API guide.
 - Native-reader chain status, exact quantities, recent block pages, reorg recovery
   and a truthful observed-header interval chart.
+- Full-width desktop block and confirmed-transaction tables, stacking on mobile,
+  with exact fees, labeled coinbase and a bounded native transaction preview.
 - Ten-second live tip observation on latest-block pages, with pause, hidden-tab
   suspension, retained browser state and retry after reader outages.
 - Readable block/transaction detail pages and global public height/hash search,

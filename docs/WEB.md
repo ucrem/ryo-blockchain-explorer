@@ -9,6 +9,18 @@ search and a developer API guide.
 
 - `/`: native-reader network and chain status, exact tip height/difficulty,
   configured block target, recent block summaries and anchored earlier pages.
+- Full-width desktop layout pairs the block and confirmed-transaction tables;
+  below 1,200 px they stack, with keyboard-accessible local table scrolling.
+  The TX preview contains at most twenty transactions from the displayed block
+  window, newest blocks first and native transaction order within each block.
+  Coinbase is explicitly labeled and has no transaction fee. Ordinary fees
+  preserve all nine RYO decimals; timestamps are those of the containing block.
+  Coinbase-only headers need no detail lookup. At most four block-detail reads
+  run concurrently with the existing five-second bounds; the preview can have
+  fewer than twenty rows. Complete lists remain on block pages. Every detail
+  must match the displayed block hash, height, network, time and coinbase.
+  Failed or mismatched reads show an unavailable state, rather than empty data.
+  The preview streams separately, allowing the block table to appear first.
 - Latest-block pages watch the native reader every ten seconds through the
   same-origin network endpoint. A changed tip hash or network refreshes Server
   Components while preserving browser state. Live updates can be paused; hidden
@@ -16,6 +28,7 @@ search and a developer API guide.
   retaining the displayed data. Earlier cursor pages stay anchored and do not poll.
   This observes blocks entering the local reader, including historical sync;
   it does not establish that a block was just mined or the node is synchronized.
+  A changed tip refreshes both block and transaction tables together.
 - An interval chart derived only from adjacent headers on the displayed page.
   Missing genesis timestamps and decreasing timestamps are excluded. At least
   two usable intervals are needed; the whole-second mean truncates division.

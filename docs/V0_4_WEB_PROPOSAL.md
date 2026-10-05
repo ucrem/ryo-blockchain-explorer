@@ -32,6 +32,11 @@ and Server Component refresh on hash/network changes. Existing cursor pages stay
 anchored. A limited real mainnet sync validates reader updates without claiming
 network-wide synchronization or freshly mined-block observation. SSE and live
 pool/network monitoring remain later milestones.
+The owner's layout request adds full-width desktop block/confirmed-transaction
+tables side by side, stacking on smaller screens. A bounded server-rendered
+transaction preview reuses existing headers and block details, includes labeled
+coinbase, preserves exact ordinary fees and follows live tip refresh. No new
+native endpoint, index, pool listing or browser cryptography is introduced.
 
 A server-only API client uses a configured fixed upstream origin, deadlines,
 response size bounds, no redirect following and no persistent caching. A

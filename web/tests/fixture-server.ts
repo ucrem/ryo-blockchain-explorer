@@ -12,19 +12,23 @@ let mode = "normal";
 let reads = 0;
 const anchor = 9007199254741023n;
 const makeHash = (height: bigint) => height.toString(16).padStart(64, "0");
-const makeBlock = (height: bigint, i: number) => ({
-  ...examples.NetworkResponse.data.tip,
-  height: height.toString(),
-  hash: makeHash(height),
-  previous_hash: makeHash(height - 1n),
-  timestamp_unix: (
-    1791200000 +
-    Number(height - anchor) * 240 +
-    (i % 3) * 40
-  ).toString(),
-  size_bytes: (1800 + i * 321).toString(),
-  transaction_count: (i % 7) + 1,
-});
+const makeBlock = (height: bigint) => {
+  const i = Number((((anchor - height) % 20n) + 20n) % 20n);
+  return {
+    ...examples.NetworkResponse.data.tip,
+    height: height.toString(),
+    hash: makeHash(height),
+    previous_hash: makeHash(height - 1n),
+    coinbase_hash: makeHash(height + (1n << 80n)),
+    timestamp_unix: (
+      1791200000 +
+      Number(height - anchor) * 240 +
+      (i % 3) * 40
+    ).toString(),
+    size_bytes: (1800 + i * 321).toString(),
+    transaction_count: (i % 7) + 1,
+  };
+};
 createServer((req, res) => {
   const url = new URL(req.url!, "http://127.0.0.1:3101");
   res.setHeader("Content-Type", "application/json");
@@ -45,6 +49,43 @@ createServer((req, res) => {
   const blockId = url.pathname.match(/^\/api\/v2\/blocks\/(.+)$/)?.[1];
   const txHash = url.pathname.match(/^\/api\/v2\/transactions\/(.+)$/)?.[1];
   if (blockId || txHash) {
+    if (blockId && /^[0-9a-f]{64}$/.test(blockId)) {
+      const height = BigInt(`0x${blockId}`);
+      if (height >= anchor - 40n && height <= anchor + 1n) {
+        if (mode === "tx-outage") {
+          res.statusCode = 503;
+          res.end(
+            '{"error":{"code":"unavailable","message":"Fixture transaction read failure"}}',
+          );
+          return;
+        }
+        const header = makeBlock(height);
+        res.end(
+          JSON.stringify({
+            meta: {
+              network: mode === "tx-mismatch" ? "testnet" : "mainnet",
+              chain_height: (anchor + 2n).toString(),
+            },
+            data: {
+              header,
+              transactions: Array.from(
+                { length: header.transaction_count },
+                (_, i) => ({
+                  ...examples.BlockResponse.data.transactions[0],
+                  hash:
+                    i === 0
+                      ? header.coinbase_hash
+                      : makeHash((height << 8n) + (1n << 96n) + BigInt(i)),
+                  coinbase: i === 0,
+                  fee_atomic: i === 0 ? "0" : "9007199254740993",
+                }),
+              ),
+            },
+          }),
+        );
+        return;
+      }
+    }
     if (
       blockId === "0" ||
       blockId === examples.BlockResponse.data.header.hash
@@ -120,7 +161,7 @@ createServer((req, res) => {
         meta,
         data: {
           ...examples.NetworkResponse.data,
-          tip: makeBlock(tip, 0),
+          tip: makeBlock(tip),
           tip_difficulty: "18446744073709551615",
         },
       }),
@@ -137,7 +178,7 @@ createServer((req, res) => {
     }
     const start = url.searchParams.has("cursor") ? anchor - 20n : tip;
     const items = Array.from({ length: 20 }, (_, i) =>
-      makeBlock(start - BigInt(i), i),
+      makeBlock(start - BigInt(i)),
     );
     res.end(
       JSON.stringify({

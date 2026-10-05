@@ -76,6 +76,10 @@ resources and partial reader outages. JSON checks cover retained layout, exact
 formatted/original tokens, escaped markup without execution, verbatim downloads,
 light/dark/mobile accessibility and rejected private queries without native reads.
 Detail tables and JSON panels scroll with keyboard focus.
+After adding contextual JSON explanations, the existing JSON browser scenario
+passed again in 5.0 seconds, including light/dark/mobile accessibility. Production
+build and ESLint also passed. The native genesis block and raw-view explanations
+were inspected in the browser, with no page-level mobile horizontal overflow.
 Axe reported no violations in the tested
 states; that is not a substitute for broad manual assistive-technology testing.
 
@@ -124,6 +128,8 @@ the official site's Neue Kaine display font is not redistributed.
 ![Transaction details against the real disposable native genesis LMDB](images/v0.4-native-transaction.png)
 
 ![Embedded formatted native JSON within the explorer layout](images/v0.4-native-json.png)
+
+![Contextual explanations in the native raw block view](images/v0.4-native-json-guide.png)
 
 ## Limits and release gate
 

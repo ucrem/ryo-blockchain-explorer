@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { jsonViewHref } from "@/lib/pretty-json";
+import { JsonViewGuide } from "./json-guide";
 import { ApiError } from "@/lib/api";
 
 export function DetailHeading({
@@ -11,7 +12,7 @@ export function DetailHeading({
   api,
   raw,
 }: {
-  kind: string;
+  kind: "Block" | "Transaction";
   title: string;
   note: string;
   api: string;
@@ -46,6 +47,7 @@ export function DetailHeading({
           </Button>
         </div>
       </div>
+      <JsonViewGuide kind={kind} />
     </>
   );
 }

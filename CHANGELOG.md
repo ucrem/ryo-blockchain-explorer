@@ -19,6 +19,8 @@ retroactively.
   and a truthful observed-header interval chart.
 - Readable block/transaction detail pages and global public height/hash search,
   with exact fees, paginated rows and privacy-safe RingCT/input/output views.
+- Contextual explanations of structured/native JSON, hexadecimal serialization,
+  exact integer strings, hidden amounts and formatting.
 - Embedded formatted JSON/raw views retaining the explorer layout, with exact
   original tokens, format toggles, bounded previews and verbatim downloads.
 - Bounded same-origin read-only API access preserving raw native numeric tokens,

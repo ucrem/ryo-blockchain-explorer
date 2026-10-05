@@ -34,6 +34,10 @@ export function JsonPanel({
           </Button>
         </div>
       </div>
+      <p className="json-format-note">
+        Formatted adds spacing and indentation for readability. Original shows
+        the response as received; both preserve the same values.
+      </p>
       <pre
         className="json-code"
         tabIndex={0}

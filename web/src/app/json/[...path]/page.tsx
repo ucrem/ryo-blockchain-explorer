@@ -4,6 +4,7 @@ import { publicIdentifier, publicPath } from "@/lib/contracts";
 import { JsonPreviewLimit, prettyJson } from "@/lib/pretty-json";
 import type { ViewQuery } from "@/lib/view-pages";
 import { ResourceFailure } from "@/components/detail";
+import { JsonViewDescription } from "@/components/json-guide";
 import { JsonPanel } from "@/components/json-panel";
 import { Button } from "@/components/ui/button";
 export const dynamic = "force-dynamic";
@@ -143,6 +144,12 @@ export default async function JsonPage({
           </Button>
         </div>
       </div>
+      {(blockId || txHash) && (
+        <JsonViewDescription
+          kind={blockId ? "Block" : "Transaction"}
+          raw={raw}
+        />
+      )}
       {formatted === null ? (
         <div className="notice" role="status">
           <div>

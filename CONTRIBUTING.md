@@ -17,18 +17,17 @@ published history, force-push, or push changes to the official upstream remote.
 
 All changes, including documentation, must reach `main` through a pull request.
 Never commit or push directly to `main`, bypass branch protection, or enable
-automatic merging. Leave pull requests open until the repository owner explicitly
-approves integration. Permission to run commands or implement a milestone does
-not authorize merging its pull requests or publishing a release.
+automatic merging. Leave pull requests open for the repository owner to merge on
+GitHub, or merge only after the owner explicitly instructs you to do so in the
+conversation. Permission to run commands or implement a milestone does not
+authorize merging its pull requests or publishing a release.
 
-`main` requires an independent approving review, approval after the latest push,
-resolved review conversations, and the successful `build-and-native-fixtures`
-GitHub Actions check on an up-to-date branch. New changes dismiss stale approvals.
-These rules apply to administrators; force pushes and branch deletion are blocked.
-GitHub does not allow authors to approve their own pull requests. If automation
-uses the owner's account, a separate reviewer with write access is required;
-do not relax protection to work around the shared identity. Do not use skip-CI
-commit markers on pull requests that require the native check.
+`main` requires a pull request, resolved review conversations, and the successful
+`build-and-native-fixtures` GitHub Actions check on an up-to-date branch. GitHub
+approving reviews are not required; the owner's conversational authorization
+controls agent merging. These rules apply to administrators; force pushes and
+branch deletion are blocked. Do not use skip-CI commit markers on pull requests
+that require the native check.
 
 Substantial architecture/behavior proposals must describe current behavior,
 the problem, proposed solution, affected components, compatibility, migration

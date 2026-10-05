@@ -11,8 +11,9 @@ repeat checks appropriate to their changes.
 
 ## Gates
 
-- All release changes reach `main` through an approved pull request with the
-  required checks. The repository owner explicitly approves integration and
+- All release changes reach `main` through a pull request with the required
+  checks. The repository owner merges it on GitHub or explicitly authorizes
+  agent merging in the conversation, and explicitly approves
   release publication; broad implementation or command authorization does not
   replace these approvals. Never bypass protection or push directly to `main`.
 - Target repository is public, owned by `ucrem`, and has the original upstream
@@ -30,10 +31,10 @@ repeat checks appropriate to their changes.
 ## Publish
 
 Prepare the implementation and release notes on a focused branch, open a pull
-request targeting `main`, and leave it open for review. Merge through GitHub only
-after the owner explicitly approves integration and branch protection is
-satisfied. GitHub requires an independent reviewer when the pull request author
-is `ucrem`; the author cannot approve their own pull request.
+request targeting `main`, and leave it open for the owner to merge on GitHub.
+An agent may merge through GitHub only after the owner explicitly instructs it
+to do so in the conversation and branch protection is satisfied. GitHub approving
+reviews are not required.
 
 After approval to publish, fetch the merged `main` commit and verify that the
 intended release changes and successful required checks are present. Authenticate

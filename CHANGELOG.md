@@ -6,6 +6,8 @@ retroactively.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-05
+
 ### Added
 
 - v0.4 server-first Next.js/TypeScript/Tailwind/shadcn/ui dashboard with bundled

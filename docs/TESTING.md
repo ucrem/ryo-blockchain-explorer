@@ -6,6 +6,19 @@ a separate opt-in HTTP application. [IMPORT_SCOPE.md](IMPORT_SCOPE.md) defines t
 
 ## CTest coverage
 
+The full `Ubuntu 24.04 native foundation` GitHub Actions workflow is manual-only.
+It is not triggered by pull requests or pushes and is not required to merge.
+Use local checks for routine changes and dispatch the full workflow explicitly
+for release validation or when a complete clean build is needed:
+
+```bash
+gh workflow run baseline.yml --repo ucrem/ryo-blockchain-explorer --ref work/your-branch
+```
+
+If the workflow is disabled, enable it only after the manual-only trigger change
+has reached `main`; enabling an older version would restore automatic runs.
+The smaller API contract workflow remains automatic for its selected paths.
+
 `ryo_mainnet_genesis` uses Ryo's native parser, serialization, and hashing with
 its public mainnet genesis transaction. It checks known block/transaction hashes,
 coinbase version, unlock height, RingCT type, output key/amount, binary round trip,

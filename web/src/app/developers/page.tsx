@@ -43,8 +43,8 @@ export default function Developers() {
       </div>
       <div className="page-heading">
         <div>
-          <h1>Built to be inspected.</h1>
-          <p>The same public data, in a form you can build on.</p>
+          <h1>Developer API</h1>
+          <p>Build with public Ryo blockchain data.</p>
         </div>
         <Button asChild variant="outline">
           <a href="/api/v2/openapi.json">

@@ -10,6 +10,9 @@ retroactively.
 
 ### Added
 
+- Official Ryo wordmark and favicon, website day/night palette, bundled
+  Inter/Montserrat typography and branding provenance.
+
 - v0.4 server-first Next.js/TypeScript/Tailwind/shadcn/ui dashboard with bundled
   fonts, light/dark themes, mobile navigation and a developer API guide.
 - Native-reader chain status, exact quantities, recent block pages, reorg recovery

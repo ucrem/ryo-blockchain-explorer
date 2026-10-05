@@ -93,10 +93,14 @@ export default async function Dashboard({
         <span className="eyebrow">EXPLORER / OVERVIEW</span>
         <span className="read-time">Page read · {readTime} UTC</span>
       </div>
-      <div className="page-heading">
+      <div className="page-heading dashboard-heading">
         <div>
-          <h1>Inside the chain.</h1>
-          <p>Public Ryo blockchain data. A clearer view.</p>
+          <h1>
+            Ryo Blockchain
+            <br />
+            Explorer
+          </h1>
+          <p>Explore the chain. Respect the privacy.</p>
         </div>
         <div className="heading-actions">
           <Badge
@@ -139,7 +143,11 @@ export default async function Dashboard({
                 {label}
                 <Icon size={17} aria-hidden="true" />
               </div>
-              <div className="metric-value">{value}</div>
+              <div
+                className={`metric-value${value.length > 18 ? " metric-long" : ""}`}
+              >
+                {value}
+              </div>
               <p>{note}</p>
             </CardContent>
           </Card>
@@ -151,8 +159,8 @@ export default async function Dashboard({
           target={network?.data.target_block_time_seconds ?? null}
         />
         <section className="chain-context" aria-labelledby="reader-title">
-          <div className="eyebrow">THE DATA BEHIND THE VIEW</div>
-          <h2 id="reader-title">Your chain reader.</h2>
+          <div className="eyebrow">NATIVE CHAIN DATA</div>
+          <h2 id="reader-title">Chain reader</h2>
           <p>
             These figures describe the blockchain held by this explorer. They do
             not establish network-wide synchronization.

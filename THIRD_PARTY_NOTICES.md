@@ -36,9 +36,13 @@ their packages. The four shadcn/ui Radix Nova source components in
 `web/src/components/ui/` were installed with CLI 4.21.2; their MIT license is
 retained in [web/LICENSE.shadcn.txt](web/LICENSE.shadcn.txt).
 
-Bundled DM Sans and IBM Plex Mono fonts are supplied by Fontsource 5.3.0 under
-the SIL Open Font License 1.1. Their notices are retained in
-[DM Sans](web/public/licenses/dm-sans.txt) and
-[IBM Plex Mono](web/public/licenses/ibm-plex-mono.txt), and are served with the
-website under `/licenses/`. No legacy explorer image/browser asset is copied.
-The new typographic mark and SVG favicon are project-authored.
+Bundled Inter Variable, Montserrat Variable and IBM Plex Mono fonts are supplied
+by Fontsource 5.3.0 under the SIL Open Font License 1.1. Their notices are retained
+in `web/public/licenses/` and served under `/licenses/`. Inter and Montserrat are
+also used by the official Ryo website. IBM Plex Mono remains the technical-data
+font. The official site's Neue Kaine display font is not redistributed here.
+
+The official Ryo wordmark, favicon and decorative artwork replace the initial
+project-authored mark. See [web branding provenance](docs/WEB_BRANDING.md) for
+sources and permitted use; these brand assets are not relicensed as project code.
+No legacy explorer template or browser script is copied.

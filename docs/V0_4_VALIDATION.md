@@ -26,6 +26,10 @@ All five CTest checks passed in 28.85 seconds:
 Local log: `build/v04-native-build.log` (ignored build artifact). Native fixtures
 retain their documented synthetic-storage and consensus/signature limitations.
 The full native GitHub Action remains manual-only; no per-PR full build is added.
+The owner-authorized manual [native run 37370952211](https://github.com/ucrem/ryo-blockchain-explorer/actions/runs/37370952211)
+also passed on the implementation commit `7284564bca0f1608193e159127badc3e8b9c7589`.
+The subsequent visual revision changes frontend assets, layout, fonts and documentation;
+its native sources are identical to that validated commit.
 
 ## Frontend build, resource and precision checks
 
@@ -49,8 +53,9 @@ Tailwind 4.3.3. Registry-resolved dependencies are pinned in the npm lockfile.
 ## Production browser checks
 
 Three Chromium Playwright scenarios passed against the production Next server
-in 6.9 seconds. Their isolated fixture server uses explicitly synthetic headers
-and public genesis examples; it is never imported by application code.
+in 9.0 seconds after the official-brand visual revision. Their isolated fixture
+server uses explicitly synthetic headers and public genesis examples; it is never
+imported by application code.
 
 The scenarios cover exact displayed difficulty/height beyond JavaScript's safe
 integer range; raw numeric text; no-store and rejected writes/private-key query
@@ -87,7 +92,14 @@ were stopped afterward. No supplied chain, wallet, private keys, mainnet sync or
 transaction submission was involved. An actual native-genesis screenshot is
 included below; multi-block browser screenshots use synthetic test headers.
 
-![Dashboard against the real disposable native genesis LMDB](images/v0.4-native-dashboard.png)
+The replacement UI was inspected against the current official Ryo site in both
+light and dark modes. Its actual wordmark, favicon and decorative artwork have
+recorded [branding provenance](WEB_BRANDING.md). Inter/Montserrat are self-hosted;
+the official site's Neue Kaine display font is not redistributed.
+
+![Light dashboard against the real disposable native genesis LMDB](images/v0.4-native-dashboard.png)
+
+![Dark dashboard against the real disposable native genesis LMDB](images/v0.4-native-dashboard-dark.png)
 
 ## Limits and release gate
 

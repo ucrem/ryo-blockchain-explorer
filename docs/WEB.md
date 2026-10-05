@@ -31,7 +31,9 @@ Use Node.js 24 LTS (tested 24.21.0) and npm (tested 11.19.0). The lockfile pins 
 resolved dependency tree. Next.js 16.3.8, React 19.2.8, TypeScript 5.9.3 and
 Tailwind 4.3.3 are recorded in `web/package.json`. shadcn/ui source components were
 installed with CLI 4.21.2 using the Radix Nova registry; its MIT notice is retained.
-DM Sans and IBM Plex Mono are bundled from Fontsource, with no runtime font CDN.
+Inter, Montserrat and IBM Plex Mono are bundled from Fontsource, with no runtime
+font CDN. The UI uses the official Ryo wordmark, favicon and day/night palette;
+see [branding provenance](WEB_BRANDING.md).
 
 ```bash
 cd web

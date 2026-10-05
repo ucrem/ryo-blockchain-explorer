@@ -5,7 +5,10 @@ async function main() {
   const base = process.env.NATIVE_SMOKE_URL ?? "http://127.0.0.1:3112";
   const browser = await chromium.launch();
   try {
-    const page = await browser.newPage();
+    const page = await browser.newPage({
+      viewport: { width: 1440, height: 1000 },
+      colorScheme: "light",
+    });
     const errors: string[] = [];
     const origins = new Set<string>();
     page.on("pageerror", (error) => errors.push(error.message));
@@ -35,6 +38,22 @@ async function main() {
     assert.deepEqual(errors, []);
     await page.screenshot({
       path: "../build/v04-native-dashboard.png",
+      fullPage: true,
+    });
+    await page.getByRole("button", { name: "Toggle color theme" }).click();
+    await page.locator("html.dark").waitFor();
+    await page.reload();
+    await page.getByText("Genesis · time not recorded").waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    // Wait for the theme and self-hosted fonts to finish painting before capture.
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        }),
+    );
+    await page.screenshot({
+      path: "../build/v04-native-dashboard-dark.png",
       fullPage: true,
     });
     console.log(

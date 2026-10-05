@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Ryo Explorer — Inside the chain",
+    default: "Ryo Blockchain Explorer",
     template: "%s | Ryo Explorer",
   },
   description:

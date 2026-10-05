@@ -13,7 +13,7 @@ test("server-rendered exact data, safe raw proxy, theme persistence, desktop acc
   page.on("request", (r) => origins.add(new URL(r.url()).origin));
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Inside the chain." }),
+    page.getByRole("heading", { name: "Ryo Blockchain Explorer" }),
   ).toBeVisible();
   await expect(
     page.getByText("18,446,744,073,709,551,615", { exact: true }),
@@ -86,7 +86,7 @@ test("mobile navigation, pagination, reorg recovery, developer guide, keyboard a
     .getByRole("link", { name: "Developer API" })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Built to be inspected." }),
+    page.getByRole("heading", { name: "Developer API" }),
   ).toBeVisible();
   expect(
     await page.evaluate(

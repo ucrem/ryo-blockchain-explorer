@@ -125,3 +125,11 @@ implemented routes, compatibility changes, resource limits, and deployment gaps.
 API v2 is independently enabled with `--enable-api-v2`; see [API_V2.md](API_V2.md).
 Upgrading from v0.2 needs no new core pin or compatibility patch, only a rebuilt
 explorer and the documented HTTP build/test dependencies.
+
+## v0.4 web application
+
+The separately run `web/` application requires Node.js 24 LTS and npm. It does
+not change the default C++ library build or require Docker. Run `npm ci`,
+`npm run build` and `npm run start` in `web/`; configure its server-only
+`RYO_API_URL` and enable API v2 on the native server. See [WEB.md](WEB.md) for
+development/production commands, deployment scope and browser dependencies.

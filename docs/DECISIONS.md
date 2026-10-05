@@ -30,6 +30,9 @@ Recorded: 2026-10-04. See [the migration plan](MODERNIZATION_PLAN.md).
 | ADR-023 | V2 uint64 quantities use canonical decimal strings, hidden output amounts use null, and raw native JSON retains its original conventions. | Preserve exact Ryo 9-decimal units and distinguish public knowledge, absence and pool provenance; native crypto/parsing remain authoritative. |
 | ADR-024 | Anchor block pagination to a native height/hash and reject changed anchors with HTTP 409. | Appends do not move existing pages; avoid retained transactions, caches, scans or a new index. |
 
+| ADR-025 | Add the owner-authorized server-first Next.js dashboard in v0.4. | Use existing native API v2, exact quantities, truthful reader provenance and a fixed bounded server-only upstream; no legacy UI, database or browser crypto. |
+| ADR-026 | Keep the full native workflow manual-only; merge through PRs with owner action or conversational authorization. | Avoid automatic full builds on every PR/push and preserve direct-push protection without mandatory GitHub reviews or CI checks. |
+
 Substantial architecture or behavior changes require a proposal covering current behavior,
 affected components, compatibility, migration risk, and tests, followed by approval.
 Mechanical build fixes, discovery documentation, and non-invasive tests can proceed.

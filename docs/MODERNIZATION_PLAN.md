@@ -19,7 +19,10 @@ executable is a usable JSON subset with the separately documented limitations.
 The approved [v0.3 API scope](V0_3_API_PROPOSAL.md) and its
 [OpenAPI contract](api-v2.openapi.yaml) are implemented;
 [API_V2.md](API_V2.md) documents the released subset. The next milestone is
-v0.4's server-first Next.js foundation/design system and initial dashboard.
+v0.4's server-first Next.js foundation/design system and initial dashboard. That
+[implementation](WEB.md) now provides the first website, with
+[validation evidence](V0_4_VALIDATION.md). v0.5 follows
+with dedicated block/transaction HTML views.
 
 ## Target data flow
 

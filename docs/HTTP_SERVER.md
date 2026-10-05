@@ -113,4 +113,6 @@ full-chain capacity, mapping-growth recovery, comprehensive historical/ring
 coverage, testnet/stagenet fixture coverage, consensus validity of synthetic
 storage transitions, or production readiness. No new database or index is justified.
 
-OpenAPI/API v2 is implemented in v0.3.0; Next.js remains the v0.4.0 milestone.
+OpenAPI/API v2 is implemented in v0.3.0. v0.4 adds the separately run
+[Next.js dashboard](WEB.md), which reads API v2 through a server-only client and
+a bounded same-origin read-only adapter. Existing native route shapes are unchanged.

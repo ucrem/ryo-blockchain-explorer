@@ -140,6 +140,14 @@ above provide separate coverage for [API v2](API_V2.md).
 
 ## Coverage required as functionality is brought over
 
+v0.4 adds local frontend lint/type/build checks, bounded API-client and exact
+integer tests, production Chromium accessibility/mobile/reorg/error checks, and
+a production frontend smoke against a disposable native genesis API. Its browser
+fixtures use synthetic headers only inside tests, never as production fallback
+data. See [web checks](WEB.md#validation) and
+[the recorded validation](V0_4_VALIDATION.md). The full native Action remains
+manual-only; no automatic frontend build Action is introduced.
+
 - Historical ordinary versions, current RingCT, payment IDs, subaddresses,
   additional keys, different ring sizes, unusual objects, and public raw blobs.
 - Pool add/remove/confirm/reorg/failure transitions and stale snapshots.

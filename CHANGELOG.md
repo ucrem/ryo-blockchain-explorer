@@ -6,6 +6,36 @@ retroactively.
 
 ## [Unreleased]
 
+### Added
+
+- v0.4 server-first Next.js/TypeScript/Tailwind/shadcn/ui dashboard with bundled
+  fonts, light/dark themes, mobile navigation and a developer API guide.
+- Native-reader chain status, exact quantities, recent block pages, reorg recovery
+  and a truthful observed-header interval chart.
+- Bounded same-origin read-only API access preserving raw native numeric tokens,
+  plus unit/browser/accessibility and real native end-to-end smoke checks.
+
+### Changed
+
+- Product metadata advances to 0.4.0; supported native/legacy route shapes and
+  native Ryo interpretation remain compatible.
+- All changes reach main through PRs. Owner merging or explicit conversational
+  merge authorization is required; GitHub reviews/CI checks are not mandatory.
+- Full native CI runs manually only, with no automatic PR/push build.
+
+### Upgrade Notes
+
+- The frontend adds Node.js 24 LTS and a separate process. Run `npm ci`,
+  `npm run build` and `npm run start` in `web/`; enable native API v2 and configure
+  the server-only `RYO_API_URL`. See `docs/WEB.md`.
+
+### Known Issues
+
+- Dedicated block/transaction HTML views, search, pool listing, realtime,
+  analytics and verification remain later milestones. Full-chain/deployment
+  capacity is not established. The developer-only ESLint glob dependency has
+  the unpatched braces advisory documented in `docs/V0_4_VALIDATION.md`.
+
 ## [0.3.0] - 2026-10-04
 
 ### Added

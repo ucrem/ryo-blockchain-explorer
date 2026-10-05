@@ -1,5 +1,9 @@
 # API v2
 
+v0.4 retains the v0.3 route shapes and DTO contracts while advancing product
+metadata to 0.4.0. The new [web application](WEB.md) consumes this read-only API;
+legacy clients and direct native API consumers remain supported.
+
 v0.3.0 adds an explicitly enabled, read-only API for external clients and the
 future frontend. Native Ryo/LMDB remains authoritative. The
 [OpenAPI 3.1.1 contract](api-v2.openapi.yaml) describes the shipped subset, and

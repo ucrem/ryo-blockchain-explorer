@@ -27,3 +27,18 @@ compatibility patch does not change consensus or cryptographic algorithms.
 
 This records provenance of the selected import, not a complete distribution
 license audit. Check linked dependencies before distributing binary packages.
+
+## v0.4 web dependencies
+
+The Next.js/React/TypeScript/Tailwind/Radix/Lucide and related npm dependencies
+are resolved through `web/package-lock.json`, with upstream license notices in
+their packages. The four shadcn/ui Radix Nova source components in
+`web/src/components/ui/` were installed with CLI 4.21.2; their MIT license is
+retained in [web/LICENSE.shadcn.txt](web/LICENSE.shadcn.txt).
+
+Bundled DM Sans and IBM Plex Mono fonts are supplied by Fontsource 5.3.0 under
+the SIL Open Font License 1.1. Their notices are retained in
+[DM Sans](web/public/licenses/dm-sans.txt) and
+[IBM Plex Mono](web/public/licenses/ibm-plex-mono.txt), and are served with the
+website under `/licenses/`. No legacy explorer image/browser asset is copied.
+The new typographic mark and SVG favicon are project-authored.

@@ -1,0 +1,309 @@
+import {
+  ArrowDown,
+  ArrowUpRight,
+  Clock3,
+  Database,
+  Layers3,
+  RefreshCw,
+  ShieldCheck,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { IntervalChart } from "@/components/interval-chart";
+import { ApiError, readBlocks, readNetwork } from "@/lib/api";
+import { cursor } from "@/lib/contracts";
+import { bytes, integer, timestamp } from "@/lib/format";
+
+export const dynamic = "force-dynamic";
+
+export default async function Dashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    cursor?: string | string[];
+    [key: string]: string | string[] | undefined;
+  }>;
+}) {
+  const query = await searchParams;
+  const valid =
+    Object.keys(query).every((k) => k === "cursor") &&
+    (query.cursor === undefined || cursor.safeParse(query.cursor).success);
+  const [networkResult, blocksResult] = await Promise.allSettled([
+    readNetwork(),
+    valid
+      ? readBlocks(query.cursor as string | undefined)
+      : Promise.reject(
+          new ApiError(
+            400,
+            "invalid_request",
+            "Invalid block page. Restart from the latest blocks.",
+          ),
+        ),
+  ]);
+  const network =
+    networkResult.status === "fulfilled" ? networkResult.value : null;
+  let page = blocksResult.status === "fulfilled" ? blocksResult.value : null;
+  let pageError =
+    blocksResult.status === "rejected" ? blocksResult.reason : null;
+  if (page && network && page.meta.network !== network.meta.network) {
+    page = null;
+    pageError = new ApiError(
+      503,
+      "unavailable",
+      "The chain reader changed networks. Refresh this page.",
+    );
+  }
+  const readTime = new Date().toISOString().slice(11, 19);
+  const metrics = [
+    {
+      label: "Latest block",
+      value: network ? integer(network.data.tip.height) : "—",
+      note: network
+        ? `${integer(network.meta.chain_height)} ${network.meta.chain_height === "1" ? "block" : "blocks"} in this reader`
+        : "Reader unavailable",
+      icon: Layers3,
+    },
+    {
+      label: "Tip difficulty",
+      value: network ? integer(network.data.tip_difficulty) : "—",
+      note: "Native chain difficulty",
+      icon: ShieldCheck,
+    },
+    {
+      label: "Target interval",
+      value: network
+        ? `${integer(network.data.target_block_time_seconds)} s`
+        : "—",
+      note: "Protocol target, not observed time",
+      icon: Clock3,
+    },
+  ];
+  return (
+    <>
+      <div className="page-topline">
+        <span className="eyebrow">EXPLORER / OVERVIEW</span>
+        <span className="read-time">Page read · {readTime} UTC</span>
+      </div>
+      <div className="page-heading">
+        <div>
+          <h1>Inside the chain.</h1>
+          <p>Public Ryo blockchain data. A clearer view.</p>
+        </div>
+        <div className="heading-actions">
+          <Badge
+            variant="outline"
+            className={network ? "reader-badge" : "offline-badge"}
+          >
+            <span className="status-dot" />
+            {network ? `${network.meta.network} reader` : "Reader unavailable"}
+          </Badge>
+          <Button variant="outline" asChild>
+            <a
+              href={
+                query.cursor && valid
+                  ? `/?cursor=${encodeURIComponent(query.cursor as string)}`
+                  : "/"
+              }
+            >
+              <RefreshCw aria-hidden="true" />
+              Refresh
+            </a>
+          </Button>
+        </div>
+      </div>
+      {!network && (
+        <div className="notice" role="alert">
+          <Database aria-hidden="true" />
+          <div>
+            <strong>Chain reader unavailable</strong>
+            <p>
+              The dashboard could not read chain status. Try refreshing shortly.
+            </p>
+          </div>
+        </div>
+      )}
+      <div className="metric-grid">
+        {metrics.map(({ label, value, note, icon: Icon }) => (
+          <Card key={label} className="metric-card">
+            <CardContent>
+              <div className="metric-label">
+                {label}
+                <Icon size={17} aria-hidden="true" />
+              </div>
+              <div className="metric-value">{value}</div>
+              <p>{note}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="overview-grid">
+        <IntervalChart
+          items={page?.data.items ?? []}
+          target={network?.data.target_block_time_seconds ?? null}
+        />
+        <section className="chain-context" aria-labelledby="reader-title">
+          <div className="eyebrow">THE DATA BEHIND THE VIEW</div>
+          <h2 id="reader-title">Your chain reader.</h2>
+          <p>
+            These figures describe the blockchain held by this explorer. They do
+            not establish network-wide synchronization.
+          </p>
+          <dl>
+            <div>
+              <dt>Network</dt>
+              <dd>{network?.meta.network ?? "Unavailable"}</dd>
+            </div>
+            <div>
+              <dt>Data source</dt>
+              <dd>Native Ryo / LMDB</dd>
+            </div>
+            <div>
+              <dt>API</dt>
+              <dd>v2 · Read only</dd>
+            </div>
+          </dl>
+          <a href="/api/v2/network" className="text-link">
+            Inspect network JSON <ArrowUpRight size={16} aria-hidden="true" />
+          </a>
+        </section>
+      </div>
+      <section className="blocks-section" aria-labelledby="blocks-title">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">BLOCK EXPLORER</span>
+            <h2 id="blocks-title">
+              {query.cursor ? "Earlier blocks" : "Recent blocks"}
+            </h2>
+          </div>
+          <span className="section-note">
+            {page
+              ? `${page.data.items.length} ${page.data.items.length === 1 ? "block" : "blocks"} · newest first`
+              : "Waiting for chain data"}
+          </span>
+        </div>
+        {pageError && (
+          <div className="notice" role="alert">
+            <Layers3 aria-hidden="true" />
+            <div>
+              <strong>
+                {pageError instanceof ApiError && pageError.status === 409
+                  ? "The chain changed"
+                  : "Block page unavailable"}
+              </strong>
+              <p>
+                {pageError instanceof ApiError
+                  ? pageError.message
+                  : "Try refreshing shortly."}
+              </p>
+              <a href="/" className="text-link">
+                Restart from latest blocks{" "}
+                <ArrowUpRight size={15} aria-hidden="true" />
+              </a>
+            </div>
+          </div>
+        )}
+        {page && (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Height</TableHead>
+                  <TableHead>Block hash</TableHead>
+                  <TableHead>Timestamp · UTC</TableHead>
+                  <TableHead className="text-right">Transactions</TableHead>
+                  <TableHead className="text-right">Size</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Public API views</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {page.data.items.map((b) => (
+                  <TableRow key={b.hash}>
+                    <TableCell>
+                      <a
+                        href={`/api/v2/blocks/${b.height}`}
+                        className="height-link"
+                        aria-label={`Block ${b.height} JSON`}
+                      >
+                        {integer(b.height)}
+                      </a>
+                    </TableCell>
+                    <TableCell>
+                      <span className="hash-text" title={b.hash}>
+                        {b.hash.slice(0, 12)}
+                        <span aria-hidden="true">…</span>
+                        {b.hash.slice(-6)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="timestamp-cell">
+                      {b.timestamp_unix === "0"
+                        ? "Genesis · time not recorded"
+                        : timestamp(b.timestamp_unix)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {integer(b.transaction_count)}
+                    </TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      {bytes(b.size_bytes)}
+                    </TableCell>
+                    <TableCell>
+                      <a
+                        href={`/api/v2/raw/block/${b.height}`}
+                        className="raw-link"
+                        aria-label={`Raw block ${b.height}`}
+                      >
+                        Raw <ArrowUpRight size={13} aria-hidden="true" />
+                      </a>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <div className="pagination">
+              <p>
+                Anchored at block{" "}
+                <strong>{integer(page.data.anchor_height)}</strong>. New blocks
+                do not shift this page.
+              </p>
+              <div>
+                {query.cursor && (
+                  <Button asChild variant="outline">
+                    <a href="/">Latest blocks</a>
+                  </Button>
+                )}
+                {page.data.next_cursor ? (
+                  <Button asChild variant="outline">
+                    <a
+                      href={`/?cursor=${encodeURIComponent(page.data.next_cursor)}`}
+                    >
+                      Earlier blocks <ArrowDown aria-hidden="true" />
+                    </a>
+                  </Button>
+                ) : (
+                  <span className="end-label">Beginning of the chain</span>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </section>
+      <footer className="page-footer">
+        <span>Public data. Private by design.</span>
+        <p>
+          Separate reads can observe different chain heights. Ring candidates do
+          not identify a real spend.
+        </p>
+      </footer>
+    </>
+  );
+}

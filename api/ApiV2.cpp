@@ -56,7 +56,7 @@ ApiResponse ApiV2::get(const std::string& target) {
                 {"target_block_time_seconds", cryptonote::common_config::DIFFICULTY_TARGET},
                 {"units", {{"symbol", "RYO"}, {"atomic_decimals", CRYPTONOTE_DISPLAY_DECIMAL_POINT},
                     {"atomic_units_per_coin", std::to_string(cryptonote::MK_COINS(1))}}},
-                {"explorer_version", "0.3.0"}, {"native_core_version", RYO_VERSION_FULL}, {"api_version", "2"}};
+                {"explorer_version", "0.4.0"}, {"native_core_version", RYO_VERSION_FULL}, {"api_version", "2"}};
             return {200, {{"data", data}, {"meta", meta(snapshot.chain_height)}}};
         }
         if (path == "/api/v2/blocks") {

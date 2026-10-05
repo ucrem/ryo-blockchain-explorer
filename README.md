@@ -4,7 +4,9 @@ An independent public project for the incremental modernization of Ryo's
 blockchain explorer. This repository starts with **selected native C++ components,
 real Ryo fixtures, and technical discovery documentation**, now extended with
 concrete block/transaction services and a separate opt-in read-only HTTP server.
-It does not include the old website, templates, browser assets, or a Next.js application.
+It does not include the old website or templates. v0.4 adds a new server-first
+Next.js dashboard and developer guide in `web/`, with bundled assets and a bounded
+same-origin read-only API adapter. See [web operation](docs/WEB.md).
 
 The current build produces `ryo_explorer_core`, a native static library for
 read-only LMDB access, existing Ryo parsing/metadata utilities, daemon RPC,
@@ -76,8 +78,9 @@ Logic still coupled to upstream HTML will be imported in focused, tested changes
 when its services are built. Phase 0 does not claim browser crypto parity,
 full-chain/reorg correctness, production readiness, or completed analytics.
 
-Future frontend work uses Next.js, TypeScript, Tailwind CSS, and shadcn/ui, with
-Server Components by default. It has not started. LMDB remains authoritative;
+The v0.4 frontend uses Next.js, TypeScript, Tailwind CSS, and shadcn/ui, with
+Server Components by default. Block/transaction HTML views and later tools remain
+future milestones. LMDB remains authoritative;
 there is no mandatory PostgreSQL, Redis, additional service infrastructure,
 tracking, external runtime CDN, or speculative Proof of Stake functionality.
 
@@ -105,3 +108,8 @@ native raw JSON/hex while preserving the legacy subset.
 [Its release source passed Ubuntu 24.04 CI and all five tests](https://github.com/ucrem/ryo-blockchain-explorer/actions/runs/37239326835).
 Each release includes
 validation, a dated changelog, an annotated tag, and a real GitHub Release.
+
+The v0.4 implementation provides a responsive light/dark
+dashboard, native-reader chain status, recent block pagination, observed header
+intervals and developer API access. See
+[the scope](docs/V0_4_WEB_PROPOSAL.md) and [validation](docs/V0_4_VALIDATION.md).

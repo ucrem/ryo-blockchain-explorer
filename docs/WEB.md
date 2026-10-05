@@ -1,0 +1,140 @@
+# v0.4 web application
+
+The first website is a server-first Next.js application in `web/`. It is an
+independent modern implementation, with no imported legacy templates or browser
+crypto. Its initial scope is the overview dashboard and developer API guide.
+
+## What is available
+
+- `/`: native-reader network and chain status, exact tip height/difficulty,
+  configured block target, recent block summaries and anchored earlier pages.
+- An interval chart derived only from adjacent headers on the displayed page.
+  Missing genesis timestamps and decreasing timestamps are excluded. At least
+  two usable intervals are needed; the whole-second mean truncates division.
+  Miner-supplied timestamps are not network-wide performance or synchronization.
+- `/developers`: public route guide, exact units and privacy semantics, examples
+  and a link to the backend's bundled OpenAPI JSON.
+- Same-origin `/api/v2/…` links for the existing public native endpoints. Block
+  heights link to JSON, and Raw links expose native JSON/hex. Dedicated block and
+  transaction HTML views belong to v0.5.
+- Responsive desktop/mobile navigation, persistent light/dark/system theme,
+  keyboard skip link, focus indicators, bounded horizontal table/code scrolling,
+  accessible SVG description and truthful unavailable/reorg/genesis states.
+
+There is no mempool listing, search form, auto-refresh/SSE, analytics store,
+private-key verification, balance/history inference or transaction submission.
+The UI has no placeholder navigation advertising those capabilities.
+
+## Install and run on native Linux
+
+Use Node.js 24 LTS (tested 24.21.0) and npm (tested 11.19.0). The lockfile pins the
+resolved dependency tree. Next.js 16.3.8, React 19.2.8, TypeScript 5.9.3 and
+Tailwind 4.3.3 are recorded in `web/package.json`. shadcn/ui source components were
+installed with CLI 4.21.2 using the Radix Nova registry; its MIT notice is retained.
+DM Sans and IBM Plex Mono are bundled from Fontsource, with no runtime font CDN.
+
+```bash
+cd web
+npm ci
+cp .env.example .env.local
+NEXT_TELEMETRY_DISABLED=1 npm run dev -- --hostname 127.0.0.1
+```
+
+Start the [native HTTP executable](HTTP_SERVER.md) separately with API v2 enabled:
+
+```bash
+build/native/ryo_explorer_http --bc-path /path/to/ryo/lmdb02 --enable-api-v2
+```
+
+Development defaults to port 3000. The frontend can build without a running API;
+chain data is read when a visitor requests a dashboard page. For production:
+
+```bash
+cd web
+NEXT_TELEMETRY_DISABLED=1 npm run build
+RYO_API_URL=http://127.0.0.1:8081 NEXT_TELEMETRY_DISABLED=1 \
+  npm run start -- --hostname 127.0.0.1 --port 3000
+```
+
+A normal Node server is required; a static export cannot read the live native API.
+No Docker, external database, queue, cache service or managed host is required.
+Use the site's process and a TLS reverse proxy for a public deployment; this
+release does not install a service or deploy a public instance. Bound public
+traffic at the proxy to the operator's measured capacity. Multi-instance Node
+processes each have their own request bound; full-chain/load capacity remains
+unverified. Keep the internal native API off the public interface unless public
+API exposure is explicitly configured by the operator.
+
+## Configuration and public adapter
+
+`RYO_API_URL` is a server-only HTTP(S) origin, default `http://127.0.0.1:8081`.
+It accepts no credentials, path prefix, query or fragment. It is not a
+`NEXT_PUBLIC_` variable, and the browser receives no internal-origin setting.
+The operator controls this fixed trusted origin; visitors cannot select it.
+`NEXT_TELEMETRY_DISABLED=1` disables Next.js development/build telemetry.
+
+The adapter only forwards GETs to the shipped native API v2 route shapes.
+Only block-list requests accept bounded `limit`/`cursor`; unknown, duplicate and
+secret-bearing parameters are rejected before forwarding. Requests do not
+forward browser cookies, authorization or arbitrary headers. Redirects are not
+followed. No legacy key-bearing or write endpoint is exposed.
+
+A maximum of 16 upstream reads per Node process is enforced without a queue.
+Each read has a five-second deadline covering headers and body, an eight-MiB
+response limit and a required JSON content type. Unexpected failures return a
+concise 503 rather than an internal URL, configuration or exception. Proxy
+responses preserve native JSON text verbatim: raw integer tokens are not passed
+through `JSON.parse`/`JSON.stringify`. The dashboard separately validates its
+network/list DTOs and uses BigInt for exact quantities and calculations.
+
+Native errors/statuses on forwarded public routes are retained. Invalid adapter
+requests return 400. Next.js rejects unsupported HTTP methods with 405. The
+adapter is not a replacement for the native OpenAPI implementation; it is a
+bounded same-origin access path for the website's supported read-only subset.
+
+Both native reads and proxy responses use no-store. Dashboard navigation and
+Refresh use a full page request, with no client prefetch or persistent cache.
+Network/list reads are independent snapshots and may have different heights.
+A replaced pagination anchor shows a restart link; appended blocks do not shift
+an anchored page. If the two reads report different networks, the block list is
+withheld and a refresh error is shown. Dashboard error states remain an HTTP 200
+HTML page with explicit alerts; the API preserves its documented error statuses.
+
+No analytics/tracker, remote icon/image/script/font CDN, browser chain fetch or
+private-key handling is introduced. Theme selection is stored locally by
+`next-themes`. Site and reverse-proxy access logging is operator controlled;
+these settings are not a claim that the hosting infrastructure keeps no logs.
+
+## Validation
+
+```bash
+cd web
+npm run lint
+npm run typecheck
+npm test
+NEXT_TELEMETRY_DISABLED=1 npm run build
+npx playwright install --with-deps chromium
+NEXT_TELEMETRY_DISABLED=1 npm run test:e2e
+npm audit --omit=dev
+```
+
+The browser suite launches the production frontend on port 3100 and an isolated
+fixture server on 3101. It uses synthetic, disclosed headers only in tests;
+production never imports the fixture server or falls back to its data. It checks
+exact values above JavaScript's safe integer range, pagination/reorg/outage/genesis
+behavior, light/dark theme persistence, keyboard access, mobile overflow,
+accessibility and browser requests staying on the website origin.
+
+`tests/native-smoke.ts` additionally runs against an already started production
+frontend connected to a disposable genesis-only native API:
+
+```bash
+cd web
+NATIVE_SMOKE_URL=http://127.0.0.1:3112 npx tsx tests/native-smoke.ts
+```
+
+This smoke requires a fresh offline genesis fixture; do not point it at a public
+chain instance. It checks the known native genesis hash, actual version, raw
+serialized bytes, bundled OpenAPI and absence of browser errors/external origins.
+See [v0.4 validation evidence](V0_4_VALIDATION.md). The full native Action remains
+manual-only, and no new automatic frontend build Action is added.

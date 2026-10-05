@@ -106,6 +106,15 @@ privacy and is not required for the baseline.
 
 ## Operations and compatibility
 
+The v0.4 website reads native public API v2 on the Next.js server. Its bounded
+same-origin adapter forwards no browser cookies, authorization, arbitrary target
+origins, secret-bearing query parameters or write operations. Theme preference
+is stored locally; fonts, icons and scripts are bundled. No browser crypto,
+private-key input, tracker or synthetic production data is added. The dashboard
+describes the reader's chain and miner-supplied intervals, without asserting
+network-wide synchronization or identifying real spends. See [WEB.md](WEB.md)
+for exact bounds and operator-controlled deployment/logging limitations.
+
 No trackers, analytics SDKs, fingerprinting, runtime CDNs, external fonts, or
 unnecessary cookies. Bundle assets. Source inspection found local scripts/assets;
 it is not proof about production reverse-proxy logs, host configuration, or a

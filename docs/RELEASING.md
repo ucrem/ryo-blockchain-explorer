@@ -11,6 +11,10 @@ repeat checks appropriate to their changes.
 
 ## Gates
 
+- All release changes reach `main` through an approved pull request with the
+  required checks. The repository owner explicitly approves integration and
+  release publication; broad implementation or command authorization does not
+  replace these approvals. Never bypass protection or push directly to `main`.
 - Target repository is public, owned by `ucrem`, and has the original upstream
   history; `origin` and `upstream` point to their documented repositories.
 - Implementation is complete for the milestone, with a successful Ubuntu 24.04
@@ -25,17 +29,25 @@ repeat checks appropriate to their changes.
 
 ## Publish
 
-Use the reviewed integration branch that actually passed validation; do not
-change unrelated target history or assume an existing unrelated `main` branch.
-Authenticate `gh` as `ucrem`, verify repository visibility and ancestry, and
-never use force push or the upstream remote. Write the final release notes to
-a file, then create an annotated tag and push only the intended branch/tag.
+Prepare the implementation and release notes on a focused branch, open a pull
+request targeting `main`, and leave it open for review. Merge through GitHub only
+after the owner explicitly approves integration and branch protection is
+satisfied. GitHub requires an independent reviewer when the pull request author
+is `ucrem`; the author cannot approve their own pull request.
+
+After approval to publish, fetch the merged `main` commit and verify that the
+intended release changes and successful required checks are present. Authenticate
+`gh` as the intended publishing account, verify repository visibility and
+ancestry, and never use force push or the upstream remote. Write the final release
+notes to a file, create an annotated tag at the approved commit, and push only
+that tag. The example below is the publication step, after review and approval;
+it must not push a branch or substitute for the pull request workflow.
 
 ```bash
 gh api user --jq .login
 gh repo view ucrem/ryo-blockchain-explorer --json nameWithOwner,isPrivate
-git tag -a v0.2.0 -m 'Release v0.2.0: native services and read-only HTTP'
-git push origin HEAD
+git fetch origin main
+git tag -a v0.2.0 origin/main -m 'Release v0.2.0: native services and read-only HTTP'
 git push origin v0.2.0
 gh release create v0.2.0 --repo ucrem/ryo-blockchain-explorer \
   --verify-tag --title 'v0.2.0 — Native Services and Read-only HTTP' \
@@ -46,7 +58,7 @@ gh release view v0.2.0 --repo ucrem/ryo-blockchain-explorer \
 
 The notes file must exist and be reviewed before publication.
 Before copying the example, select an unused intended version; never rerun it
-against a published tag. v0.1.0 is already published.
+against a published tag. v0.1.0, v0.2.0, and v0.3.0 are already published.
 
 Attach only artifacts that have been validated, together with checksums and dependency/license
 information. A failed release command must not be reported as publication.

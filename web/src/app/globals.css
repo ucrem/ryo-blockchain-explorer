@@ -1056,3 +1056,52 @@ h4 {
     min-width: 140px;
   }
 }
+
+.json-panel {
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.json-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.json-toolbar h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.json-format-controls {
+  display: flex;
+  gap: 8px;
+}
+.json-code {
+  margin: 0;
+  padding: 24px;
+  max-width: 100%;
+  max-height: 70vh;
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.75;
+  tab-size: 2;
+}
+.json-code code {
+  white-space: pre;
+}
+.json-code:focus-visible {
+  outline-offset: -3px;
+}
+@media (max-width: 600px) {
+  .json-toolbar {
+    flex-wrap: wrap;
+    padding: 16px;
+  }
+  .json-code {
+    padding: 16px;
+    font-size: 11px;
+  }
+}

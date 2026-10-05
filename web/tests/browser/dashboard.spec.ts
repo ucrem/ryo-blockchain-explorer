@@ -257,3 +257,80 @@ test("search validates before lookup; missing data and partial outages have dist
     page.getByRole("heading", { name: "No matching block or transaction" }),
   ).toHaveCount(0);
 });
+
+test("JSON links preserve the explorer layout, format exactly and safely, with original and download views", async ({
+  page,
+  request,
+}) => {
+  const errors: string[] = [],
+    origins = new Set<string>();
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("request", (r) => origins.add(new URL(r.url()).origin));
+  await request.get("http://127.0.0.1:3101/__control?mode=genesis");
+  await page.goto("/blocks/0");
+  await page.getByRole("link", { name: "Block JSON", exact: true }).click();
+  await expect(page).toHaveURL(/\/json\/blocks\//);
+  await expect(
+    page.getByRole("heading", { name: "Block JSON", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Ryo Explorer home" }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Search the Ryo blockchain", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Back to block" })).toBeVisible();
+  const code = page.getByRole("region", { name: "JSON response", exact: true });
+  expect(await code.textContent()).toContain('\n  "data": {');
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.getByRole("link", { name: "Back to block" }).click();
+  await page.locator("a[href^='/transactions/']").first().click();
+  await page
+    .getByRole("link", { name: "Transaction JSON", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Transaction JSON", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Back to transaction" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Back to transaction" }).click();
+  await page.getByRole("link", { name: "Raw JSON", exact: true }).click();
+  await expect(page).toHaveURL(/\/json\/raw\/transaction\//);
+  await request.get("http://127.0.0.1:3101/__control?mode=normal");
+  await page.goto("/json/raw/block/0");
+  const original = await (await request.get("/api/v2/raw/block/0")).text();
+  expect(await code.textContent()).toContain('"exact": 18446744073709551615');
+  expect(await code.textContent()).toContain("<img src=");
+  await expect(page.locator("img[src='/__unexpected']")).toHaveCount(0);
+  await page.getByRole("button", { name: "Original", exact: true }).click();
+  expect(await code.textContent()).toBe(original);
+  await page.getByRole("button", { name: "Formatted", exact: true }).click();
+  const download = page.waitForEvent("download");
+  await page.getByRole("link", { name: "Download JSON" }).click();
+  expect((await download).suggestedFilename()).toBe("ryo-response.json");
+  await page.getByRole("button", { name: "Toggle color theme" }).click();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await request.get("http://127.0.0.1:3101/__control?mode=genesis");
+  await page.goto("/json/network?viewkey=synthetic-secret");
+  await expect(
+    page.getByRole("heading", { name: "Invalid request" }),
+  ).toBeVisible();
+  await page.goto("/json/https://example.com");
+  await expect(
+    page.getByRole("heading", { name: "Invalid request" }),
+  ).toBeVisible();
+  expect(
+    (await (await request.get("http://127.0.0.1:3101/__control")).json()).reads,
+  ).toBe(0);
+  expect([...origins]).toEqual(["http://127.0.0.1:3100"]);
+  expect(errors).toEqual([]);
+});

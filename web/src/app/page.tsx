@@ -179,7 +179,7 @@ export default async function Dashboard({
               <dd>v2 · Read only</dd>
             </div>
           </dl>
-          <a href="/api/v2/network" className="text-link">
+          <a href="/json/network" className="text-link">
             Inspect network JSON <ArrowUpRight size={16} aria-hidden="true" />
           </a>
         </section>
@@ -270,7 +270,7 @@ export default async function Dashboard({
                     </TableCell>
                     <TableCell>
                       <a
-                        href={`/api/v2/raw/block/${b.height}`}
+                        href={`/json/raw/block/${b.hash}`}
                         className="raw-link"
                         aria-label={`Raw block ${b.height}`}
                       >

@@ -16,6 +16,8 @@ import { ApiError, upstreamOrigin, upstreamRead } from "../src/lib/upstream";
 
 import { viewPages, slicePage } from "../src/lib/view-pages";
 
+import { prettyJson, JsonPreviewLimit } from "../src/lib/pretty-json";
+
 const examples = JSON.parse(
   readFileSync(
     new URL("../../docs/api-v2.examples.json", import.meta.url),
@@ -286,4 +288,68 @@ test("detail row pagination bounds HTML output and rejects duplicate or unsuppor
   assert.deepEqual(page.items, [50]);
   assert.equal(page.pages, 2);
   assert.equal(slicePage([1], 2, 50), null);
+});
+
+test("JSON formatting preserves native numeric lexemes, strings, duplicate keys and empty containers", () => {
+  const quoted = JSON.stringify(
+    'spaces, [brackets]: "quotes" and\nnewlines <script>',
+  );
+  const source = `{"integer":18446744073709551615,"decimal":1.2300,"exponent":1e400,"negative":-0,"quoted":${quoted},"empty":{},"array":[true,null,[]]}`;
+  assert.equal(
+    prettyJson(source),
+    `{
+  "integer": 18446744073709551615,
+  "decimal": 1.2300,
+  "exponent": 1e400,
+  "negative": -0,
+  "quoted": ${quoted},
+  "empty": {},
+  "array": [
+    true,
+    null,
+    []
+  ]
+}`,
+  );
+  assert.equal(
+    prettyJson('{"duplicate":1,"duplicate":2}'),
+    '{\n  "duplicate": 1,\n  "duplicate": 2\n}',
+  );
+  assert.equal(prettyJson('  "\\u0061" '), '"\\u0061"');
+  assert.equal(prettyJson(" \n 123 \t"), "123");
+});
+test("JSON formatting rejects malformed syntax without decoding numbers", () => {
+  for (const source of [
+    "",
+    "{",
+    "[1,]",
+    '{"a":1,}',
+    '{"a" 1}',
+    '{"a":}',
+    "[01]",
+    "[+1]",
+    "[1.]",
+    "[1e]",
+    "[true false]",
+    "{} {}",
+    "{1:2}",
+    '"bad\nstring"',
+    '"\\x41"',
+    '"\\u12xz"',
+    "/* comment */{}",
+  ])
+    assert.throws(() => prettyJson(source), SyntaxError);
+});
+test("embedded JSON formatting has explicit size, depth and expansion bounds", () => {
+  assert.throws(
+    () => prettyJson(" ".repeat(1024 * 1024 + 1)),
+    JsonPreviewLimit,
+  );
+  assert.throws(
+    () => prettyJson("[".repeat(65) + "0" + "]".repeat(65)),
+    JsonPreviewLimit,
+  );
+  const deepArray =
+    "[".repeat(60) + Array(40000).fill("0").join(",") + "]".repeat(60);
+  assert.throws(() => prettyJson(deepArray), JsonPreviewLimit);
 });

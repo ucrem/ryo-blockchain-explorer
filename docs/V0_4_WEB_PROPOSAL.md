@@ -22,7 +22,9 @@ chart when enough real samples exist, API/raw links and a developer guide.
 The owner's 2026-10-05 usability request additionally includes readable block and
 transaction pages and a visible public height/hash search. These reuse the
 existing native detail endpoints; no native architecture or schema change is
-introduced. Dedicated UI links open HTML, with JSON/raw as additional views.
+introduced. Dedicated UI links open HTML, with JSON/raw as additional views
+inside the explorer layout. Token-preserving formatting and an Original toggle
+keep native quantities intact; explicit API endpoints and downloads remain available.
 
 A server-only API client uses a configured fixed upstream origin, deadlines,
 response size bounds, no redirect following and no persistent caching. A

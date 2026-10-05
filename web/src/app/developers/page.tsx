@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ArrowUpRight, Braces, LockKeyhole } from "lucide-react";
+import { jsonViewHref } from "@/lib/pretty-json";
 import { Button } from "@/components/ui/button";
 export const metadata: Metadata = { title: "Developer API" };
 const routes = [
@@ -47,7 +48,7 @@ export default function Developers() {
           <p>Build with public Ryo blockchain data.</p>
         </div>
         <Button asChild variant="outline">
-          <a href="/api/v2/openapi.json">
+          <a href="/json/openapi.json">
             OpenAPI JSON <ArrowUpRight aria-hidden="true" />
           </a>
         </Button>
@@ -104,7 +105,7 @@ export default function Developers() {
             </div>
             {example && (
               <a
-                href={example}
+                href={jsonViewHref(example)}
                 className="raw-link"
                 aria-label={`Example ${path}`}
               >

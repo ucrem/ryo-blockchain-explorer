@@ -27,8 +27,10 @@ search and a developer API guide.
   hashes. Decimal heights are normalized exactly within uint64 bounds; hash case
   is normalized. Hash lookups query both existing native detail routes, with
   distinct absent-data and unavailable-reader states. No new native index is used.
-- Same-origin `/api/v2/…` links remain additional developer views, not the default
-  destination for block or transaction navigation.
+- JSON and raw buttons open `/json/…` inside the explorer's normal layout, with
+  a formatted response panel, an Original toggle and verbatim download. Network,
+  recent-block and OpenAPI examples use the same viewer. Explicit API-endpoint
+  links remain available for programmatic responses at `/api/v2/…`.
 - Responsive desktop/mobile navigation, persistent light/dark/system theme,
   keyboard skip link, focus indicators, bounded horizontal table/code scrolling,
   accessible SVG description and truthful unavailable/reorg/genesis states.
@@ -179,3 +181,21 @@ Next.js can return HTTP 200 for errors after streaming has begun. Other HTML
 validation/unavailable messages also use the framework's rendered response. The
 public API preserves its native error status codes. There is no persistent search
 cache; known mempool transaction lookup is not a full live mempool feed.
+
+
+## Embedded JSON viewer
+
+The server reads only the same public API allowlist through the existing bounded
+client. Unsupported paths and duplicate/secret query fields are rejected before
+lookup. The formatted viewer validates JSON grammar and inserts whitespace around
+the original tokens; it never decodes/re-encodes numeric values or strings.
+Integer digits, negative zero, decimal/exponent spelling, key order, duplicate
+keys and escape sequences remain unchanged. React renders JSON as escaped text,
+without HTML insertion. Formatting/original toggles make no API request.
+
+The embedded preview accepts up to 1,048,576 source UTF-16 code units, 64 levels
+of nesting and 4,194,304 formatted code units. Larger/deeper responses show a
+clear download fallback inside the layout. Source reads retain the existing
+8-MiB network body limit. The download and explicit endpoint link retain the
+original API response bytes and native HTTP statuses. JSON panels scroll with
+keyboard focus, including on mobile, and keep the selected site theme.

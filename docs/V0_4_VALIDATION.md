@@ -39,12 +39,15 @@ Tailwind 4.3.3. Registry-resolved dependencies are pinned in the npm lockfile.
 
 - Clean lockfile installation succeeded; no API was needed at build time.
 - ESLint, route generation/TypeScript checks and the production build passed.
-- Ten Node tests passed: public native schema examples, exact values above
+- Thirteen Node tests passed: public native schema examples, exact values above
   2^53 and uint64 bounds, invalid/secret route queries, timestamp interpretation,
   trusted origins, raw numeric-token preservation, reorg status, redirect/content
   type/declared and streamed response-size rejection, concurrency and deadline.
   Detail cases cover count/inclusion consistency, hidden RingCT amounts, exact
   RYO formatting, public identifier normalization and bounded row pagination.
+  JSON cases cover token preservation (including uint64, decimal spelling,
+  exponents, negative zero, escapes and duplicate keys), malformed syntax and
+  preview size/depth/expansion bounds.
 - Production dependency audit reported zero vulnerabilities. The complete audit
   reported five high entries, all one developer-only `braces` advisory and its
   Next ESLint glob dependency chain. The advisory has no published patched version:
@@ -54,8 +57,8 @@ Tailwind 4.3.3. Registry-resolved dependencies are pinned in the npm lockfile.
 
 ## Production browser checks
 
-Six Chromium Playwright scenarios passed against the production Next server
-in 13.1 seconds with the official-brand detail/search UI. Their isolated fixture
+Seven Chromium Playwright scenarios passed against the production Next server
+in 18.7 seconds with the official-brand detail/search/JSON UI. Their isolated fixture
 server uses explicitly synthetic headers and public genesis examples; it is never
 imported by application code.
 
@@ -69,7 +72,10 @@ restricted to the website origin. Additional scenarios cover HTML block/transact
 navigation, height/block-hash/transaction-hash searches, uppercase hash
 normalization, exact fees, hidden output amounts, mempool inclusion, output-row
 pagination, rejected duplicate/unsupported queries without native reads, absent
-resources and partial reader outages. Detail tables scroll with keyboard focus.
+resources and partial reader outages. JSON checks cover retained layout, exact
+formatted/original tokens, escaped markup without execution, verbatim downloads,
+light/dark/mobile accessibility and rejected private queries without native reads.
+Detail tables and JSON panels scroll with keyboard focus.
 Axe reported no violations in the tested
 states; that is not a substitute for broad manual assistive-technology testing.
 
@@ -95,6 +101,8 @@ origin. `web/tests/native-smoke.ts` passed in Chromium:
 - Block links opened readable native header/transaction HTML pages. The native
   coinbase output showed exactly `8,800,000.000000000 RYO`; height zero and both
   hash types resolved through the search field.
+- Native raw transaction JSON opened inside the explorer layout. The original
+  toggle matched the API response text exactly; formatted digits were preserved.
 - No browser page errors or external-origin requests occurred.
 
 Only the smoke's own loopback processes and offline directory were used; processes
@@ -114,6 +122,8 @@ the official site's Neue Kaine display font is not redistributed.
 ![Block details against the real disposable native genesis LMDB](images/v0.4-native-block.png)
 
 ![Transaction details against the real disposable native genesis LMDB](images/v0.4-native-transaction.png)
+
+![Embedded formatted native JSON within the explorer layout](images/v0.4-native-json.png)
 
 ## Limits and release gate
 

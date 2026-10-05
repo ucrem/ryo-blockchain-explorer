@@ -74,6 +74,26 @@ async function main() {
       path: "../build/v04-native-transaction.png",
       fullPage: true,
     });
+    await page.getByRole("link", { name: "Raw JSON", exact: true }).click();
+    await page
+      .getByRole("heading", { name: "Raw transaction JSON", exact: true })
+      .waitFor();
+    const jsonCode = page.getByRole("region", {
+      name: "JSON response",
+      exact: true,
+    });
+    assert.ok((await jsonCode.textContent())?.includes("8800000000000000"));
+    const nativeText = await (
+      await page.request.get(`${base}/api/v2/raw/transaction/${coinbase}`)
+    ).text();
+    await page.getByRole("button", { name: "Original", exact: true }).click();
+    assert.equal(await jsonCode.textContent(), nativeText);
+    await page.getByRole("button", { name: "Formatted", exact: true }).click();
+    await page.screenshot({
+      path: "../build/v04-native-json.png",
+      fullPage: true,
+    });
+    await page.getByRole("link", { name: "Back to transaction" }).click();
     for (const [identifier, destination] of [
       ["0", "/blocks/0"],
       [network.data.tip.hash.toUpperCase(), `/blocks/${network.data.tip.hash}`],
@@ -88,7 +108,7 @@ async function main() {
     assert.deepEqual([...origins], [new URL(base).origin]);
     assert.deepEqual(errors, []);
     console.log(
-      "Production frontend / native offline LMDB / block and transaction HTML / search / raw and OpenAPI smoke passed.",
+      "Production frontend / native offline LMDB / block and transaction HTML / search / embedded exact JSON / raw and OpenAPI smoke passed.",
     );
   } finally {
     await browser.close();

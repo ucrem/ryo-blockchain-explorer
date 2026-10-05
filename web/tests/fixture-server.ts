@@ -152,8 +152,11 @@ createServer((req, res) => {
     return;
   }
   if (url.pathname.startsWith("/api/v2/raw/")) {
+    const literal = JSON.stringify(
+      '<img src="/__unexpected" onerror="window.__jsonXss=true">',
+    );
     res.end(
-      '{"data":{"native_json":{"exact":18446744073709551615},"blob_hex":"00"}}',
+      `{"data":{"native_json":{"exact":18446744073709551615,"literal":${literal}},"blob_hex":"00"}}`,
     );
     return;
   }

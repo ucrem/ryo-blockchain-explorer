@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { jsonViewHref } from "@/lib/pretty-json";
 import { ApiError } from "@/lib/api";
 
 export function DetailHeading({
@@ -32,13 +33,13 @@ export function DetailHeading({
         </div>
         <div className="heading-actions">
           <Button variant="outline" asChild>
-            <a href={api}>
+            <a href={jsonViewHref(api)}>
               {kind} JSON
               <ArrowUpRight aria-hidden="true" />
             </a>
           </Button>
           <Button variant="outline" asChild>
-            <a href={raw}>
+            <a href={jsonViewHref(raw)}>
               Raw JSON
               <ArrowUpRight aria-hidden="true" />
             </a>

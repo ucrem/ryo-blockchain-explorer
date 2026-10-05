@@ -9,7 +9,11 @@
   Never enable automatic merging or publish a release without the owner's
   explicit approval of that action. Command access and permission to implement
   do not imply this approval.
-- Preserve required pull requests and CI. GitHub approving reviews are not
-  required; the owner's conversational authorization controls agent merging.
+- Preserve required pull requests. Neither GitHub approving reviews nor CI
+  checks are required for merging; the owner's conversational authorization
+  controls agent merging.
+- The full native GitHub Actions build runs manually only, not on pull requests
+  or pushes. Do not restore automatic triggers or required CI without the owner's
+  instruction. Run appropriate local checks and record release validation.
 - Write repository code, comments, documentation, commits, pull requests, and
   releases in English. Follow `CONTRIBUTING.md` and `docs/RELEASING.md`.

@@ -22,12 +22,16 @@ GitHub, or merge only after the owner explicitly instructs you to do so in the
 conversation. Permission to run commands or implement a milestone does not
 authorize merging its pull requests or publishing a release.
 
-`main` requires a pull request, resolved review conversations, and the successful
-`build-and-native-fixtures` GitHub Actions check on an up-to-date branch. GitHub
-approving reviews are not required; the owner's conversational authorization
-controls agent merging. These rules apply to administrators; force pushes and
-branch deletion are blocked. Do not use skip-CI commit markers on pull requests
-that require the native check.
+`main` requires a pull request and resolved review conversations. GitHub approving
+reviews and CI checks are not required for merging; the owner's conversational
+authorization controls agent merging. These rules apply to administrators; force
+pushes and branch deletion are blocked.
+
+The full Ubuntu 24.04 native build is manual-only, through `workflow_dispatch`;
+do not run it automatically on pull requests or pushes. Run local checks
+appropriate to the change and record the results. The smaller API contract check
+runs automatically only when its relevant files change. Release validation still
+requires the documented native build and test evidence.
 
 Substantial architecture/behavior proposals must describe current behavior,
 the problem, proposed solution, affected components, compatibility, migration

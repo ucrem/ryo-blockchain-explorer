@@ -11,15 +11,17 @@ repeat checks appropriate to their changes.
 
 ## Gates
 
-- All release changes reach `main` through a pull request with the required
-  checks. The repository owner merges it on GitHub or explicitly authorizes
+- All release changes reach `main` through a pull request. CI checks are not a
+  branch-protection merge requirement. The repository owner merges it on GitHub
+  or explicitly authorizes
   agent merging in the conversation, and explicitly approves
   release publication; broad implementation or command authorization does not
   replace these approvals. Never bypass protection or push directly to `main`.
 - Target repository is public, owned by `ucrem`, and has the original upstream
   history; `origin` and `upstream` point to their documented repositories.
 - Implementation is complete for the milestone, with a successful Ubuntu 24.04
-  build, tests, CI results, and local read-only runtime verification.
+  build, tests, manually dispatched native CI results, and local read-only runtime
+  verification. The full native workflow does not run on every PR or push.
 - Historical fixtures, optional-feature behavior, compatibility, and known
   security/privacy limitations have been reviewed.
 - README/build/API/contributor docs and a dated `CHANGELOG.md` release entry
@@ -37,7 +39,7 @@ to do so in the conversation and branch protection is satisfied. GitHub approvin
 reviews are not required.
 
 After approval to publish, fetch the merged `main` commit and verify that the
-intended release changes and successful required checks are present. Authenticate
+intended release changes and successful release validation are present. Authenticate
 `gh` as the intended publishing account, verify repository visibility and
 ancestry, and never use force push or the upstream remote. Write the final release
 notes to a file, create an annotated tag at the approved commit, and push only

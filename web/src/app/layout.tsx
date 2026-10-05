@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SearchBox } from "@/components/search-box";
 import { Navigation } from "@/components/navigation";
 import { Themes } from "@/components/theme";
 import "./globals.css";
@@ -25,6 +26,7 @@ export default function RootLayout({
           </a>
           <Navigation />
           <main id="main-content" tabIndex={-1} className="main-content">
+            <SearchBox />
             {children}
           </main>
         </Themes>

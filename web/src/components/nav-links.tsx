@@ -18,7 +18,13 @@ export function NavLinks() {
           key={href}
           href={href}
           className="nav-link"
-          aria-current={current === href ? "page" : undefined}
+          aria-current={
+            current === href ||
+            (href === "/" &&
+              /^\/(blocks|transactions|search)(?:\/|$)/.test(current))
+              ? "page"
+              : undefined
+          }
           rel={href.startsWith("https:") ? "noreferrer" : undefined}
         >
           <Icon size={18} aria-hidden="true" />

@@ -19,6 +19,10 @@ only theme selection and mobile navigation. The initial product provides a
 responsive light/dark dashboard, native-reader chain status, exact heights and
 difficulty, recent blocks, bounded cursor pagination, an observed block-interval
 chart when enough real samples exist, API/raw links and a developer guide.
+The owner's 2026-10-05 usability request additionally includes readable block and
+transaction pages and a visible public height/hash search. These reuse the
+existing native detail endpoints; no native architecture or schema change is
+introduced. Dedicated UI links open HTML, with JSON/raw as additional views.
 
 A server-only API client uses a configured fixed upstream origin, deadlines,
 response size bounds, no redirect following and no persistent caching. A
@@ -55,6 +59,8 @@ claim follows from the offline fixtures.
 - Browser checks against an isolated fixture backend for theme persistence,
   mobile navigation, pagination/reorg/outage behavior, no horizontal overflow,
   keyboard access and accessibility violations in light/dark/mobile layouts.
+- Browser detail/search checks cover HTML navigation, native identifier lookup,
+  exact fees, hidden amounts, mempool state, bounded row pagination and failures.
 - Production frontend reads a real offline native genesis API; build metadata
   changes pass the existing native and legacy/HTTP test suites.
 - Document supported operation, privacy limits, migration and evidence before an

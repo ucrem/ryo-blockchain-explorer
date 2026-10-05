@@ -3,6 +3,10 @@ import type { BlockSummary } from "./contracts";
 export function integer(value: string | bigint | number): string {
   return BigInt(value).toLocaleString("en-US");
 }
+export function coins(value: string): string {
+  const atomic = BigInt(value);
+  return `${integer(atomic / 1000000000n)}.${(atomic % 1000000000n).toString().padStart(9, "0")} RYO`;
+}
 export function bytes(value: string): string {
   const n = BigInt(value);
   if (n < 1024n) return `${integer(n)} B`;

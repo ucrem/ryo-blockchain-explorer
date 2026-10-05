@@ -2,7 +2,8 @@
 
 The first website is a server-first Next.js application in `web/`. It is an
 independent modern implementation, with no imported legacy templates or browser
-crypto. Its initial scope is the overview dashboard and developer API guide.
+crypto. It provides an overview, block and transaction details, public identifier
+search and a developer API guide.
 
 ## What is available
 
@@ -14,14 +15,25 @@ crypto. Its initial scope is the overview dashboard and developer API guide.
   Miner-supplied timestamps are not network-wide performance or synchronization.
 - `/developers`: public route guide, exact units and privacy semantics, examples
   and a link to the backend's bundled OpenAPI JSON.
-- Same-origin `/api/v2/…` links for the existing public native endpoints. Block
-  heights link to JSON, and Raw links expose native JSON/hex. Dedicated block and
-  transaction HTML views belong to v0.5.
+- `/blocks/{height-or-hash}`: readable header details, previous/next block links,
+  coinbase and transaction links. The transaction table has 50 rows per page.
+- `/transactions/{hash}`: inclusion/confirmations, exact fees, input key images,
+  candidate ring metadata, public output keys and explicit hidden RingCT amounts.
+  Outputs have 50 rows per page; inputs have 10. Each input shows up to 32 ring
+  candidates and relative offsets, with a clear full-JSON link for larger lists.
+  Advanced metadata shows up to 32 additional keys and 4,096 extra-hex characters;
+  complete native DTO and raw views remain separately available.
+- A global GET search form resolves block heights and public block/transaction
+  hashes. Decimal heights are normalized exactly within uint64 bounds; hash case
+  is normalized. Hash lookups query both existing native detail routes, with
+  distinct absent-data and unavailable-reader states. No new native index is used.
+- Same-origin `/api/v2/…` links remain additional developer views, not the default
+  destination for block or transaction navigation.
 - Responsive desktop/mobile navigation, persistent light/dark/system theme,
   keyboard skip link, focus indicators, bounded horizontal table/code scrolling,
   accessible SVG description and truthful unavailable/reorg/genesis states.
 
-There is no mempool listing, search form, auto-refresh/SSE, analytics store,
+There is no mempool listing, address search, auto-refresh/SSE, analytics store,
 private-key verification, balance/history inference or transaction submission.
 The UI has no placeholder navigation advertising those capabilities.
 
@@ -125,7 +137,9 @@ fixture server on 3101. It uses synthetic, disclosed headers only in tests;
 production never imports the fixture server or falls back to its data. It checks
 exact values above JavaScript's safe integer range, pagination/reorg/outage/genesis
 behavior, light/dark theme persistence, keyboard access, mobile overflow,
-accessibility and browser requests staying on the website origin.
+accessibility and browser requests staying on the website origin. Detail/search
+scenarios also cover HTML navigation, exact fees, hidden amounts, mempool state,
+row pagination, lookup validation and partial reader failures.
 
 `tests/native-smoke.ts` additionally runs against an already started production
 frontend connected to a disposable genesis-only native API:
@@ -140,3 +154,28 @@ chain instance. It checks the known native genesis hash, actual version, raw
 serialized bytes, bundled OpenAPI and absence of browser errors/external origins.
 See [v0.4 validation evidence](V0_4_VALIDATION.md). The full native Action remains
 manual-only, and no new automatic frontend build Action is added.
+
+
+## Detail and search behavior
+
+Only public block heights or 64-character hexadecimal hashes are accepted. Search
+requires explicit form submission; there are no keystroke requests or browser
+chain reads. Duplicate query fields, target URLs, unsupported fields and invalid
+identifiers are rejected before native lookup. Search GET parameters are visible
+in browser history: never enter wallet secrets. Detail pagination accepts only
+bounded canonical page numbers. Block pages use a hash for table-page navigation
+so a different block at the same height does not silently replace that view.
+
+Typed detail responses are checked before display: identifiers match the requested
+resource, block transaction count/coinbase order is consistent, transaction counts
+match arrays, inclusion is consistent with the reader height, and hidden RingCT
+amounts remain null. Fees and public amounts use BigInt with nine decimal RYO
+places. Input candidates do not identify the real spend; output keys do not
+identify recipient addresses or balances. The unlock field is shown as native
+metadata, not interpreted as a spendability guarantee.
+
+Valid resources absent from the reader render route-specific not-found pages;
+Next.js can return HTTP 200 for errors after streaming has begun. Other HTML
+validation/unavailable messages also use the framework's rendered response. The
+public API preserves its native error status codes. There is no persistent search
+cache; known mempool transaction lookup is not a full live mempool feed.

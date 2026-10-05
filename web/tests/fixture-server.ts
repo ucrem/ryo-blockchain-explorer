@@ -9,6 +9,7 @@ const examples = JSON.parse(
   ),
 );
 let mode = "normal";
+let reads = 0;
 const anchor = 9007199254741023n;
 const makeHash = (height: bigint) => height.toString(16).padStart(64, "0");
 const makeBlock = (height: bigint, i: number) => ({
@@ -28,13 +29,77 @@ createServer((req, res) => {
   const url = new URL(req.url!, "http://127.0.0.1:3101");
   res.setHeader("Content-Type", "application/json");
   if (url.pathname === "/__control") {
-    mode = url.searchParams.get("mode") ?? "normal";
-    res.end("{}");
+    if (url.searchParams.has("mode")) {
+      mode = url.searchParams.get("mode")!;
+      reads = 0;
+    }
+    res.end(JSON.stringify({ reads }));
     return;
   }
+  reads++;
   if (mode === "outage") {
     res.statusCode = 503;
     res.end('{"error":{"code":"unavailable","message":"Unavailable"}}');
+    return;
+  }
+  const blockId = url.pathname.match(/^\/api\/v2\/blocks\/(.+)$/)?.[1];
+  const txHash = url.pathname.match(/^\/api\/v2\/transactions\/(.+)$/)?.[1];
+  if (blockId || txHash) {
+    if (
+      blockId === "0" ||
+      blockId === examples.BlockResponse.data.header.hash
+    ) {
+      res.end(JSON.stringify(examples.BlockResponse));
+      return;
+    }
+    if (txHash === examples.TransactionResponse.data.hash) {
+      const result = structuredClone(examples.TransactionResponse);
+      if (mode === "ringct" || mode === "mempool") {
+        const t = result.data;
+        t.coinbase = false;
+        t.coinbase_height = null;
+        t.ringct_type = 1;
+        t.fee_atomic = "9007199254740993";
+        t.input_count = 1;
+        t.inputs = [
+          {
+            key_image: "a".repeat(64),
+            key_offsets_relative: ["9007199254740993"],
+            ring_candidates: [
+              {
+                public_key: "b".repeat(64),
+                block_height: "0",
+                timestamp_unix: "0",
+              },
+            ],
+          },
+        ];
+        t.outputs = Array.from({ length: 51 }, (_, index) => ({
+          ...t.outputs[0],
+          index,
+          amount_atomic: null,
+        }));
+        t.output_count = t.outputs.length;
+        if (mode === "mempool")
+          t.inclusion = {
+            state: "mempool",
+            block_height: null,
+            timestamp_unix: null,
+            confirmations: "0",
+          };
+      }
+      res.end(JSON.stringify(result));
+      return;
+    }
+    res.statusCode = mode === "partial-outage" && txHash ? 503 : 404;
+    res.end(
+      JSON.stringify({
+        error: {
+          code: res.statusCode === 404 ? "not_found" : "unavailable",
+          message: "Fixture lookup response",
+        },
+      }),
+    );
     return;
   }
   if (mode === "genesis") {

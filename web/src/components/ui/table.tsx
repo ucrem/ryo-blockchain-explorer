@@ -3,11 +3,18 @@
 import * as React from "react";
 import { cn } from "cn";
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+function Table({
+  className,
+  scrollLabel = "Blockchain data table",
+  ...props
+}: React.ComponentProps<"table"> & { scrollLabel?: string }) {
   return (
     <div
       data-slot="table-container"
       className="relative w-full overflow-x-auto"
+      tabIndex={0}
+      role="region"
+      aria-label={scrollLabel}
     >
       <table
         data-slot="table"

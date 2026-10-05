@@ -36,3 +36,18 @@ Recorded: 2026-10-04. See [the migration plan](MODERNIZATION_PLAN.md).
 Substantial architecture or behavior changes require a proposal covering current behavior,
 affected components, compatibility, migration risk, and tests, followed by approval.
 Mechanical build fixes, discovery documentation, and non-invasive tests can proceed.
+
+
+## ADR-027: usable native detail navigation and public identifier search in v0.4
+
+The owner requested that clicking a block open a readable page and that visitors
+can search for a transaction or block in the initial web release. Include basic
+HTML detail pages and a global public height/hash search in v0.4, reusing the
+existing native API v2. JSON and raw views remain additional developer links.
+
+Keep native interpretation authoritative. Validate DTOs and requested identifiers
+on the server, preserve exact integer/RYO quantities and null hidden amounts, and
+paginate HTML rows without adding an index or browser chain fetch. A missing hash
+and an unavailable lookup have different UI states. Candidate ring metadata never
+identifies a spend, and output public keys never imply recipient balances. Wider
+historical presentation and advanced tools remain future milestones.

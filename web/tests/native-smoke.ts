@@ -16,7 +16,7 @@ async function main() {
     await page.goto(base);
     await page.getByText("Genesis · time not recorded").waitFor();
     await page.getByText("Beginning of the chain").waitFor();
-    await page.getByRole("link", { name: "Block 0 JSON" }).waitFor();
+    await page.getByRole("link", { name: "Block 0", exact: true }).waitFor();
     const result = await page.request.get(`${base}/api/v2/network`);
     assert.equal(result.status(), 200);
     const network = await result.json();
@@ -56,8 +56,39 @@ async function main() {
       path: "../build/v04-native-dashboard-dark.png",
       fullPage: true,
     });
+    await page.getByRole("link", { name: "Block 0", exact: true }).click();
+    await page.getByRole("heading", { name: "Block 0", exact: true }).waitFor();
+    assert.ok(new URL(page.url()).pathname.startsWith("/blocks/"));
+    await page.screenshot({
+      path: "../build/v04-native-block.png",
+      fullPage: true,
+    });
+    const coinbase =
+      "ef9edde12f78ce1776ce1886b3e448d8f3575bc25111231370989baeae4a2d88";
+    await page.locator(`a[href='/transactions/${coinbase}']`).first().click();
+    await page
+      .getByRole("heading", { name: "Transaction details", exact: true })
+      .waitFor();
+    await page.getByText("8,800,000.000000000 RYO", { exact: true }).waitFor();
+    await page.screenshot({
+      path: "../build/v04-native-transaction.png",
+      fullPage: true,
+    });
+    for (const [identifier, destination] of [
+      ["0", "/blocks/0"],
+      [network.data.tip.hash.toUpperCase(), `/blocks/${network.data.tip.hash}`],
+      [coinbase, `/transactions/${coinbase}`],
+    ]) {
+      await page
+        .getByLabel("Search the Ryo blockchain", { exact: true })
+        .fill(identifier);
+      await page.getByRole("button", { name: "Search", exact: true }).click();
+      await page.waitForURL((url) => url.pathname === destination);
+    }
+    assert.deepEqual([...origins], [new URL(base).origin]);
+    assert.deepEqual(errors, []);
     console.log(
-      "Production frontend / native offline LMDB / raw and OpenAPI smoke passed.",
+      "Production frontend / native offline LMDB / block and transaction HTML / search / raw and OpenAPI smoke passed.",
     );
   } finally {
     await browser.close();

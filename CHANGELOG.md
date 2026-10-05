@@ -17,6 +17,8 @@ retroactively.
   fonts, light/dark themes, mobile navigation and a developer API guide.
 - Native-reader chain status, exact quantities, recent block pages, reorg recovery
   and a truthful observed-header interval chart.
+- Readable block/transaction detail pages and global public height/hash search,
+  with exact fees, paginated rows and privacy-safe RingCT/input/output views.
 - Bounded same-origin read-only API access preserving raw native numeric tokens,
   plus unit/browser/accessibility and real native end-to-end smoke checks.
 
@@ -36,8 +38,8 @@ retroactively.
 
 ### Known Issues
 
-- Dedicated block/transaction HTML views, search, pool listing, realtime,
-  analytics and verification remain later milestones. Full-chain/deployment
+- Address search, pool listing, realtime, advanced analytics and verification
+  remain later milestones. Full-chain/deployment
   capacity is not established. The developer-only ESLint glob dependency has
   the unpatched braces advisory documented in `docs/V0_4_VALIDATION.md`.
 

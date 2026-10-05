@@ -3,13 +3,18 @@ import { after, before, test } from "node:test";
 import { createServer, type Server } from "node:http";
 import { readFileSync } from "node:fs";
 import {
+  blockResponse,
+  transactionResponse,
+  publicIdentifier,
   blocksResponse,
   networkResponse,
   publicPath,
   uint64,
 } from "../src/lib/contracts";
-import { bytes, integer, intervals, timestamp } from "../src/lib/format";
+import { bytes, coins, integer, intervals, timestamp } from "../src/lib/format";
 import { ApiError, upstreamOrigin, upstreamRead } from "../src/lib/upstream";
+
+import { viewPages, slicePage } from "../src/lib/view-pages";
 
 const examples = JSON.parse(
   readFileSync(
@@ -199,4 +204,86 @@ test("capacity and response deadline are bounded, including response body wait",
   );
   mode = "ok";
   assert.equal((await upstreamRead("network")).status, 200);
+});
+
+test("detail DTOs reject mismatched counts, invalid inclusion and disclosed RingCT amounts", () => {
+  assert.equal(
+    blockResponse.parse(examples.BlockResponse).data.header.height,
+    "0",
+  );
+  assert.equal(
+    transactionResponse.parse(examples.TransactionResponse).data.fee_atomic,
+    "0",
+  );
+  const empty = structuredClone(examples.BlockResponse);
+  empty.data.transactions = [];
+  assert.equal(blockResponse.safeParse(empty).success, false);
+  const bad = structuredClone(examples.TransactionResponse);
+  bad.data.inclusion.confirmations = "2";
+  assert.equal(transactionResponse.safeParse(bad).success, false);
+  bad.data.inclusion.block_height = "1e3";
+  assert.equal(transactionResponse.safeParse(bad).success, false);
+  const ring = structuredClone(examples.TransactionResponse);
+  ring.data.coinbase = false;
+  ring.data.coinbase_height = null;
+  ring.data.ringct_type = 1;
+  ring.data.inclusion = {
+    state: "mempool",
+    block_height: null,
+    timestamp_unix: null,
+    confirmations: "0",
+  };
+  assert.equal(transactionResponse.safeParse(ring).success, false);
+  ring.data.outputs[0].amount_atomic = null;
+  assert.equal(
+    transactionResponse.parse(ring).data.outputs[0].amount_atomic,
+    null,
+  );
+  assert.equal(coins("9007199254740993"), "9,007,199.254740993 RYO");
+  assert.equal(coins("18446744073709551615"), "18,446,744,073.709551615 RYO");
+});
+test("public search normalizes identifiers and rejects unbounded or non-public query shapes", () => {
+  assert.deepEqual(publicIdentifier(" 00012 "), {
+    kind: "height",
+    value: "12",
+  });
+  assert.deepEqual(publicIdentifier("A".repeat(64)), {
+    kind: "hash",
+    value: "a".repeat(64),
+  });
+  assert.equal(
+    publicIdentifier("18446744073709551615")?.value,
+    "18446744073709551615",
+  );
+  for (const value of [
+    "",
+    "-1",
+    "1e3",
+    "18446744073709551616",
+    "a".repeat(63),
+    "https://example.com",
+    "../0",
+    ["0", "1"],
+    "a".repeat(1000),
+  ])
+    assert.equal(publicIdentifier(value), null);
+});
+test("detail row pagination bounds HTML output and rejects duplicate or unsupported parameters", () => {
+  assert.deepEqual(viewPages({}, ["page"]), { page: 1 });
+  for (const query of [
+    { page: "0" },
+    { page: "01" },
+    { page: ["1", "2"] },
+    { page: "1000000" },
+    { viewkey: "private" },
+  ])
+    assert.equal(viewPages(query, ["page"]), null);
+  const page = slicePage(
+    Array.from({ length: 51 }, (_, n) => n),
+    2,
+    50,
+  )!;
+  assert.deepEqual(page.items, [50]);
+  assert.equal(page.pages, 2);
+  assert.equal(slicePage([1], 2, 50), null);
 });

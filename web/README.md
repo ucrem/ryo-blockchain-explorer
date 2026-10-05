@@ -1,6 +1,6 @@
 # Ryo Explorer web application
 
-The v0.4 server-first dashboard uses Next.js, TypeScript, Tailwind and shadcn/ui.
+The v0.4 dashboard, block/transaction views and public identifier search use Next.js, TypeScript, Tailwind and shadcn/ui.
 It reads the existing native API v2; it has no legacy templates, browser crypto,
 synthetic production data or external runtime asset CDN.
 

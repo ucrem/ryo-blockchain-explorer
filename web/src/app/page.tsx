@@ -239,19 +239,23 @@ export default async function Dashboard({
                   <TableRow key={b.hash}>
                     <TableCell>
                       <a
-                        href={`/api/v2/blocks/${b.height}`}
+                        href={`/blocks/${b.hash}`}
                         className="height-link"
-                        aria-label={`Block ${b.height} JSON`}
+                        aria-label={`Block ${b.height}`}
                       >
                         {integer(b.height)}
                       </a>
                     </TableCell>
                     <TableCell>
-                      <span className="hash-text" title={b.hash}>
+                      <a
+                        href={`/blocks/${b.hash}`}
+                        className="hash-text"
+                        title={b.hash}
+                      >
                         {b.hash.slice(0, 12)}
                         <span aria-hidden="true">…</span>
                         {b.hash.slice(-6)}
-                      </span>
+                      </a>
                     </TableCell>
                     <TableCell className="timestamp-cell">
                       {b.timestamp_unix === "0"

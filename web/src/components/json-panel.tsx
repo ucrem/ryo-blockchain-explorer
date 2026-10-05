@@ -35,8 +35,9 @@ export function JsonPanel({
         </div>
       </div>
       <p className="json-format-note">
-        Formatted adds spacing and indentation for readability. Original shows
-        the response as received; both preserve the same values.
+        {pretty
+          ? "Formatted adds spacing and indentation for readability, without changing any values."
+          : "Original shows the response exactly as received from the native reader, including its original spacing."}
       </p>
       <pre
         className="json-code"

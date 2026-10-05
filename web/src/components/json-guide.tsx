@@ -21,30 +21,6 @@ function RawDescription() {
     </>
   );
 }
-export function JsonViewGuide({ kind }: { kind: RecordKind }) {
-  return (
-    <aside className="json-guide" aria-label="Choosing a JSON view">
-      <div className="json-guide-columns">
-        <div>
-          <h2>{kind} JSON</h2>
-          <p>
-            <StructuredDescription kind={kind} />
-          </p>
-        </div>
-        <div>
-          <h2>Raw JSON</h2>
-          <p>
-            <RawDescription />
-          </p>
-        </div>
-      </div>
-      <p className="json-guide-note">
-        Both describe the same {kind.toLowerCase()} using data from the native
-        Ryo reader.
-      </p>
-    </aside>
-  );
-}
 export function JsonViewDescription({
   kind,
   raw,

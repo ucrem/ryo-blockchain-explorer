@@ -185,10 +185,12 @@ cache; known mempool transaction lookup is not a full live mempool feed.
 
 ## Embedded JSON viewer
 
-Block and transaction pages explain the structured and native/raw representations
-next to the view controls. Each JSON view explains its fields and purpose, including
+Explanations appear only after opening the chosen JSON/raw view; block and
+transaction detail pages have no introductory comparison panel. Each selected
+JSON view explains its fields and purpose, including
 `native_json`, serialized `blob_hex`, exact integer strings, hidden RingCT amounts
-and the difference between formatting and changing values.
+and the difference between formatting and changing values. The formatting note
+follows the selected Formatted or Original mode.
 
 The server reads only the same public API allowlist through the existing bounded
 client. Unsupported paths and duplicate/secret query fields are rejected before

@@ -76,10 +76,11 @@ resources and partial reader outages. JSON checks cover retained layout, exact
 formatted/original tokens, escaped markup without execution, verbatim downloads,
 light/dark/mobile accessibility and rejected private queries without native reads.
 Detail tables and JSON panels scroll with keyboard focus.
-After adding contextual JSON explanations, the existing JSON browser scenario
-passed again in 5.0 seconds, including light/dark/mobile accessibility. Production
-build and ESLint also passed. The native genesis block and raw-view explanations
-were inspected in the browser, with no page-level mobile horizontal overflow.
+The existing JSON browser scenario passed again in 4.4 seconds, including
+light/dark/mobile accessibility. Production build and ESLint also passed. Native
+genesis pages were inspected to confirm explanations are absent from primary
+block/transaction pages and appear only for the selected JSON/raw view. The format
+note follows the selected Formatted or Original mode.
 Axe reported no violations in the tested
 states; that is not a substitute for broad manual assistive-technology testing.
 

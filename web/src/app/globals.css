@@ -1106,7 +1106,6 @@ h4 {
   }
 }
 
-.json-guide,
 .json-view-description {
   background: var(--muted);
   border: 1px solid var(--border);
@@ -1114,24 +1113,11 @@ h4 {
   padding: 18px 22px;
   margin-bottom: 22px;
 }
-.json-guide-columns {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 28px;
-}
-.json-guide h2 {
-  margin: 0 0 6px;
-  font-size: 14px;
-}
-.json-guide p,
 .json-view-description p,
 .json-format-note {
   color: var(--muted-foreground);
   font-size: 12px;
   line-height: 1.75;
-}
-.json-guide-note {
-  margin-top: 12px;
 }
 .json-view-description p + p {
   margin-top: 8px;
@@ -1141,11 +1127,6 @@ h4 {
   border-bottom: 1px solid var(--border);
 }
 @media (max-width: 600px) {
-  .json-guide-columns {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-  .json-guide,
   .json-view-description {
     padding: 16px;
   }

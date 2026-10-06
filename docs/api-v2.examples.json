@@ -21,9 +21,18 @@
         "atomic_decimals": 9,
         "atomic_units_per_coin": "1000000000"
       },
-      "explorer_version": "0.3.0",
+      "explorer_version": "0.4.0",
       "native_core_version": "fixture-example",
-      "api_version": "2"
+      "api_version": "2",
+      "overview": {
+        "issued_atomic": "8800000000000000",
+        "tip_coinbase_atomic": "8800000000000000",
+        "median_block_size_bytes": "82",
+        "median_sample_blocks": 1,
+        "confirmed_transactions": "0",
+        "pool_transactions": "0",
+        "pool_size_bytes": "0"
+      }
     },
     "meta": {
       "network": "mainnet",
@@ -78,7 +87,12 @@
           "size_bytes": "82",
           "fee_atomic": "0",
           "input_count": 0,
-          "output_count": 1
+          "output_count": 1,
+          "inspection": {
+            "ring_size_min": null,
+            "ring_size_max": null,
+            "payment_id_types": []
+          }
         }
       ]
     },
@@ -117,7 +131,12 @@
           "public_key": "8be379aa57a70fa19c0ee5765fdc3d2aae0b1034158f4963e157d9042c24fbec",
           "amount_atomic": "8800000000000000"
         }
-      ]
+      ],
+      "inspection": {
+        "ring_size_min": null,
+        "ring_size_max": null,
+        "payment_id_types": []
+      }
     },
     "meta": {
       "network": "mainnet",
@@ -206,6 +225,80 @@
     "error": {
       "code": "chain_changed",
       "message": "Chain changed; restart pagination."
+    }
+  },
+  "BlockIntervalsResponse": {
+    "meta": {
+      "network": "mainnet",
+      "chain_height": "1"
+    },
+    "data": {
+      "anchor_height": "0",
+      "anchor_hash": "6eb04b6b8c68049a76206fe2805ede5f7465c03b7112850d3262a067b9914dac",
+      "anchor_timestamp_unix": "0",
+      "window_seconds": 3600,
+      "start_timestamp_unix": "0",
+      "scanned_from_height": "0",
+      "scanned_count": 0,
+      "oldest_timestamp_unix": "0",
+      "history_limited": false,
+      "points": []
+    }
+  },
+  "MempoolResponse": {
+    "data": {
+      "items": [],
+      "transaction_count": "0",
+      "size_bytes": "0",
+      "fee_atomic": "0",
+      "snapshot": "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+      "next_cursor": null
+    },
+    "meta": {
+      "network": "mainnet",
+      "chain_height": "1"
+    }
+  },
+  "KeyImageResponse": {
+    "data": {
+      "key_image": "0000000000000000000000000000000000000000000000000000000000000000",
+      "spent": false,
+      "scope": "confirmed_chain"
+    },
+    "meta": {
+      "network": "mainnet",
+      "chain_height": "1"
+    }
+  },
+  "OutputCheckResponse": {
+    "data": {
+      "transaction_hash": "ef9edde12f78ce1776ce1886b3e448d8f3575bc25111231370989baeae4a2d88",
+      "public_key": "8be379aa57a70fa19c0ee5765fdc3d2aae0b1034158f4963e157d9042c24fbec",
+      "curve_valid": true,
+      "output_indices": [
+        0
+      ],
+      "state": "confirmed"
+    },
+    "meta": {
+      "network": "mainnet",
+      "chain_height": "1"
+    }
+  },
+  "AddressResponse": {
+    "data": {
+      "address": "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+      "valid": false,
+      "network": null,
+      "matches_reader": false,
+      "kind": null,
+      "spend_public_key": null,
+      "view_public_key": null,
+      "payment_id8": null
+    },
+    "meta": {
+      "network": "mainnet",
+      "chain_height": "1"
     }
   }
 }

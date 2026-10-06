@@ -5,11 +5,13 @@ inclusion height/timestamp `null`, and ring candidates alternatives without a
 real-spend marker. Network responses describe this native reader's chain.
 Payment IDs/public extra remain public native bytes; encrypted short IDs are
 not described as decrypted recipient information. Read-only GETs accept only
-bounded public block-list parameters; no private-key input or propagation data
-is exposed. Existing [legacy privacy differences](HTTP_SERVER.md) remain explicit.
+bounded public query parameters; no private-key input is exposed. The owner
+authorized a narrowly scoped local receive timestamp in the v0.4 pool list,
+separate from chain inclusion; relay times and peer/source records stay excluded.
+Existing [legacy privacy differences](HTTP_SERVER.md) remain explicit.
 
-The active project has native services and an opt-in read-only HTTP subset,
-without a browser flow. Its block/transaction/raw/version routes accept no
+The native foundation has services and an opt-in read-only HTTP subset; the
+v0.4 website consumes its public DTOs. Its block/transaction/raw/version routes accept no
 private keys, wallet uploads, or transaction submission, and omit local pool
 receive/relay times. See [HTTP_SERVER.md](HTTP_SERVER.md) for the explicit legacy
 privacy differences. Legacy endpoint/browser risks below describe the inspected
@@ -76,8 +78,14 @@ document the exact inputs and verification meaning in each future flow.
 
 Legacy `MempoolStatus` sorts by receive time and the API exposes it as timestamp.
 It is this node's observation, not a chain inclusion timestamp. Some transaction
-lookup fallback responses expose it too. Future v2 models must omit precise
-first-seen/receive/relay times, source peer/IP data, and propagation information.
+lookup fallback responses expose it too. The original v2 policy excluded these
+local times. On 2026-10-06 the owner explicitly requested the receive timestamp
+with a tooltip explaining its node-local meaning. The pool list now exposes
+optional `local_received_timestamp_unix` from native metadata, with null when
+missing. It is this node's record, not transaction creation, confirmation or
+network-wide first sighting; historical synchronization can create such a record.
+Relay times and peer/source/propagation records remain excluded. Ordinary TX
+inclusion timestamps retain their existing confirmed/mempool semantics.
 Safe public summaries include transaction hash, size, fee, input/output counts,
 and aggregate count/size/fees. Aggregation must avoid reconstructing propagation
 history. Realtime events should not add local observation timestamps as public
@@ -87,6 +95,23 @@ Network hashrate is an estimate based on chain difficulty/target. Connection and
 peer-list counts, uptime, synchronization, and daemon health describe the explorer
 node. They do not measure total network peers. Separate these categories in v2,
 including snapshot freshness and partial failures.
+
+## Shipped public inspection tools
+
+v0.4 adds native public checks for confirmed-chain key-image membership, output
+membership within an identified transaction and public-address decoding.
+They take no private keys or wallet exports. A negative key-image result is
+limited to this reader's confirmed chain and does not prove wallet spendability,
+identify a real ring member or check pending conflicts. Output-key membership
+is not recipient/ownership proof. Address decoding yields format/network and
+public keys, without balance or history inference. These are distinct from the
+legacy export-decryption/signature and secret-based output-verification flows.
+
+The full public pool list is bounded, excludes `do_not_relay` and orders by hash,
+with a native membership digest for pagination. The owner-authorized local
+receive timestamp is labeled and explained; relay timestamps remain excluded.
+Ring summary ranges count candidates; ID markers distinguish
+native legacy/encrypted/uniform presence without decrypting encrypted IDs.
 
 ## Target local verification
 
@@ -105,6 +130,34 @@ where it improves correctness or portability. WASM itself does not establish
 privacy and is not required for the baseline.
 
 ## Operations and compatibility
+
+The v0.4 website reads native public API v2 on the Next.js server. Its bounded
+same-origin adapter forwards no browser cookies, authorization, arbitrary target
+origins, secret-bearing query parameters or write operations. Theme preference
+is stored locally; fonts, icons and scripts are bundled. No browser crypto,
+private-key input, tracker or synthetic production data is added. The dashboard
+describes the reader's chain and miner-supplied intervals, without asserting
+network-wide synchronization or identifying real spends. See [WEB.md](WEB.md)
+for exact bounds and operator-controlled deployment/logging limitations.
+
+The optional server-only daemon status reads a fixed `/get_info` path and renders
+only selected public counts, network/height/difficulty and connection state.
+It exposes no browser RPC route, internal URL, peer list/IP, uptime or unselected
+RPC fields. Peer counts and sync targets describe this configured node. A saved
+public observation can survive a failed read for at most 60 seconds, marked
+delayed with its original timestamp. Native pool aggregates exclude entries
+marked `do_not_relay`; only the explicitly authorized local receive time is
+added to pool rows. Relay timestamps and propagation records stay excluded.
+Issued supply does not imply spendability or address balance inference.
+
+The owner's explicit request to expose node errors authorizes a narrow operational
+status projection: recent recognized sync-failure category/time and a native blob
+identifier. `/api/node-status` returns selected status only, with a fixed daemon
+origin and an operator-configured bounded local log read. Peer addresses, raw
+log lines, local paths, arbitrary exception messages and daemon write commands
+remain excluded. The in-process progress observation is not a propagation archive;
+tracked screenshots mask precise error times and identifiers. See [WEB.md](WEB.md).
+
 
 No trackers, analytics SDKs, fingerprinting, runtime CDNs, external fonts, or
 unnecessary cookies. Bundle assets. Source inspection found local scripts/assets;

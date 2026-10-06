@@ -75,6 +75,11 @@ An oversized native pool container is first read successfully, then rejected by
 the API raw-size bound; this distinguishes resource rejection from a parse/DB
 failure. Native raw block bytes are decoded and hashed again for a roundtrip check.
 
+v0.4 interval-window checks add genesis omission, native signed differences,
+an unchanged older anchor after append, a removed anchor after pop, bounded scans,
+period allowlisting and actual-response schema validation. Timestamp-backtracking
+storage cases are synthetic and do not establish PoW/consensus acceptance.
+
 With `RYO_BUILD_HTTP=ON`, `ryo_http_contracts` starts the real HTTP executable
 alongside the offline daemon. It compares all four block/transaction/raw genesis
 contracts with captured JSON, normalizing only changing chain height/confirmations.
@@ -140,6 +145,14 @@ above provide separate coverage for [API v2](API_V2.md).
 
 ## Coverage required as functionality is brought over
 
+v0.4 adds local frontend lint/type/build checks, bounded API-client and exact
+integer tests, production Chromium accessibility/mobile/reorg/error checks, and
+a production frontend smoke against a disposable native genesis API. Its browser
+fixtures use synthetic headers only inside tests, never as production fallback
+data. See [web checks](WEB.md#validation) and
+[the recorded validation](V0_4_VALIDATION.md). The full native Action remains
+manual-only; no automatic frontend build Action is introduced.
+
 - Historical ordinary versions, current RingCT, payment IDs, subaddresses,
   additional keys, different ring sizes, unusual objects, and public raw blobs.
 - Pool add/remove/confirm/reorg/failure transitions and stale snapshots.
@@ -155,3 +168,23 @@ The Phase 0 legacy website smoke was run separately as discovery evidence. Its
 HTTP checks are not this foundation's test suite, and its website is not shipped.
 No full-chain performance or production security claim follows from a tiny
 mainnet genesis fixture. Submission tests require an isolated test network.
+
+## Native point identity and recurring sync-boundary proofs
+
+The service fixture checks native canonical identity, equivalent carried and
+modular field coordinates, projective rescaling, and rejection of nonidentity,
+order-two torsion and invalid zero projective coordinates. The old SDK fails the
+equivalent-coordinate regression; the corrected SDK passes. It also verifies
+public transaction bytes from both observed sync boundaries, with altered-proof
+rejection. Fresh replay is separate from the daemon's bad-semantics cache and
+is not proof of full-chain consensus or the exact original failure context.
+See [the correction proposal](POINT_IDENTITY_FIX_PROPOSAL.md) and
+[fixture provenance](../tests/fixtures/README.md).
+
+For a local SDK regression check after rebuilding both patches, enable the
+pinned core's `BUILD_TESTS`, build `cncrypto-tests` and `unit_tests`, then run
+`ctest -R '^cncrypto$' --output-on-failure` in its release build directory and
+`tests/unit_tests/unit_tests --gtest_filter='bulletproofs.*:bulletproof.*:bp_blobs.*:multiexp.*:ringct.*:Crypto.*'`.
+This selects the native proof/point paths rather than unrelated upstream tests;
+it supplements the explorer's five CTests. The normal SDK build helper restores
+`BUILD_TESTS=OFF` without removing either reviewed source patch.

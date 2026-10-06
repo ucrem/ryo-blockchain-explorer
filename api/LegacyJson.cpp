@@ -22,7 +22,7 @@ ApiResponse LegacyJson::get(const std::string& target) {
         if (target == "/health") {
             const auto block = blocks_.get("0");
             return {200, json{{"status", "ok"}, {"height", block.chain_height},
-                {"network", network_}, {"version", "0.3.0"}}};
+                {"network", network_}, {"version", "0.4.0"}}};
         }
         if (!enabled_) return {404, json{{"status", "fail"}, {"data", {{"title", "Route not enabled."}}}}};
         if (target == "/api/version") {

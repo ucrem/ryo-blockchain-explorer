@@ -8,7 +8,7 @@ int main(int argc, char** argv) {
     namespace options = boost::program_options;
     try {
         std::string path, address; unsigned port;
-        options::options_description description("Ryo Explorer v0.3.0 read-only server");
+        options::options_description description("Ryo Explorer v0.4.0 read-only server");
         description.add_options()
             ("help,h", "Show supported options")
             ("bc-path", options::value<std::string>(&path)->required(), "Existing Ryo LMDB directory")

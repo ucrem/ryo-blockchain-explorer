@@ -6,6 +6,84 @@ retroactively.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-05
+
+### Added
+
+- Official Ryo wordmark and favicon, website day/night palette, bundled
+  Inter/Montserrat typography and branding provenance.
+
+- v0.4 server-first Next.js/TypeScript/Tailwind/shadcn/ui dashboard with bundled
+  fonts, light/dark themes, mobile navigation and a developer API guide.
+- Native-reader chain status, exact quantities, recent block pages, reorg recovery
+  and a truthful observed-header interval chart.
+- Reference-driven overview with issued supply including native dev-fund payouts,
+  latest coinbase payout, estimated hashrate, last-100 median block size,
+  confirmed ordinary count and bounded relayable local pool metrics.
+- Optional server-only node status with synchronization progress, peer count,
+  next-block difficulty/hashrate and explicitly marked delayed observations.
+- Independently updating node health with visible sync failures, bounded safe
+  error details and a separate observed-stall warning; no raw log/peer disclosure.
+- Native TX size/input/output preview fields and exact fee per KiB; pool count/size
+  changes trigger the existing ten-second dashboard refresh.
+- Labeled block-number/seconds axes and 1h/24h/7d/30d interval windows, backed by
+  a bounded native timestamp API, with exact signed differences and accessible
+  point inspection independent of table pagination.
+- Full-width desktop block and confirmed-transaction tables, stacking on mobile,
+  with exact fees, labeled coinbase and a bounded native transaction preview.
+- Ten-second live tip observation on latest-block pages, with pause, hidden-tab
+  suspension, retained browser state and retry after reader outages.
+- Readable block/transaction detail pages and global public height/hash search,
+  with exact fees, paginated rows and privacy-safe RingCT/input/output views.
+- Paginated relayable mempool with membership-bound cursors, exact native
+  summaries and ten-second pool updates with pause/mutation recovery.
+- Owner-requested mempool receive time/age with an explicit node-local tooltip;
+  unknown timestamps remain unavailable and relay/source records stay excluded.
+- Ring size ranges and legacy/encrypted/uniform payment-ID presence in summaries.
+- Public native key-image/output-membership/address tools, linked from details,
+  with contextual results and embedded JSON.
+- Contextual explanations of structured/native JSON, hexadecimal serialization,
+  exact integer strings, hidden amounts and formatting.
+- Embedded formatted JSON/raw views retaining the explorer layout, with exact
+  original tokens, format toggles, bounded previews and verbatim downloads.
+- Bounded same-origin read-only API access preserving raw native numeric tokens,
+  plus unit/browser/accessibility and real native end-to-end smoke checks.
+
+### Fixed
+
+- Corrected the pinned native core's raw-limb point-identity comparison with
+  existing field helpers and a nonzero projective denominator. Added old/new
+  coordinate regressions and both public sync-boundary transactions with
+  positive/altered-proof checks; native proof equations remain intact.
+- Rebuilt and resumed the development daemon from its existing database after
+  recurring semantic failures; direct attribution of the intermittent failures
+  to the reproducible predicate defect remains unverified.
+
+### Changed
+
+- Product metadata advances to 0.4.0; supported native/legacy route shapes and
+  native Ryo interpretation remain compatible. Optional network overview fields
+  are additive; clients with closed old schemas must update the contract.
+- All changes reach main through PRs. Owner merging or explicit conversational
+  merge authorization is required; GitHub reviews/CI checks are not mandatory.
+- Full native CI runs manually only, with no automatic PR/push build.
+
+### Upgrade Notes
+
+- Rebuild the pinned core with both reviewed patches through
+  `scripts/build-ryo-core.sh`, then rebuild/restart daemon and explorer using the
+  existing database. Unrelated SDK changes are refused; see `docs/BUILD.md`.
+- The frontend adds Node.js 24 LTS and a separate process. Run `npm ci`,
+  `npm run build` and `npm run start` in `web/`; enable native API v2 and configure
+  the server-only `RYO_API_URL`. See `docs/WEB.md`.
+
+### Known Issues
+
+- Address balance/history search, wallet-export/private-key verification, SSE
+  and advanced analytics remain later milestones. Full-chain/deployment
+  capacity is not established. The developer-only ESLint glob dependency has
+  the unpatched braces advisory documented in `docs/V0_4_VALIDATION.md`.
+
 ## [0.3.0] - 2026-10-04
 
 ### Added

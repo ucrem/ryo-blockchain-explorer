@@ -5,6 +5,8 @@
 #include <fstream>
 #include <thread>
 #include <atomic>
+#include <cstring>
+#include "ringct/rctSigs.h"
 
 using namespace ryo_explorer;
 static void check(bool value, const char* message) {
@@ -23,9 +25,65 @@ static void expect_failure(std::function<void()> operation, QueryError expected)
     }
     throw std::runtime_error("Expected a query failure.");
 }
+static void check_native_point_identity() {
+    const unsigned char identity[32] = {1};
+    auto assert_identity = [&](const ge_p3& point, const char* message) {
+        unsigned char encoded[32]; ge_p3_tobytes(encoded, &point);
+        check(std::memcmp(encoded, identity, sizeof(encoded)) == 0, "Point fixture does not encode as identity.");
+        check(ge_p3_is_point_at_infinity(&point), message);
+    };
+    auto point = ge_p3_identity;
+    assert_identity(point, "Canonical native identity rejected.");
+    point.X[0] = 1 << 26; point.X[1] = -1;
+    assert_identity(point, "Equivalent carried-zero X rejected.");
+    point = ge_p3_identity; point.X[0] = -19; point.X[9] = 1 << 25;
+    assert_identity(point, "Field-modulus zero X rejected.");
+    point = ge_p3_identity; point.T[0] = 1 << 26; point.T[1] = -1;
+    assert_identity(point, "Equivalent carried-zero T rejected.");
+    point = ge_p3_identity; point.Y[0] = 1 + (1 << 26); point.Y[1] = -1;
+    assert_identity(point, "Equivalent carried Y/Z rejected.");
+    point = ge_p3_identity; point.Z[0] = -18; point.Z[9] = 1 << 25;
+    assert_identity(point, "Equivalent modular Y/Z rejected.");
+    point = ge_p3_identity; point.Y[0] = point.Z[0] = 2;
+    assert_identity(point, "Rescaled native identity rejected.");
+    point = ge_p3_identity; point.Y[0] = -1;
+    check(!ge_p3_is_point_at_infinity(&point), "Order-two torsion was accepted as identity.");
+    point = ge_p3_identity; point.X[0] = 1;
+    check(!ge_p3_is_point_at_infinity(&point), "Nonzero X was accepted as identity.");
+    point = ge_p3_identity; point.T[0] = 1;
+    check(!ge_p3_is_point_at_infinity(&point), "Nonzero T was accepted as identity.");
+    point = ge_p3{};
+    check(!ge_p3_is_point_at_infinity(&point), "Invalid zero projective coordinates were accepted.");
+    ge_scalarmult_base(&point, identity);
+    check(!ge_p3_is_point_at_infinity(&point), "Base point was accepted as identity.");
+}
+static void check_public_recovery_proof(const char* name, const char* expected_hash, const char* expected_blob_hash) {
+    const auto recovery_blob = fixture_blob(name);
+    cryptonote::transaction recovery_tx;
+    crypto::hash recovery_hash, recovery_prefix;
+    check(cryptonote::parse_and_validate_tx_from_blob(recovery_blob, recovery_tx, recovery_hash, recovery_prefix),
+          "Recovery fixture native parse failed.");
+    check(epee::string_tools::pod_to_hex(recovery_hash) == expected_hash &&
+          epee::string_tools::pod_to_hex(cryptonote::get_blob_hash(recovery_blob)) == expected_blob_hash &&
+          cryptonote::tx_to_blob(recovery_tx) == recovery_blob,
+          "Recovery transaction/blob identity or roundtrip failed.");
+    check(recovery_tx.rct_signatures.type == rct::RCTTypeBulletproof &&
+          recovery_tx.rct_signatures.p.bulletproofs.size() == 1 &&
+          rct::verRctSemanticsSimple(recovery_tx.rct_signatures), "Public recovery proof failed native semantics.");
+    auto altered_recovery = recovery_tx.rct_signatures;
+    altered_recovery.p.bulletproofs[0].t.bytes[0] ^= 1;
+    check(!rct::verRctSemanticsSimple(altered_recovery), "Altered recovery proof passed native semantics.");
+}
 int main(int argc, char** argv) {
     try {
         check(argc == 3, "Expected offline LMDB and RPC arguments.");
+        check_native_point_identity();
+        check_public_recovery_proof("ringct-sync-recovery-transaction.hex",
+            "c133f8d2a67df074f683115156fd3eddb4481bef1b68666171932bb46950fce0",
+            "d921a38e147c8d782c1000d1350cc400e045d828dba98fea04471b631651c45c");
+        check_public_recovery_proof("ringct-sync-recurrence-transaction.hex",
+            "64bab57b60c5efa5a3d8cba6f079e333269c376ed6ef809d94426c8aac78314f",
+            "0493d486575cb5732308956c82a4deb284b85db32a810ea9f3d889e4c949bde9");
         cryptonote::transaction ordinary;
         const auto ordinary_blob = fixture_blob("ringct-v3-transaction.hex");
         check(cryptonote::parse_and_validate_tx_from_blob(ordinary_blob, ordinary), "Native RingCT parse failed.");
@@ -71,7 +129,25 @@ int main(int argc, char** argv) {
               genesis_tx.metadata.output_amounts_visible, "Genesis metadata failed.");
         check(source_network.get().chain_height == 1 && source_network.get().tip.height == 0 &&
               source_network.get().tip_difficulty == 1, "Native network snapshot failed.");
-        record(source_api, "/api/v2/network", "NetworkResponse");
+        const auto genesis_network = record(source_api, "/api/v2/network", "NetworkResponse");
+        check(genesis_network["data"]["overview"]["issued_atomic"] == "8800000000000000" &&
+              genesis_network["data"]["overview"]["tip_coinbase_atomic"] == "8800000000000000" &&
+              genesis_network["data"]["overview"]["pool_transactions"] == "0", "Genesis overview metrics failed.");
+        uint64_t native_payout = 0;
+        cryptonote::get_dev_fund_amount<cryptonote::MAINNET>(cryptonote::config<cryptonote::MAINNET>::DEV_FUND_START, native_payout);
+        check(native_dev_fund_issued(cryptonote::MAINNET, cryptonote::config<cryptonote::MAINNET>::DEV_FUND_START - 1,
+                  [](uint64_t) { return true; }) == 0 &&
+              native_dev_fund_issued(cryptonote::MAINNET, cryptonote::config<cryptonote::MAINNET>::DEV_FUND_START,
+                  [](uint64_t) { return true; }) == native_payout &&
+              native_dev_fund_issued(cryptonote::MAINNET, cryptonote::config<cryptonote::MAINNET>::DEV_FUND_START,
+                  [](uint64_t) { return false; }) == 0, "Native dev-fund activation or aggregation failed.");
+        check(native_dev_fund_issued(cryptonote::MAINNET, cryptonote::config<cryptonote::MAINNET>::DEV_FUND_V2_START,
+                  [](uint64_t) { return true; }) == native_payout * 92,
+              "Native dev-fund v2 increase was omitted from issued supply.");
+        record(source_api, "/api/v2/block-intervals?window=30d", "BlockIntervalsResponse");
+        check(source_blocks.intervals(3600).points.empty(), "Genesis acquired an interval.");
+        expect_failure([&] { source_blocks.intervals(1); }, QueryError::invalid);
+        expect_failure([&] { source_blocks.intervals(3600, "", 50001); }, QueryError::invalid);
         record(source_api, "/api/v2/blocks?limit=1", "BlockPageResponse");
         record(source_api, "/api/v2/blocks/0", "BlockResponse");
         const auto v2_genesis = record(source_api, "/api/v2/transactions/" +
@@ -123,7 +199,70 @@ int main(int argc, char** argv) {
         ApiRouter api(legacy, v2);
         cryptonote::txpool_tx_meta_t meta{};
         meta.receive_time = 123456789; meta.last_relayed_time = 987654321;
+        meta.blob_size = ordinary_metadata.size; meta.fee = ordinary_metadata.fee; meta.relayed = true;
         writer.block_txn_start(false); writer.add_txpool_tx(ordinary, meta); writer.block_txn_stop();
+        const auto pool_overview = network.get();
+        check(pool_overview.pool_transactions == 1 && pool_overview.pool_size == ordinary_metadata.size && pool_overview.pool_complete,
+              "Relayed native pool overview failed.");
+        auto private_pool_tx = ordinary;
+        private_pool_tx.extra.push_back(0); private_pool_tx.invalidate_hashes();
+        auto private_meta = meta; private_meta.relayed = false; private_meta.do_not_relay = true;
+        writer.block_txn_start(false); writer.add_txpool_tx(private_pool_tx, private_meta); writer.block_txn_stop();
+        check(network.get().pool_transactions == 1 && network.get().pool_size == ordinary_metadata.size,
+              "Do-not-relay pool transactions leaked into public overview.");
+        writer.block_txn_start(false); writer.remove_txpool_tx(cryptonote::get_transaction_hash(private_pool_tx)); writer.block_txn_stop();
+
+        const auto pool_page = transactions.pool(1);
+        check(pool_page.count == 1 && pool_page.metadata.size() == 1 && pool_page.metadata[0].hash == ordinary_metadata.hash &&
+              pool_page.fees == ordinary_metadata.fee && pool_page.receive_times.at(0) == meta.receive_time && pool_page.next_cursor.empty(), "Native public pool page failed.");
+        record(api, "/api/v2/mempool?limit=1", "MempoolResponse");
+        const auto observed_pool = api.get("/api/v2/mempool?limit=1").body["data"]["items"][0];
+        check(observed_pool["local_received_timestamp_unix"] == "123456789" &&
+              observed_pool.find("last_relayed_time") == observed_pool.end(), "Local receive time provenance or relay-time exclusion failed.");
+        auto unknown_time_meta = meta; unknown_time_meta.receive_time = 0;
+        writer.block_txn_start(false); writer.update_txpool_tx(ordinary_metadata.hash, unknown_time_meta); writer.block_txn_stop();
+        check(api.get("/api/v2/mempool").body["data"]["items"][0]["local_received_timestamp_unix"].is_null(),
+              "Missing receive time was invented.");
+        writer.block_txn_start(false); writer.update_txpool_tx(ordinary_metadata.hash, meta); writer.block_txn_stop();
+        auto second_meta = meta; second_meta.do_not_relay = false;
+        second_meta.blob_size = cryptonote::get_object_blobsize(private_pool_tx);
+        writer.block_txn_start(false); writer.add_txpool_tx(private_pool_tx, second_meta); writer.block_txn_stop();
+        const auto first_pool_page = transactions.pool(1);
+        check(first_pool_page.count == 2 && !first_pool_page.next_cursor.empty(), "Pool pagination failed.");
+        const auto final_pool_page = transactions.pool(1, first_pool_page.next_cursor);
+        check(final_pool_page.metadata.size() == 1 && final_pool_page.next_cursor.empty() &&
+              final_pool_page.metadata[0].hash != first_pool_page.metadata[0].hash, "Pool traversal duplicated or omitted a transaction.");
+        writer.block_txn_start(false); writer.remove_txpool_tx(cryptonote::get_transaction_hash(private_pool_tx)); writer.block_txn_stop();
+        expect_failure([&] { transactions.pool(1, first_pool_page.next_cursor); }, QueryError::chain_changed);
+        check(api.get("/api/v2/mempool?limit=101").status == 400 &&
+              api.get("/api/v2/mempool?viewkey=x").status == 400 &&
+              api.get("/api/v2/mempool?limit=1&limit=2").status == 400, "Unsafe pool queries accepted.");
+        const auto image = ordinary_metadata.inputs.at(0).k_image;
+        const auto image_text = epee::string_tools::pod_to_hex(image);
+        check(!transactions.key_image(image_text).spent, "Unknown key image labeled spent.");
+        record(api, "/api/v2/tools/key-images/" + image_text, "KeyImageResponse");
+        const auto output_key = epee::string_tools::pod_to_hex(ordinary_metadata.outputs.at(0).first.key);
+        const auto output_check = record(api, "/api/v2/tools/outputs/" + ordinary_hash + "/" + output_key, "OutputCheckResponse");
+        check(output_check["data"]["output_indices"] == xmreg::json::array({0}) && output_check["data"]["curve_valid"] == true,
+              "Native public output membership failed.");
+        check(api.get("/api/v2/tools/outputs/" + ordinary_hash + "/" + std::string(64, '0')).body["data"]["output_indices"].empty(),
+              "Absent output key was reported present.");
+        cryptonote::account_public_address public_address{};
+        public_address.m_spend_public_key = ordinary_metadata.outputs.at(0).first.key;
+        public_address.m_view_public_key = ordinary_metadata.outputs.at(1).first.key;
+        const auto address_text = cryptonote::get_public_address_as_str(cryptonote::MAINNET, false, public_address);
+        const auto address_check = record(api, "/api/v2/tools/addresses/" + address_text, "AddressResponse");
+        check(address_check["data"]["valid"] == true && address_check["data"]["matches_reader"] == true &&
+              address_check["data"]["spend_public_key"] == output_key, "Native address decoding failed.");
+        const auto test_address = cryptonote::get_public_address_as_str(cryptonote::TESTNET, false, public_address);
+        check(transactions.address(test_address).valid && !transactions.address(test_address).matches_reader,
+              "Cross-network public address was mislabeled.");
+        auto malformed_address = address_text; malformed_address.back() = malformed_address.back() == '1' ? '2' : '1';
+        check(!transactions.address(malformed_address).valid, "Bad address checksum was accepted.");
+        const auto pool_summary = api.get("/api/v2/mempool").body["data"]["items"][0];
+        check(pool_summary["inspection"]["ring_size_min"] == std::to_string(ordinary_metadata.inputs.at(0).key_offsets.size()) &&
+              pool_summary["inspection"]["payment_id_types"] == xmreg::json::array({"uniform"}),
+              "Native uniform ID or ring summary failed.");
         auto pooled = transactions.get(ordinary_hash, false);
         check(pooled.in_pool && pooled.confirmations == 0 && pooled.timestamp == 0,
               "Pool provenance or local timestamp policy failed.");
@@ -158,15 +297,30 @@ int main(int argc, char** argv) {
         record(api, "/api/v2/blocks?cursor=" + anchored.next_cursor, "BlockPageResponse");
         auto appended = historical;
         appended.prev_id = old_result.hash; appended.nonce += 10;
+        appended.timestamp = historical.timestamp - 30;
         boost::get<cryptonote::txin_gen>(appended.miner_tx.vin[0]).height = 2;
         appended.miner_tx.invalidate_hashes(); appended.invalidate_hashes();
         writer.add_block(appended, cryptonote::get_object_blobsize(appended), 3, 8800000000000002ULL,
                          std::vector<cryptonote::transaction>{});
+        const auto interval_anchor = epee::string_tools::pod_to_hex(cryptonote::get_block_hash(appended));
+        const auto window = blocks.intervals(3600, interval_anchor);
+        check(window.points.size() == 1 && window.points[0].height == 2 &&
+              window.points[0].seconds == "-30" && window.points[0].previous_timestamp == historical.timestamp,
+              "Native negative timestamp difference was changed or hidden.");
+        const auto limited_intervals = blocks.intervals(2592000, interval_anchor, 1);
+        check(limited_intervals.scanned_count == 1 && limited_intervals.scanned_from_height == 2 && limited_intervals.history_limited,
+              "Native interval history bound failed.");
+        check(blocks.intervals(86400, epee::string_tools::pod_to_hex(old_result.hash)).points.empty(),
+              "Append changed an older interval anchor.");
+        record(api, "/api/v2/block-intervals?window=1h&anchor=" + interval_anchor, "BlockIntervalsResponse");
         const auto preserved_page = blocks.list(1, anchored.next_cursor);
         check(preserved_page.anchor_height == 1 && preserved_page.chain_height == 3 &&
               preserved_page.items[0].height == 0, "Append moved the anchored page.");
         cryptonote::block popped; std::vector<cryptonote::transaction> popped_txs;
         writer.pop_block(popped, popped_txs); // Remove synthetic appended block.
+        expect_failure([&] { blocks.intervals(3600, interval_anchor); }, QueryError::chain_changed);
+        check(api.get("/api/v2/block-intervals?anchor=" + interval_anchor).status == 409,
+              "Removed interval anchor did not return 409.");
         writer.pop_block(popped, popped_txs);
         expect_failure([&] { blocks.list(1, anchored.next_cursor); }, QueryError::chain_changed);
         check(api.get("/api/v2/blocks?cursor=" + anchored.next_cursor).status == 409,
@@ -179,6 +333,7 @@ int main(int argc, char** argv) {
         synthetic.invalidate_hashes();
         writer.add_block(synthetic, cryptonote::get_object_blobsize(synthetic) + ordinary_blob.size(), 2,
                          8800000000000001ULL, {ordinary});
+        check(transactions.key_image(image_text).spent, "Native confirmed key image was missed.");
         check(!transactions.get(ordinary_hash, false).in_pool &&
               transactions.get(ordinary_hash, false).confirmations == 1, "Confirmed provenance failed.");
         check(blocks.get("1").transactions.size() == 2, "Block transaction snapshot failed.");
@@ -187,6 +342,9 @@ int main(int argc, char** argv) {
         record(api, "/api/v2/blocks/1", "BlockResponse");
         record(api, "/api/v2/transactions/" + ordinary_hash, "TransactionResponse");
         record(api, "/api/v2/raw/block/1", "RawResponse");
+        const auto confirmed_overview = network.get();
+        check(confirmed_overview.confirmed_transactions == 1 && confirmed_overview.median_sample_blocks == 2,
+              "Native overview count or median scope failed.");
         // Synthetic public ring references exercise native output and originating-time reads.
         auto ring_tx = ordinary;
         auto& ring_input = boost::get<cryptonote::txin_to_key>(ring_tx.vin[0]);

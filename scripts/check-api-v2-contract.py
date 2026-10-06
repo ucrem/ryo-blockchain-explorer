@@ -50,7 +50,7 @@ def expect_invalid(checker, value, label):
 
 def main():
     spec = load_spec()
-    if spec["openapi"] != "3.1.1" or spec["info"]["version"] != "0.3.0":
+    if spec["openapi"] != "3.1.1" or spec["info"]["version"] != "0.4.0":
         raise ValueError("Unexpected OpenAPI/product version")
     check_references(spec)
     for schema in spec["components"]["schemas"].values():

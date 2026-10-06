@@ -26,6 +26,8 @@ TransactionMetadata transaction_metadata(const cryptonote::transaction& tx) {
         if (!result.payment_id8_present)
             result.payment_id_present = cryptonote::get_payment_id_from_tx_extra_nonce(nonce.nonce, result.payment_id);
     }
+    cryptonote::tx_extra_uniform_payment_id uniform_pid;
+    result.uniform_payment_id_present = cryptonote::get_payment_id_from_tx_extra(tx.extra, uniform_pid);
     result.input_amounts_visible = !result.inputs.empty() &&
         result.non_ringct_inputs == result.inputs.size();
     result.output_amounts_visible = result.coinbase || tx.rct_signatures.type == 0;

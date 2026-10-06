@@ -1,7 +1,7 @@
 openapi: 3.1.1
 info:
   title: Ryo Explorer API v2
-  version: 0.3.0
+  version: 0.4.0
   description: |
     Opt-in read-only API using native Ryo
     LMDB snapshots. Decimal-string DTOs preserve integer precision; raw native
@@ -24,6 +24,124 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/NetworkResponse' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '405': { $ref: '#/components/responses/MethodNotAllowed' }
+        '409': { $ref: '#/components/responses/ChainChanged' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /api/v2/mempool:
+    get:
+      operationId: getMempool
+      summary: List relayable local pool transactions in deterministic hash order
+      description: At most 100 transaction blobs per page and 10000 metadata entries. Membership changes invalidate cursors with 409. Owner-authorized local receive time is explicitly scoped to this node; relay times remain excluded. No persistent snapshot store.
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - name: cursor
+          in: query
+          schema: { $ref: '#/components/schemas/PoolCursor' }
+      responses:
+        '200':
+          description: Native public inspection snapshot
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MempoolResponse' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '405': { $ref: '#/components/responses/MethodNotAllowed' }
+        '409': { $ref: '#/components/responses/ChainChanged' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /api/v2/tools/key-images/{image}:
+    get:
+      operationId: checkKeyImage
+      summary: Check confirmed-chain membership of a public key image
+      parameters:
+        - name: image
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/Hash' }
+      responses:
+        '200':
+          description: Native public inspection snapshot
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KeyImageResponse' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '405': { $ref: '#/components/responses/MethodNotAllowed' }
+        '409': { $ref: '#/components/responses/ChainChanged' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /api/v2/tools/outputs/{transaction}/{key}:
+    get:
+      operationId: checkOutputKey
+      summary: Check an output public key within an identified transaction, not recipient ownership
+      parameters:
+        - name: transaction
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/Hash' }
+        - name: key
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/Hash' }
+      responses:
+        '200':
+          description: Native public inspection snapshot
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OutputCheckResponse' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '405': { $ref: '#/components/responses/MethodNotAllowed' }
+        '409': { $ref: '#/components/responses/ChainChanged' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /api/v2/tools/addresses/{address}:
+    get:
+      operationId: inspectAddress
+      summary: Decode a public Ryo address using native network, checksum and format rules
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/PublicAddress' }
+      responses:
+        '200':
+          description: Native public inspection snapshot
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AddressResponse' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '405': { $ref: '#/components/responses/MethodNotAllowed' }
+        '409': { $ref: '#/components/responses/ChainChanged' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /api/v2/block-intervals:
+    get:
+      operationId: getBlockIntervals
+      summary: Read consecutive native timestamp differences in a selected period
+      description: |
+        Periods end at the selected native block, defaulting to this reader's tip.
+        Scans at most 50,000 consecutive block timestamps in one read snapshot;
+        points include their predecessor's timestamp, including negative differences.
+        Genesis/missing timestamps are omitted. Points are ordered by height.
+        No timestamp binary search, per-block transaction reads or auxiliary index.
+        history_limited reports a scan boundary still inside the selected period;
+        scanned_from_height and oldest_timestamp_unix expose the searched coverage.
+      parameters:
+        - name: window
+          in: query
+          schema: { type: string, enum: [1h, 24h, 7d, 30d], default: 1h }
+        - name: anchor
+          in: query
+          description: Optional block hash; a removed anchor returns 409.
+          schema: { type: string, pattern: '^[0-9a-fA-F]{64}$' }
+      responses:
+        '200':
+          description: Bounded native timestamp window
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BlockIntervalsResponse' }
         '400': { $ref: '#/components/responses/InvalidRequest' }
         '404': { $ref: '#/components/responses/NotFound' }
         '405': { $ref: '#/components/responses/MethodNotAllowed' }
@@ -188,6 +306,82 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/ErrorResponse' }
   schemas:
+    SignedSeconds:
+      type: string
+      pattern: ^(0|-?[1-9][0-9]{0,19})$
+      maxLength: 21
+      description: Exact signed timestamp difference; magnitude is bounded to uint64 by the application.
+    BlockInterval:
+      type: object
+      additionalProperties: false
+      required:
+      - height
+      - timestamp_unix
+      - previous_timestamp_unix
+      - interval_seconds
+      properties:
+        height:
+          $ref: '#/components/schemas/UInt64'
+        timestamp_unix:
+          $ref: '#/components/schemas/UInt64'
+        previous_timestamp_unix:
+          $ref: '#/components/schemas/UInt64'
+        interval_seconds:
+          $ref: '#/components/schemas/SignedSeconds'
+    BlockIntervalsResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      properties:
+        meta:
+          $ref: '#/components/schemas/Meta'
+        data:
+          type: object
+          additionalProperties: false
+          required:
+          - anchor_height
+          - anchor_timestamp_unix
+          - start_timestamp_unix
+          - scanned_from_height
+          - oldest_timestamp_unix
+          - anchor_hash
+          - window_seconds
+          - scanned_count
+          - history_limited
+          - points
+          properties:
+            anchor_height:
+              $ref: '#/components/schemas/UInt64'
+            anchor_timestamp_unix:
+              $ref: '#/components/schemas/UInt64'
+            start_timestamp_unix:
+              $ref: '#/components/schemas/UInt64'
+            scanned_from_height:
+              $ref: '#/components/schemas/UInt64'
+            oldest_timestamp_unix:
+              $ref: '#/components/schemas/UInt64'
+            anchor_hash:
+              $ref: '#/components/schemas/Hash'
+            window_seconds:
+              type: integer
+              enum:
+              - 3600
+              - 86400
+              - 604800
+              - 2592000
+            scanned_count:
+              type: integer
+              minimum: 0
+              maximum: 50000
+            history_limited:
+              type: boolean
+            points:
+              type: array
+              maxItems: 50000
+              items:
+                $ref: '#/components/schemas/BlockInterval'
     UInt64:
       type: string
       pattern: '^(0|[1-9][0-9]{0,19})$'
@@ -379,6 +573,117 @@ components:
           minimum: 0
           description: Number of spend inputs; excludes coinbase generation input.
         output_count: { type: integer, minimum: 0 }
+        inspection: { $ref: '#/components/schemas/TransactionInspection' }
+    PoolCursor:
+      type: string
+      maxLength: 70
+      pattern: '^[0-9a-f]{64}\.[1-9][0-9]{0,4}$'
+    PublicAddress:
+      type: string
+      minLength: 40
+      maxLength: 200
+      pattern: '^[1-9A-HJ-NP-Za-km-z]+$'
+    TransactionInspection:
+      type: object
+      additionalProperties: false
+      required: [ring_size_min, ring_size_max, payment_id_types]
+      properties:
+        ring_size_min: { $ref: '#/components/schemas/NullableUInt64' }
+        ring_size_max: { $ref: '#/components/schemas/NullableUInt64' }
+        payment_id_types:
+          type: array
+          uniqueItems: true
+          maxItems: 3
+          items: { type: string, enum: [legacy, encrypted, uniform] }
+          description: Native extra presence only. Uniform and short encrypted IDs are not decrypted recipient information.
+    PoolTransactionSummary:
+      type: object
+      allOf:
+        - { $ref: '#/components/schemas/TransactionSummaryFields' }
+      unevaluatedProperties: false
+      properties:
+        local_received_timestamp_unix:
+          allOf:
+            - { $ref: '#/components/schemas/NullableUInt64' }
+          description: Native pool receive_time on this node, in Unix seconds. Null when unavailable; not creation, confirmation or network-wide first-seen time. Added with owner approval; omitted by older servers.
+    MempoolResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        meta: { $ref: '#/components/schemas/Meta' }
+        data:
+          type: object
+          additionalProperties: false
+          required: [items, transaction_count, size_bytes, fee_atomic, snapshot, next_cursor]
+          properties:
+            items:
+              type: array
+              maxItems: 100
+              items: { $ref: '#/components/schemas/PoolTransactionSummary' }
+            transaction_count: { $ref: '#/components/schemas/UInt64' }
+            size_bytes: { $ref: '#/components/schemas/UInt64' }
+            fee_atomic: { $ref: '#/components/schemas/UInt64' }
+            snapshot: { $ref: '#/components/schemas/Hash' }
+            next_cursor:
+              anyOf:
+                - { $ref: '#/components/schemas/PoolCursor' }
+                - { type: 'null' }
+    KeyImageResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        meta: { $ref: '#/components/schemas/Meta' }
+        data:
+          type: object
+          additionalProperties: false
+          required: [key_image, spent, scope]
+          properties:
+            key_image: { $ref: '#/components/schemas/Hash' }
+            spent: { type: boolean }
+            scope: { type: string, const: confirmed_chain }
+    OutputCheckResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        meta: { $ref: '#/components/schemas/Meta' }
+        data:
+          type: object
+          additionalProperties: false
+          required: [transaction_hash, public_key, curve_valid, output_indices, state]
+          properties:
+            transaction_hash: { $ref: '#/components/schemas/Hash' }
+            public_key: { $ref: '#/components/schemas/Hash' }
+            curve_valid: { type: boolean }
+            output_indices:
+              type: array
+              uniqueItems: true
+              items: { type: integer, minimum: 0 }
+            state: { type: string, enum: [confirmed, mempool] }
+    AddressResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        meta: { $ref: '#/components/schemas/Meta' }
+        data:
+          type: object
+          additionalProperties: false
+          required: [address, valid, network, matches_reader, kind, spend_public_key, view_public_key, payment_id8]
+          properties:
+            address: { $ref: '#/components/schemas/PublicAddress' }
+            valid: { type: boolean }
+            network: { enum: [mainnet, testnet, stagenet, null] }
+            matches_reader: { type: boolean }
+            kind: { enum: [standard, integrated, subaddress, kurz, null] }
+            spend_public_key: { $ref: '#/components/schemas/NullableHash' }
+            view_public_key: { $ref: '#/components/schemas/NullableHash' }
+            payment_id8:
+              anyOf:
+                - { type: string, pattern: '^[0-9a-f]{16}$' }
+                - { type: 'null' }
     NetworkResponse:
       type: object
       additionalProperties: false
@@ -394,6 +699,28 @@ components:
             tip: { $ref: '#/components/schemas/BlockSummary' }
             tip_difficulty: { $ref: '#/components/schemas/UInt64' }
             target_block_time_seconds: { type: integer, minimum: 1 }
+            overview:
+              type: object
+              additionalProperties: false
+              description: Local-tip metrics. Issued supply includes active native dev-fund payouts, excludes fees, and is null if the subsidy counter is capped. Pool excludes entries marked do_not_relay; bytes are null beyond the bounded scan.
+              required: [issued_atomic, tip_coinbase_atomic, median_block_size_bytes, median_sample_blocks, confirmed_transactions, pool_transactions, pool_size_bytes]
+              properties:
+                issued_atomic:
+                  oneOf:
+                  - { $ref: '#/components/schemas/UInt64' }
+                  - { type: 'null' }
+                tip_coinbase_atomic: { $ref: '#/components/schemas/UInt64' }
+                median_block_size_bytes: { $ref: '#/components/schemas/UInt64' }
+                median_sample_blocks: { type: integer, minimum: 1, maximum: 100 }
+                confirmed_transactions: { $ref: '#/components/schemas/UInt64' }
+                pool_transactions:
+                  oneOf:
+                  - { $ref: '#/components/schemas/UInt64' }
+                  - { type: 'null' }
+                pool_size_bytes:
+                  oneOf:
+                  - { $ref: '#/components/schemas/UInt64' }
+                  - { type: 'null' }
             units:
               type: object
               additionalProperties: false

@@ -19,7 +19,17 @@ executable is a usable JSON subset with the separately documented limitations.
 The approved [v0.3 API scope](V0_3_API_PROPOSAL.md) and its
 [OpenAPI contract](api-v2.openapi.yaml) are implemented;
 [API_V2.md](API_V2.md) documents the released subset. The next milestone is
-v0.4's server-first Next.js foundation/design system and initial dashboard.
+v0.4's server-first Next.js foundation/design system and initial dashboard. That
+[implementation](WEB.md) now provides the first website, with
+[validation evidence](V0_4_VALIDATION.md). The owner extended v0.4 to include basic
+block/transaction HTML details, public height/hash search and bounded live tip
+polling, validated during a limited real mainnet sync.
+The dashboard also pairs full-width block and confirmed-transaction tables using
+existing bounded native reads, with mobile stacking and live updates.
+The owner additionally authorized a paginated public mempool, ring/payment-ID
+summaries and native public key-image/output/address inspection tools in v0.4.
+Wallet-export/private-key verification remains a separate later capability.
+v0.5 follows with richer detail inspection, presentation and wider historical validation.
 
 ## Target data flow
 
@@ -43,8 +53,8 @@ move the current source tree mechanically or add empty service abstractions.
 | v0.1.0 | Selected native C++ foundation | Preserved provenance/history, independent public ucrem repo, Ubuntu 24.04 native library build, offline LMDB/RPC/genesis tests, discovery/privacy/build docs, CI, changelog/tag/GitHub Release |
 | v0.2.0 | Core/services/HTTP separation | Concrete block/transaction services and opt-in HTTP subset; captured supported contracts, explicit privacy/error differences, native fixture/storage-reorg/HTTP tests |
 | v0.3.0 | API v2 and OpenAPI | Typed public DTOs/errors/pagination/units, documented privacy-safe output, legacy API retained, schema/contract tests |
-| v0.4.0 | Next.js foundation/design system/dashboard | Next.js + TypeScript + Tailwind + shadcn/ui, Server Components by default, bundled assets, accessibility/light/dark/mobile verification |
-| v0.5.0 | Modern block/transaction views | Preserve low-level data; basic/advanced presentation, API/raw links, historical transaction coverage |
+| v0.4.0 | Next.js foundation/design system/dashboard | Next.js + TypeScript + Tailwind + shadcn/ui, Server Components by default, bundled assets, basic block/transaction HTML pages, public height/hash lookup, bounded live tip polling, native 1h/24h/7d/30d interval windows with numbered axes, accessibility/light/dark/mobile verification |
+| v0.5.0 | Extended block/transaction inspection | Expand native detail presentation and advanced inspection, with historical transaction coverage |
 | v0.6.0 | Advanced search/tools | Native lookup benchmarks and truthful coverage; configurable push; ring/key-image/output explanations; no public address-balance fiction |
 | v0.7.0 | Realtime chain/pool/network | SSE first, disconnect/reconnect and reorg handling, bounded clients, privacy-safe payloads |
 | v0.8.0 | Network intelligence/analytics/emission | Measured aggregates/history, observed block intervals, current reward/emission validation; justify any storage addition |
@@ -82,7 +92,10 @@ block/transaction metadata and owned snapshots, legacy JSON adaptation, and
 separate bounded HTTP transport. The legacy HTML-bound code remains an upstream
 reference, outside this project. The approved v0.3 increment adds a native chain
 snapshot, bounded block-summary pagination, v2 serialization/routing and OpenAPI;
-pool listing, search, emission and verification remain later focused extraction.
+Advanced search, extended emission analytics and secret-based verification
+remain later focused extraction. The owner's reference-dashboard request adds
+bounded native overview aggregates and optional server-only public node status
+in v0.4; see [the comparison](DASHBOARD_REFERENCE_AUDIT.md).
 
 Before implementation, provide a focused proposal with current behavior,
 problem, affected files, compatibility impact, migration/reorg/thread risks,

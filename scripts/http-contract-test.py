@@ -117,6 +117,7 @@ def main():
                   network["data"]["tip_difficulty"] == "1" and network["data"]["units"]["atomic_decimals"] == 9,
                   "V2 native network values differ from genesis.")
             v2_routes = (("/api/v2/blocks", "BlockPageResponse"),
+                         ("/api/v2/block-intervals?window=1h", "BlockIntervalsResponse"),
                          ("/api/v2/blocks?limit=1", "BlockPageResponse"),
                          ("/api/v2/blocks/0", "BlockResponse"),
                          ("/api/v2/transactions/" + tx_hash, "TransactionResponse"))
@@ -125,6 +126,27 @@ def main():
                 check(status == 200, "V2 lookup failed.")
                 validate(data, schema)
                 check(data == examples[schema], "V2 genesis response differs from documented example.")
+            for route, schema in (("/api/v2/mempool?limit=50", "MempoolResponse"),
+                                  ("/api/v2/tools/key-images/" + "0" * 64, "KeyImageResponse"),
+                                  ("/api/v2/tools/outputs/" + tx_hash + "/" + examples["TransactionResponse"]["data"]["outputs"][0]["public_key"], "OutputCheckResponse"),
+                                  ("/api/v2/tools/addresses/" + "1" * 95, "AddressResponse")):
+                status, data = request(route)
+                check(status == 200, "Public pool/tool query failed.")
+                validate(data, schema)
+                check(data == examples[schema], "Public pool/tool example differs from native response.")
+            for suffix in ("?limit=101", "?cursor=x", "?limit=1&limit=2", "?viewkey=example", "?limit=01"):
+                check(request("/api/v2/mempool" + suffix)[0] == 400, "Unsafe pool query accepted.")
+            check(request("/api/v2/tools/key-images/" + "0" * 64 + "?viewkey=example")[0] == 400, "Secret tool query accepted.")
+            check(request("/api/v2/mempool", method="POST")[0] == 405, "Pool write accepted.")
+            for window in ("24h", "7d", "30d"):
+                status, data = request("/api/v2/block-intervals?window=" + window + "&anchor=" + block_hash)
+                check(status == 200 and not data["data"]["points"], "Genesis interval window differs.")
+                validate(data, "BlockIntervalsResponse")
+            for suffix in ("?", "?window=", "?window=2h", "?window=1h&window=7d", "?anchor=x",
+                           "?anchor=" + block_hash + "&anchor=" + block_hash, "?window=%31h",
+                           "?window=1h&", "?viewkey=example", "?limit=1"):
+                check(request("/api/v2/block-intervals" + suffix)[0] == 400,
+                      "Invalid interval query accepted.")
             check(request("/api/v2/blocks/" + block_hash.upper()) == request("/api/v2/blocks/0"),
                   "V2 block height/hash/case lookup differs.")
             check(request("/api/v2/transactions/" + tx_hash.upper()) == request("/api/v2/transactions/" + tx_hash),
@@ -148,7 +170,7 @@ def main():
                       "/api/v2/blocks?viewkey=example", "/api/v2/blocks?limit=%31", "/api/v2/network?limit=1",
                       "/api/v2/network#fragment", "/api/v2/" + "x" * 1100),
                 404: ("/api/v2/blocks/1", "/api/v2/transactions/" + "0" * 64,
-                      "/api/v2/blocks/" + "0" * 64, "/api/v2/mempool", "/api/v2/blocks/0/extra"),
+                      "/api/v2/blocks/" + "0" * 64, "/api/v2/future-group", "/api/v2/blocks/0/extra"),
                 409: ("/api/v2/blocks?cursor=1." + "0" * 64 + ".0",),
             }
             codes = {400: "invalid_request", 404: "not_found", 409: "chain_changed"}

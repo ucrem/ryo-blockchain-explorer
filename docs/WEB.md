@@ -36,14 +36,21 @@ search and a developer API guide.
   explicitly, including while the node is syncing historical blocks. The chart
   reads a native window independently of the twenty-row block table. Every
   returned point is plotted without downsampling, with labeled axes, rounded
-  grid ticks, pointer inspection, keyboard slider and a block-detail link.
+  grid ticks, pointer inspection, arrow/Home/End keyboard inspection directly
+  on the focused chart and a block-detail link.
   Missing/genesis timestamps are omitted; negative and zero differences remain
   intact. The default hour labels every returned block in ascending height,
   with one bar per interval and the newest at the right edge. An overflowing
   chart starts at the right and scrolls to the newest block on live refresh;
-  reduced-motion preferences disable smooth scrolling. Longer periods keep
-  sparse axis labels while plotting every bar. No target reference line is shown.
-  A single usable interval can be displayed. The whole-second signed mean truncates division.
+  hovering, tapping or keyboard inspection holds the displayed native window
+  and selected block while the dashboard continues receiving new data. A
+  top-right "Back to live" button returns to the latest window and right edge.
+  Native scrollbars are hidden and the former range input is removed; horizontal
+  gestures and keyboard inspection remain available. Switching periods resumes
+  following. Reduced-motion preferences disable smooth scrolling. Longer periods
+  keep sparse axis labels while plotting every bar. No target reference line is shown.
+  A single usable interval can be displayed. The whole-second signed mean
+  truncates division.
   The selected period persists across live refresh; changed anchors reload it.
   The native read scans at most 50,000 consecutive timestamps in one snapshot,
   using a fixed period allowlist and optional block-hash anchor. Available

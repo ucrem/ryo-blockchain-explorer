@@ -57,7 +57,7 @@ test("interval chart has exact block/seconds axes, historical period controls, k
       chart.getByRole("button", { name: label, exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
     await expect(chart.getByLabel("Inspect a block interval")).toHaveAttribute(
-      "max",
+      "aria-valuemax",
       String(count - 1),
     );
   }
@@ -73,7 +73,7 @@ test("interval chart has exact block/seconds axes, historical period controls, k
   ).toBeVisible();
   await slider.focus();
   await page.keyboard.press("ArrowRight");
-  await expect(slider).toHaveValue("2");
+  await expect(slider).toHaveAttribute("aria-valuenow", "2");
   await expect(chart.locator(".chart-inspector a")).toHaveAttribute(
     "href",
     /^\/blocks\/[0-9]+$/,
@@ -82,6 +82,9 @@ test("interval chart has exact block/seconds axes, historical period controls, k
   await page.getByRole("button", { name: "Toggle color theme" }).click();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await page.setViewportSize({ width: 390, height: 844 });
+  await chart
+    .getByRole("button", { name: "Back to live", exact: true })
+    .click();
   await expect
     .poll(() =>
       chart
@@ -107,6 +110,76 @@ test("interval chart has exact block/seconds axes, historical period controls, k
   await expect(
     chart.getByText(/Partial history for this period/),
   ).toBeVisible();
+});
+test("hover inspection holds its native window through sync and returns to the latest block without a visible slider", async ({
+  page,
+  request,
+}) => {
+  await page.clock.install();
+  await page.goto("/");
+  const chart = page.locator(".interval-panel");
+  const plot = chart.getByLabel("Inspect a block interval");
+  await expect(plot).toHaveAttribute("aria-valuemax", "11");
+  await expect(chart.locator("input[type=range]")).toHaveCount(0);
+  expect(
+    await plot.evaluate((element) => getComputedStyle(element).scrollbarWidth),
+  ).toBe("none");
+  await plot.scrollIntoViewIfNeeded();
+  await page.clock.runFor(500);
+  const area = (await plot.boundingBox())!;
+  await page.mouse.move(area.x + 180, area.y + 120);
+  const resume = chart.getByRole("button", {
+    name: "Back to live",
+    exact: true,
+  });
+  await expect(resume).toBeVisible();
+  const heading = (await chart.locator(".chart-heading").boundingBox())!;
+  const button = (await resume.boundingBox())!;
+  expect(button.x).toBeGreaterThan(heading.x + heading.width / 2);
+  await page.mouse.move(5, 5);
+  const selected = await plot.getAttribute("aria-valuetext");
+  const path = await chart.locator(".chart-bars").getAttribute("d");
+  const position = await plot.evaluate((element) => element.scrollLeft);
+  await request.get("http://127.0.0.1:3101/__control?mode=advanced");
+  await page.clock.runFor(10_100);
+  await expect(page.locator(".metric-card").first()).toContainText(
+    "9,007,199,254,741,024",
+  );
+  await expect(plot).toHaveAttribute("aria-valuetext", selected!);
+  await expect(chart.locator(".chart-period-end").first()).toContainText(
+    "9,007,199,254,741,023",
+  );
+  await expect(chart.locator(".chart-bars")).toHaveAttribute("d", path!);
+  expect(await plot.evaluate((element) => element.scrollLeft)).toBe(position);
+  await resume.click();
+  await page.clock.runFor(1000);
+  await expect(resume).toHaveCount(0);
+  await expect(chart.locator("[data-block-height]").last()).toHaveAttribute(
+    "data-block-height",
+    "9007199254741024",
+  );
+  await expect(plot).toHaveAttribute(
+    "aria-valuetext",
+    /^Block 9007199254741024:/,
+  );
+  await expect
+    .poll(() =>
+      plot.evaluate((element) =>
+        Math.abs(
+          element.scrollWidth - element.clientWidth - element.scrollLeft,
+        ),
+      ),
+    )
+    .toBeLessThan(2);
+  await plot.focus();
+  await page.keyboard.press("Home");
+  await expect(resume).toBeVisible();
+  await chart
+    .getByRole("button", { name: "Last 24 hours", exact: true })
+    .click();
+  await expect(resume).toHaveCount(0);
+  await expect(plot).toHaveAttribute("aria-valuemax", "79");
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
 test("full-width desktop block and transaction tables stack on mobile and preserve native fee and failure semantics", async ({
   page,
@@ -211,7 +284,7 @@ test("live reader changes refresh blocks; unchanged tips, pause, outage and earl
   await expect(metric).toContainText("9,007,199,254,741,023");
   await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
   await expect(page.getByLabel("Inspect a block interval")).toHaveAttribute(
-    "max",
+    "aria-valuemax",
     "119",
   );
   await page

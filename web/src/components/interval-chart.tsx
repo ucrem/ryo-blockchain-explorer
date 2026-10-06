@@ -5,8 +5,9 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type PointerEvent,
 } from "react";
-import { Activity } from "lucide-react";
+import { Activity, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   blockIntervalsResponse,
@@ -41,17 +42,27 @@ export function IntervalChart({
     data: BlockIntervalsResponse | null;
     error: boolean;
   } | null>(null);
-  const [selection, setSelection] = useState<{
-    key: string;
+  const [inspection, setInspection] = useState<{
+    data: BlockIntervalsResponse;
+    window: IntervalWindow;
+    network: string | null;
     index: number;
   } | null>(null);
   const key = `${anchor ?? "latest"}.${network ?? "reader"}.${window}`;
-  const data =
+  const latestData =
     window === "1h" && initial
       ? initial
       : reply?.key === key
         ? reply.data
         : null;
+  const inspecting =
+    inspection !== null &&
+    inspection.window === window &&
+    inspection.network === network;
+  const data = inspecting ? inspection.data : latestData;
+  const displayKey = data
+    ? `${data.data.anchor_hash}.${data.meta.network}.${window}`
+    : key;
   const error = !data && reply?.key === key && reply.error;
 
   useEffect(() => {
@@ -95,10 +106,7 @@ export function IntervalChart({
     () => intervalPlot(points, window === "1h"),
     [points, window],
   );
-  const index =
-    selection?.key === key
-      ? Math.min(selection.index, points.length - 1)
-      : points.length - 1;
+  const index = inspecting ? inspection.index : points.length - 1;
   const point = points[index];
   const mean = useMemo(
     () =>
@@ -110,8 +118,9 @@ export function IntervalChart({
   );
   useEffect(() => {
     const element = viewport.current;
-    if (!element || !points.length) return;
-    const changed = previousKey.current !== null && previousKey.current !== key;
+    if (!element || !points.length || inspecting) return;
+    const changed =
+      previousKey.current !== null && previousKey.current !== displayKey;
     element.scrollTo({
       left: element.scrollWidth,
       behavior:
@@ -119,18 +128,45 @@ export function IntervalChart({
           ? "smooth"
           : "instant",
     });
-    previousKey.current = key;
-  }, [key, points]);
+    previousKey.current = displayKey;
+  }, [displayKey, points, inspecting]);
   const hasPoints = points.length > 0;
   useEffect(() => {
     const element = viewport.current;
-    if (!element) return;
+    if (!element || inspecting) return;
     const observer = new ResizeObserver(() => {
       element.scrollTo({ left: element.scrollWidth, behavior: "instant" });
     });
     observer.observe(element);
     return () => observer.disconnect();
-  }, [hasPoints]);
+  }, [hasPoints, inspecting]);
+  function inspect(index: number) {
+    if (data) setInspection({ data, window, network, index });
+  }
+  function inspectPointer(event: PointerEvent<SVGSVGElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * plot.bounds.width;
+    const y = ((event.clientY - rect.top) / rect.height) * 320;
+    // Axis labels and the fixed Y axis are not block hit targets.
+    if (
+      y < plot.bounds.top ||
+      y > plot.bounds.bottom ||
+      event.clientX <
+        (viewport.current?.getBoundingClientRect().left ?? 0) + 96 ||
+      x < plot.bounds.left ||
+      x > plot.bounds.right
+    )
+      return;
+    inspect(
+      Math.max(
+        0,
+        Math.min(
+          points.length - 1,
+          Math.floor((x - plot.bounds.left) / plot.slot),
+        ),
+      ),
+    );
+  }
   const loading = !data && !error;
   return (
     <section className="interval-panel" aria-labelledby="interval-title">
@@ -139,7 +175,17 @@ export function IntervalChart({
           <span className="eyebrow">TIME BETWEEN CONSECUTIVE BLOCKS</span>
           <h2 id="interval-title">Block intervals</h2>
         </div>
-        <Activity size={20} aria-hidden="true" />
+        {inspecting ? (
+          <Button
+            variant="outline"
+            className="chart-live-button"
+            onClick={() => setInspection(null)}
+          >
+            <Radio aria-hidden="true" /> Back to live
+          </Button>
+        ) : (
+          <Activity size={20} aria-hidden="true" />
+        )}
       </div>
       <div className="chart-periods" role="group" aria-label="Chart period">
         {periods.map((period) => (
@@ -149,7 +195,7 @@ export function IntervalChart({
             aria-pressed={window === period.value}
             onClick={() => {
               setWindow(period.value);
-              setSelection(null);
+              setInspection(null);
             }}
           >
             {period.label}
@@ -175,8 +221,36 @@ export function IntervalChart({
             ref={viewport}
             className="interval-plot"
             tabIndex={0}
-            role="region"
-            aria-label="Block interval plot"
+            role="slider"
+            aria-label="Inspect a block interval"
+            aria-valuemin={0}
+            aria-valuemax={points.length - 1}
+            aria-valuenow={index}
+            aria-valuetext={`Block ${point.height}: ${point.interval_seconds} seconds`}
+            onKeyDown={(event) => {
+              const next =
+                event.key === "Home"
+                  ? 0
+                  : event.key === "End"
+                    ? points.length - 1
+                    : event.key === "ArrowRight" || event.key === "ArrowUp"
+                      ? Math.min(points.length - 1, index + 1)
+                      : event.key === "ArrowLeft" || event.key === "ArrowDown"
+                        ? Math.max(0, index - 1)
+                        : null;
+              if (next === null) return;
+              event.preventDefault();
+              inspect(next);
+              const element = viewport.current;
+              if (element)
+                element.scrollTo({
+                  left:
+                    plot.x(points[next].height) *
+                      (element.scrollWidth / plot.bounds.width) -
+                    element.clientWidth / 2,
+                  behavior: "instant",
+                });
+            }}
           >
             <div className="chart-y-axis" aria-hidden="true">
               <svg viewBox="0 0 96 320">
@@ -213,20 +287,8 @@ export function IntervalChart({
               preserveAspectRatio="none"
               role="img"
               aria-label={`Observed block intervals. X axis: block number. Y axis: seconds since the previous block. ${points.length} intervals.`}
-              onPointerMove={(event) => {
-                const rect = event.currentTarget.getBoundingClientRect();
-                const coordinate =
-                  ((event.clientX - rect.left) / rect.width) *
-                  plot.bounds.width;
-                const index = Math.max(
-                  0,
-                  Math.min(
-                    points.length - 1,
-                    Math.floor((coordinate - plot.bounds.left) / plot.slot),
-                  ),
-                );
-                setSelection({ key, index });
-              }}
+              onPointerMove={inspectPointer}
+              onPointerDown={inspectPointer}
             >
               {plot.yTicks.map((tick) => (
                 <g key={tick}>
@@ -254,8 +316,8 @@ export function IntervalChart({
                 className="chart-axis"
               />
               <g
-                key={key}
-                className="chart-series"
+                key={displayKey}
+                className={inspecting ? undefined : "chart-series"}
                 style={{ "--chart-step": `${plot.slot}px` } as CSSProperties}
               >
                 <path
@@ -290,19 +352,6 @@ export function IntervalChart({
           </div>
           <p className="chart-x-caption">Block number</p>
           <div className="chart-inspector">
-            <label htmlFor="interval-point">Inspect a block interval</label>
-            <input
-              id="interval-point"
-              type="range"
-              min={0}
-              max={points.length - 1}
-              step={1}
-              value={index}
-              aria-valuetext={`Block ${point.height}: ${point.interval_seconds} seconds`}
-              onChange={(event) =>
-                setSelection({ key, index: Number(event.target.value) })
-              }
-            />
             <p>
               <a href={`/blocks/${point.height}`} className="height-link">
                 Block {integer(point.height)}

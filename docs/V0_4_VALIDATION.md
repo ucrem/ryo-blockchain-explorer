@@ -257,6 +257,30 @@ Ignored evidence is `build/v04-native-smoke/interval-bars-browser-result.json`.
 
 ![Native last-hour interval bars with every block labeled](images/v0.4-mainnet-interval-windows.png)
 
+## Hold inspection during synchronization
+
+Pointer/touch and keyboard inspection now retain the displayed native window,
+selected block and horizontal position across live dashboard refresh. The chart
+header exposes "Back to live" at the top right to select the latest block and
+resume following. The former range input is removed and native scrollbars are
+hidden; arrow/Home/End inspection and horizontal gestures remain available.
+Period changes return to following. Other dashboard sections keep updating.
+
+A real production mainnet session selected block 154,675 in the window ending
+at 154,683. As the dashboard advanced to 154,743, the chart retained its anchor,
+selection and scroll position. "Back to live" then displayed block 154,743 and
+reached the new right edge. No page errors occurred; the native daemon remained
+running. Evidence is `build/v04-native-smoke/interval-inspection-browser-result.json`.
+The tracked chart screenshot now shows that native inspection view.
+
+Build/TypeScript and ESLint passed. Ten existing production browser scenarios
+passed with the new chart keyboard control; the new hover/sync/resume scenario
+passed after correcting its pointer setup to bring the plot into the viewport.
+That regression verifies frozen identity/geometry/position while the native tip
+changes, latest-block recovery, button placement, hidden/removed scroll controls,
+keyboard/period behavior and accessibility. Native sources and workflows did
+not change in this revision.
+
 ## Limits and release gate
 
 Full-chain performance, live mapping growth/external writers, wider historical

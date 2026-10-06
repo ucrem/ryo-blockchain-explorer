@@ -472,7 +472,19 @@ h2 {
 .interval-plot {
   width: 100%;
   overflow-x: auto;
+  scrollbar-width: none;
   margin-top: 12px;
+}
+.interval-plot::-webkit-scrollbar {
+  display: none;
+}
+.chart-live-button {
+  flex-shrink: 0;
+  font-size: 11px;
+}
+.interval-plot:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 .interval-plot svg {
   display: block;
@@ -514,15 +526,6 @@ h2 {
 .chart-inspector {
   margin-top: 12px;
   font-size: 12px;
-}
-.chart-inspector label {
-  color: var(--muted-foreground);
-}
-.chart-inspector input {
-  display: block;
-  width: 100%;
-  accent-color: var(--primary);
-  margin: 8px 0;
 }
 .chart-inspector p {
   display: flex;

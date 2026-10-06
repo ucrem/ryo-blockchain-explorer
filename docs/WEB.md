@@ -96,9 +96,41 @@ search and a developer API guide.
   keyboard skip link, focus indicators, bounded horizontal table/code scrolling,
   accessible SVG description and truthful unavailable/reorg/genesis states.
 
-There is no mempool listing, address search, SSE, analytics store,
-private-key verification, balance/history inference or transaction submission.
+There is no address-to-balance/history search, SSE, analytics store,
+private-key verification, wallet-export checking or transaction submission.
 The UI has no placeholder navigation advertising those capabilities.
+
+## Mempool and public inspection tools
+
+`/mempool` lists relayable transactions held by this node, with 50 rows per page,
+exact fees/fee per KiB, native size, input/output counts, ring size and payment-ID
+presence. All entries can be traversed within the native 10,000-entry bound;
+exceeding it produces unavailable, rather than a silently partial list. Native
+hash order gives stable pagination without exposing receive/relay timestamps.
+A membership digest binds each cursor; a changed pool returns HTTP 409 with a
+restart link. Live checks every ten seconds compare membership, including
+replacements with the same count/size, and return to the first page on change.
+Updates can be paused; hidden tabs do not make pool reads. Failures retain the
+visible page and retry. Inspection reads preserve hidden amounts and do-not-relay
+exclusion. An empty pool is an explicit local observation, not a network claim.
+
+Transaction summaries on the dashboard, block pages and pool now show an
+optional native `inspection` object. Ring size counts every candidate per input,
+including the real member without identifying it; mixed historical ring sizes
+show min–max. Native tx-extra parsing distinguishes legacy, encrypted short and
+uniform payment-ID presence. Uniform/encrypted payloads are not decrypted.
+Old responses and header-only summaries show unavailable fields as a dash.
+
+`/tools` provides confirmed-chain key-image membership, output-key membership
+within an identified transaction and native public-address inspection. Forms
+accept public identifiers only. Transaction detail links prefill its input key
+images and output keys. Results stay in the explorer layout, with contextual
+meaning, native reader provenance and embedded JSON links. Address inspection
+recognizes the native standard/integrated/subaddress/kurz formats and reports
+network mismatch separately; invalid checksum/format has an explicit result.
+These checks do not request private keys, accept wallet exports, disclose hidden
+amounts, prove recipient ownership or infer balances. An absent key image is
+limited to this reader's confirmed chain; pending spends are not checked.
 
 ## Install and run on native Linux
 
@@ -167,7 +199,8 @@ no independent node-status polling loop. Targets and peer counts are reported
 by this node and do not prove network-wide consensus or synchronization.
 
 The adapter only forwards GETs to the shipped native API v2 route shapes.
-Only block-list requests accept bounded `limit`/`cursor`; unknown, duplicate and
+Only block/pool lists and interval windows accept their bounded query parameters;
+unknown, duplicate and
 secret-bearing parameters are rejected before forwarding. Requests do not
 forward browser cookies, authorization or arbitrary headers. Redirects are not
 followed. No legacy key-bearing or write endpoint is exposed.

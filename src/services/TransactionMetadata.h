@@ -13,7 +13,7 @@ struct TransactionMetadata {
     uint64_t fee = 0, size = 0, input_atoms = 0, output_atoms = 0;
     uint64_t ring_size = 0, non_ringct_inputs = 0;
     bool coinbase = false, input_amounts_visible = false, output_amounts_visible = false;
-    bool payment_id_present = false, payment_id8_present = false;
+    bool payment_id_present = false, payment_id8_present = false, uniform_payment_id_present = false;
 };
 TransactionMetadata transaction_metadata(const cryptonote::transaction& tx);
 }

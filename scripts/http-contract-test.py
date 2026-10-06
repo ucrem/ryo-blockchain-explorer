@@ -126,6 +126,18 @@ def main():
                 check(status == 200, "V2 lookup failed.")
                 validate(data, schema)
                 check(data == examples[schema], "V2 genesis response differs from documented example.")
+            for route, schema in (("/api/v2/mempool?limit=50", "MempoolResponse"),
+                                  ("/api/v2/tools/key-images/" + "0" * 64, "KeyImageResponse"),
+                                  ("/api/v2/tools/outputs/" + tx_hash + "/" + examples["TransactionResponse"]["data"]["outputs"][0]["public_key"], "OutputCheckResponse"),
+                                  ("/api/v2/tools/addresses/" + "1" * 95, "AddressResponse")):
+                status, data = request(route)
+                check(status == 200, "Public pool/tool query failed.")
+                validate(data, schema)
+                check(data == examples[schema], "Public pool/tool example differs from native response.")
+            for suffix in ("?limit=101", "?cursor=x", "?limit=1&limit=2", "?viewkey=example", "?limit=01"):
+                check(request("/api/v2/mempool" + suffix)[0] == 400, "Unsafe pool query accepted.")
+            check(request("/api/v2/tools/key-images/" + "0" * 64 + "?viewkey=example")[0] == 400, "Secret tool query accepted.")
+            check(request("/api/v2/mempool", method="POST")[0] == 405, "Pool write accepted.")
             for window in ("24h", "7d", "30d"):
                 status, data = request("/api/v2/block-intervals?window=" + window + "&anchor=" + block_hash)
                 check(status == 200 and not data["data"]["points"], "Genesis interval window differs.")
@@ -158,7 +170,7 @@ def main():
                       "/api/v2/blocks?viewkey=example", "/api/v2/blocks?limit=%31", "/api/v2/network?limit=1",
                       "/api/v2/network#fragment", "/api/v2/" + "x" * 1100),
                 404: ("/api/v2/blocks/1", "/api/v2/transactions/" + "0" * 64,
-                      "/api/v2/blocks/" + "0" * 64, "/api/v2/mempool", "/api/v2/blocks/0/extra"),
+                      "/api/v2/blocks/" + "0" * 64, "/api/v2/future-group", "/api/v2/blocks/0/extra"),
                 409: ("/api/v2/blocks?cursor=1." + "0" * 64 + ".0",),
             }
             codes = {400: "invalid_request", 404: "not_found", 409: "chain_changed"}

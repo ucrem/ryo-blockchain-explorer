@@ -1,5 +1,9 @@
 import type { z } from "zod";
-import type { blockResponse, BlocksResponse } from "./contracts";
+import type {
+  blockResponse,
+  BlocksResponse,
+  TransactionInspection,
+} from "./contracts";
 
 type BlockDetail = z.infer<typeof blockResponse>;
 export type RecentTransaction = {
@@ -12,6 +16,7 @@ export type RecentTransaction = {
   sizeBytes: string | null;
   inputCount: number | null;
   outputCount: number | null;
+  inspection: TransactionInspection | null;
 };
 
 // Native summaries already identify a block's coinbase. Read detail only when
@@ -60,6 +65,7 @@ export async function recentTransactions(
         size_bytes: null,
         input_count: 0,
         output_count: null,
+        inspection: undefined,
       },
     ];
     for (const transaction of transactions) {
@@ -74,6 +80,7 @@ export async function recentTransactions(
         sizeBytes: transaction.size_bytes,
         inputCount: transaction.input_count,
         outputCount: transaction.output_count,
+        inspection: transaction.inspection ?? null,
       });
     }
   }

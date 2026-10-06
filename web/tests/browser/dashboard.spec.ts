@@ -135,29 +135,34 @@ test("the fixed plot shows every native interval with the exact count for 4, 10 
       await expect
         .poll(() => plot.evaluate((el) => el.scrollWidth - el.clientWidth))
         .toBeLessThan(2);
-      const measured = await chart.evaluate((el) => {
-        const viewport = el
-          .querySelector(".interval-plot")!
-          .getBoundingClientRect();
-        const axis = el.querySelector(".chart-y-axis")!.getBoundingClientRect();
-        const svg = el.querySelector<SVGSVGElement>("svg[role=img]")!;
-        const visible = [...el.querySelectorAll("[data-block-height]")].filter(
-          (label) => {
+      const measure = () =>
+        chart.evaluate((el) => {
+          const viewport = el
+            .querySelector(".interval-plot")!
+            .getBoundingClientRect();
+          const axis = el
+            .querySelector(".chart-y-axis")!
+            .getBoundingClientRect();
+          const svg = el.querySelector<SVGSVGElement>("svg[role=img]")!;
+          const visible = [
+            ...el.querySelectorAll("[data-block-height]"),
+          ].filter((label) => {
             const center = new DOMPoint(
               Number(label.getAttribute("x")),
               120,
             ).matrixTransform(svg.getScreenCTM()!);
             return center.x >= axis.right && center.x <= viewport.right;
-          },
-        ).length;
-        const path = el.querySelector(".chart-bars")!.getAttribute("d")!;
-        return {
-          width: viewport.width,
-          height: viewport.height,
-          visible,
-          bars: (path.match(/M/g) ?? []).length,
-        };
-      });
+          }).length;
+          const path = el.querySelector(".chart-bars")!.getAttribute("d")!;
+          return {
+            width: viewport.width,
+            height: viewport.height,
+            visible,
+            bars: (path.match(/M/g) ?? []).length,
+          };
+        });
+      await expect.poll(async () => (await measure()).visible).toBe(count);
+      const measured = await measure();
       expect(measured.visible).toBe(count);
       expect(measured.bars).toBe(count);
       if (dimensions)
@@ -835,4 +840,134 @@ test("JSON links preserve the explorer layout, format exactly and safely, with o
   ).toBe(0);
   expect([...origins]).toEqual(["http://127.0.0.1:3100"]);
   expect(errors).toEqual([]);
+});
+
+test("mempool pages cover all entries, detect membership changes and recover from empty and unavailable states", async ({
+  page,
+  request,
+}) => {
+  await page.clock.install();
+  await page.goto("/mempool");
+  const table = page.getByRole("table", {
+    name: "Pending transactions",
+    exact: true,
+  });
+  await expect(table.locator("tbody tr")).toHaveCount(50);
+  await expect(table).toContainText("Uniform");
+  await expect(table.locator("tbody tr").first()).toContainText("25");
+  await expect(page.locator(".section-note")).toContainText("1–50 of 53");
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.getByRole("link", { name: "Next transactions" }).click();
+  await expect(table.locator("tbody tr")).toHaveCount(3);
+  await expect(page.locator(".section-note")).toContainText("51–53 of 53");
+  await page.getByRole("button", { name: "Pause pool updates" }).click();
+  await request.get("http://127.0.0.1:3101/__control?mode=pool-mutated");
+  await page.clock.runFor(20_100);
+  await expect(table.locator("tbody tr")).toHaveCount(3);
+  await page.getByRole("button", { name: "Resume pool updates" }).click();
+  await page.clock.runFor(10_100);
+  await expect(page).toHaveURL(/\/mempool$/);
+  await expect(page.locator(".section-note")).toContainText("1–50 of 54");
+  await request.get("http://127.0.0.1:3101/__control?mode=normal");
+  await page.getByRole("link", { name: "Next transactions" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Mempool changed", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Restart mempool" }).click();
+  await expect(table.locator("tbody tr")).toHaveCount(50);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+  ).toBe(false);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await request.get("http://127.0.0.1:3101/__control?mode=pool-empty");
+  await page.reload();
+  await expect(
+    page.getByText("No relayable transactions in this node's pool.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await request.get("http://127.0.0.1:3101/__control?mode=outage");
+  await page.reload();
+  await expect(
+    page.getByRole("heading", {
+      name: "Chain reader unavailable",
+      exact: true,
+    }),
+  ).toBeVisible();
+});
+test("public tools submit native identifiers, explain negative results and reject secret parameters before lookup", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/tools");
+  await page.getByRole("link", { name: /Key image status/ }).click();
+  await page
+    .getByLabel("Public key image", { exact: true })
+    .fill("a".repeat(64));
+  await page.getByRole("button", { name: "Check", exact: true }).click();
+  await expect(
+    page.getByRole("region", { name: "Verification result" }),
+  ).toContainText("Key image not found in confirmed chain");
+  await request.get("http://127.0.0.1:3101/__control?mode=image-spent");
+  await page.reload();
+  await expect(
+    page.getByRole("region", { name: "Verification result" }),
+  ).toContainText("Key image recorded as spent");
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.getByRole("link", { name: "Result JSON", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Inspection result JSON", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Back to tools", exact: true }).click();
+  await page.getByRole("link", { name: /Output key check/ }).click();
+  await page
+    .getByLabel("Transaction hash", { exact: true })
+    .fill("b".repeat(64));
+  await page
+    .getByLabel("Public output key", { exact: true })
+    .fill("a".repeat(64));
+  await page.getByRole("button", { name: "Check", exact: true }).click();
+  await expect(
+    page.getByRole("region", { name: "Verification result" }),
+  ).toContainText("Output key found in transaction");
+  await request.get("http://127.0.0.1:3101/__control?mode=output-absent");
+  await page.reload();
+  await expect(
+    page.getByRole("region", { name: "Verification result" }),
+  ).toContainText("Output key not found in transaction");
+  await page.getByRole("link", { name: /Address inspector/ }).click();
+  await page
+    .getByLabel("Public Ryo address", { exact: true })
+    .fill("1".repeat(95));
+  await page
+    .getByRole("button", { name: "Inspect address", exact: true })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "Verification result" }),
+  ).toContainText("Address failed native validation");
+  await request.get("http://127.0.0.1:3101/__control?mode=address-valid");
+  await page.reload();
+  await expect(
+    page.getByRole("region", { name: "Verification result" }),
+  ).toContainText("Valid Ryo address");
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+  ).toBe(false);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await request.get("http://127.0.0.1:3101/__control?mode=normal");
+  await page.goto(
+    "/tools?tool=key-image&value=" + "a".repeat(64) + "&viewkey=secret",
+  );
+  await expect(
+    page.getByRole("heading", { name: "Invalid request", exact: true }),
+  ).toBeVisible();
+  expect(
+    (await (await request.get("http://127.0.0.1:3101/__control")).json()).reads,
+  ).toBe(0);
 });

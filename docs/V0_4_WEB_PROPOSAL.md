@@ -30,8 +30,7 @@ The owner's subsequent synchronization request adds ten-second same-origin tip
 polling on the latest dashboard, with pause, hidden-tab suspension, bounded reads
 and Server Component refresh on hash/network changes. Existing cursor pages stay
 anchored. A limited real mainnet sync validates reader updates without claiming
-network-wide synchronization or freshly mined-block observation. SSE and full live
-pool listing remain later milestones.
+network-wide synchronization or freshly mined-block observation. SSE remains a later milestone; the public pool extension is documented below.
 The owner's layout request adds full-width desktop block/confirmed-transaction
 tables side by side, stacking on smaller screens. A bounded server-rendered
 transaction preview reuses existing headers and block details, includes labeled
@@ -109,3 +108,34 @@ claim follows from the offline fixtures.
 - Document supported operation, privacy limits, migration and evidence before an
   annotated tag and GitHub Release. Publish only from an owner-authorized merged
   commit, without direct pushes to `main` or automatic merging.
+
+## Public mempool and inspection tools extension
+
+The owner's follow-up request on 2026-10-06 explicitly adds the remaining pool
+listing, ring/payment-ID summaries and dedicated verification tools. A dedicated
+`/mempool` page lists every relayable local pool entry through bounded pages,
+with fees, serialized size, input/output counts and native ring/payment-ID
+metadata. Native TransactionService reads at most 10,000 pool metadata entries
+and 100 transaction blobs per page. Deterministic hash order and a native hash
+of membership invalidate stale cursors with HTTP 409; no observation timestamps,
+peer records, background snapshot store or confirmed-chain scan are introduced.
+The browser checks membership every ten seconds with pause/hidden-tab handling.
+
+An optional additive `inspection` object enriches existing transaction summaries
+using native input offset counts and native tx-extra parsing, including uniform
+payment-ID presence. Old responses remain accepted as unknown metadata.
+
+Dedicated `/tools` public checks reuse native Ryo functions: confirmed-chain
+key-image membership, output-key membership within an identified transaction,
+and address format/network decoding. GET routes accept only bounded public
+identifiers; they never accept wallet exports, private view/spend/transaction
+keys or infer balances, output ownership or a real ring member. A negative
+key-image result is limited to the reader's confirmed chain, not proof of an
+unspent wallet or pool acceptance. Output membership is not recipient proof.
+These tools do not claim parity with secret-based legacy wallet-export checks.
+
+Existing services, fixed server-only adapter, native LMDB/core pin and API/legacy
+fields are retained. Additive routes/schemas, closed-validator migration,
+reorg/pool mutation behavior and explicit unknown states need native fixture,
+HTTP, schema and production browser checks. All changes remain on the open PR;
+mainnet sync continues and the full native workflow remains manual-only.

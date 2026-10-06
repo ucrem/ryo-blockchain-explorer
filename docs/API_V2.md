@@ -36,6 +36,10 @@ Python, external documentation assets or a runtime CDN.
 | `/api/v2/block-intervals?window=1h&anchor=...` | Exact consecutive timestamp differences for 1h, 24h, 7d or 30d ending at a native block; up to 50,000 timestamp reads |
 | `/api/v2/blocks?limit=10&cursor=...` | At most 20 newest-first block summaries anchored to a validated native tip |
 | `/api/v2/blocks/{id}` | Native header and coinbase-first transaction summaries |
+| `/api/v2/mempool?limit=50&cursor=...` | Relayable local pool summaries, aggregate fees/size and membership-bound pagination |
+| `/api/v2/tools/key-images/{image}` | Confirmed-chain public key-image membership |
+| `/api/v2/tools/outputs/{transaction}/{key}` | Public output-key membership in an identified transaction |
+| `/api/v2/tools/addresses/{address}` | Native public address checksum, format, network and public keys |
 | `/api/v2/transactions/{hash}` | Confirmed or native-pool public metadata, extra/keys/payment IDs, inputs/outputs and ring candidates |
 | `/api/v2/raw/block/{id}` | Native Ryo JSON and native serialized block hex |
 | `/api/v2/raw/transaction/{hash}` | Native Ryo JSON and native serialized transaction hex |
@@ -119,6 +123,43 @@ an old closed OpenAPI validator must update its schema to permit the added
 optional object. Optional website daemon status is separate from this native
 DTO and does not change `/network` into a daemon RPC proxy.
 
+## Transaction inspection, mempool and public tools
+
+Optional `inspection` on transaction summaries adds nullable decimal-string
+`ring_size_min` and `ring_size_max`, computed from each native spend input's
+relative offset count. Coinbase has no ring and uses null. `payment_id_types`
+is an array of native extra-presence markers: `legacy`, `encrypted`, `uniform`.
+An empty array means no detected ID; an omitted object means unsupported
+metadata. Neither short encrypted nor uniform payloads are decrypted. Old
+fields and legacy serialization remain unchanged; closed-schema clients must
+update their contracts.
+
+`GET /mempool` defaults to 50 summaries, with canonical `limit` 1–100 and optional
+`cursor`. One native scope reads at most 10,000 pool metadata entries, excludes
+`do_not_relay` and loads only the selected page's transaction blobs (each bounded
+to 4 MiB). Native bytes must match hash, size and fee metadata. Hash sorting and
+native `cn_fast_hash` over concatenated lowercase hashes form the membership
+`snapshot`. Cursors contain `snapshot.offset`, at most 70 characters; offset is
+canonical 1–10,000. Membership changes return 409 and require restarting. No
+persistent snapshot or local transaction observation times are exposed.
+The response includes `items`, decimal-string `transaction_count`, `size_bytes`,
+aggregate `fee_atomic`, `snapshot` and nullable `next_cursor`. Following cursors
+to null traverses the entire relayable pool within the bound; larger/inconsistent
+snapshots return 503, not partial success. Separate pages can have different
+reader heights while membership remains unchanged.
+
+Public tool paths accept exactly the documented public identifiers and no query
+parameters. Key-image checks return `spent` and `scope: confirmed_chain` from
+the native LMDB index; a negative result is not spendability or pending-pool
+proof. Output checks parse an exact transaction hash/public key, return native
+point-encoding `curve_valid`, matching output indices and inclusion state;
+missing transactions return 404, missing keys within a found transaction return
+an empty list. Membership does not prove recipient ownership. Address inspection
+accepts bounded Base58 text and uses native decoding for all three networks.
+Invalid native checksum/format returns `valid: false` and null metadata; valid
+addresses report their actual network and `matches_reader`. Public address keys
+and integrated ID are not wallet balances or private verification results.
+
 ## Pagination and errors
 
 `limit` defaults to 10 and accepts canonical integers 1–20. The initial page
@@ -143,7 +184,8 @@ Errors are `{error: {code, message}}` with concise, non-echoing messages:
 | 409 | `chain_changed` | Replaced/removed anchor or inconsistent native snapshot |
 | 503 | `unavailable` | DB, query-capacity, serialization or resource failure |
 
-Only `/api/v2/blocks` and `/api/v2/block-intervals` accept query parameters, and only when enabled. Duplicate,
+Only `/api/v2/blocks`, `/api/v2/mempool` and `/api/v2/block-intervals`
+accept their documented query parameters, and only when enabled. Duplicate,
 unknown, empty, noncanonical, percent-encoded or fragment-bearing parameters are
 rejected. V2 targets reject non-ASCII bytes; legacy query rejection remains.
 Bodies are rejected even for GET. Recognizable v2 transport errors use the v2

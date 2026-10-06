@@ -29,6 +29,93 @@ paths:
         '405': { $ref: '#/components/responses/MethodNotAllowed' }
         '409': { $ref: '#/components/responses/ChainChanged' }
         '503': { $ref: '#/components/responses/Unavailable' }
+  /api/v2/mempool:
+    get:
+      operationId: getMempool
+      summary: List relayable local pool transactions in deterministic hash order
+      description: At most 100 transaction blobs per page and 10000 metadata entries. Membership changes invalidate cursors with 409. No local receive/relay times; no persistent snapshot store.
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - name: cursor
+          in: query
+          schema: { $ref: '#/components/schemas/PoolCursor' }
+      responses:
+        '200':
+          description: Native public inspection snapshot
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MempoolResponse' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '405': { $ref: '#/components/responses/MethodNotAllowed' }
+        '409': { $ref: '#/components/responses/ChainChanged' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /api/v2/tools/key-images/{image}:
+    get:
+      operationId: checkKeyImage
+      summary: Check confirmed-chain membership of a public key image
+      parameters:
+        - name: image
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/Hash' }
+      responses:
+        '200':
+          description: Native public inspection snapshot
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KeyImageResponse' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '405': { $ref: '#/components/responses/MethodNotAllowed' }
+        '409': { $ref: '#/components/responses/ChainChanged' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /api/v2/tools/outputs/{transaction}/{key}:
+    get:
+      operationId: checkOutputKey
+      summary: Check an output public key within an identified transaction, not recipient ownership
+      parameters:
+        - name: transaction
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/Hash' }
+        - name: key
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/Hash' }
+      responses:
+        '200':
+          description: Native public inspection snapshot
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OutputCheckResponse' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '405': { $ref: '#/components/responses/MethodNotAllowed' }
+        '409': { $ref: '#/components/responses/ChainChanged' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /api/v2/tools/addresses/{address}:
+    get:
+      operationId: inspectAddress
+      summary: Decode a public Ryo address using native network, checksum and format rules
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/PublicAddress' }
+      responses:
+        '200':
+          description: Native public inspection snapshot
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AddressResponse' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '405': { $ref: '#/components/responses/MethodNotAllowed' }
+        '409': { $ref: '#/components/responses/ChainChanged' }
+        '503': { $ref: '#/components/responses/Unavailable' }
   /api/v2/block-intervals:
     get:
       operationId: getBlockIntervals
@@ -486,6 +573,107 @@ components:
           minimum: 0
           description: Number of spend inputs; excludes coinbase generation input.
         output_count: { type: integer, minimum: 0 }
+        inspection: { $ref: '#/components/schemas/TransactionInspection' }
+    PoolCursor:
+      type: string
+      maxLength: 70
+      pattern: '^[0-9a-f]{64}\.[1-9][0-9]{0,4}$'
+    PublicAddress:
+      type: string
+      minLength: 40
+      maxLength: 200
+      pattern: '^[1-9A-HJ-NP-Za-km-z]+$'
+    TransactionInspection:
+      type: object
+      additionalProperties: false
+      required: [ring_size_min, ring_size_max, payment_id_types]
+      properties:
+        ring_size_min: { $ref: '#/components/schemas/NullableUInt64' }
+        ring_size_max: { $ref: '#/components/schemas/NullableUInt64' }
+        payment_id_types:
+          type: array
+          uniqueItems: true
+          maxItems: 3
+          items: { type: string, enum: [legacy, encrypted, uniform] }
+          description: Native extra presence only. Uniform and short encrypted IDs are not decrypted recipient information.
+    MempoolResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        meta: { $ref: '#/components/schemas/Meta' }
+        data:
+          type: object
+          additionalProperties: false
+          required: [items, transaction_count, size_bytes, fee_atomic, snapshot, next_cursor]
+          properties:
+            items:
+              type: array
+              maxItems: 100
+              items: { $ref: '#/components/schemas/TransactionSummary' }
+            transaction_count: { $ref: '#/components/schemas/UInt64' }
+            size_bytes: { $ref: '#/components/schemas/UInt64' }
+            fee_atomic: { $ref: '#/components/schemas/UInt64' }
+            snapshot: { $ref: '#/components/schemas/Hash' }
+            next_cursor:
+              anyOf:
+                - { $ref: '#/components/schemas/PoolCursor' }
+                - { type: 'null' }
+    KeyImageResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        meta: { $ref: '#/components/schemas/Meta' }
+        data:
+          type: object
+          additionalProperties: false
+          required: [key_image, spent, scope]
+          properties:
+            key_image: { $ref: '#/components/schemas/Hash' }
+            spent: { type: boolean }
+            scope: { type: string, const: confirmed_chain }
+    OutputCheckResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        meta: { $ref: '#/components/schemas/Meta' }
+        data:
+          type: object
+          additionalProperties: false
+          required: [transaction_hash, public_key, curve_valid, output_indices, state]
+          properties:
+            transaction_hash: { $ref: '#/components/schemas/Hash' }
+            public_key: { $ref: '#/components/schemas/Hash' }
+            curve_valid: { type: boolean }
+            output_indices:
+              type: array
+              uniqueItems: true
+              items: { type: integer, minimum: 0 }
+            state: { type: string, enum: [confirmed, mempool] }
+    AddressResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        meta: { $ref: '#/components/schemas/Meta' }
+        data:
+          type: object
+          additionalProperties: false
+          required: [address, valid, network, matches_reader, kind, spend_public_key, view_public_key, payment_id8]
+          properties:
+            address: { $ref: '#/components/schemas/PublicAddress' }
+            valid: { type: boolean }
+            network: { enum: [mainnet, testnet, stagenet, null] }
+            matches_reader: { type: boolean }
+            kind: { enum: [standard, integrated, subaddress, kurz, null] }
+            spend_public_key: { $ref: '#/components/schemas/NullableHash' }
+            view_public_key: { $ref: '#/components/schemas/NullableHash' }
+            payment_id8:
+              anyOf:
+                - { type: string, pattern: '^[0-9a-f]{16}$' }
+                - { type: 'null' }
     NetworkResponse:
       type: object
       additionalProperties: false

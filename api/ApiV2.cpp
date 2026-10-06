@@ -19,7 +19,20 @@ json summary(const cryptonote::transaction& tx, const TransactionMetadata& metad
     return {{"hash", hex(metadata.hash)}, {"version", tx.version}, {"ringct_type", tx.rct_signatures.type},
         {"coinbase", metadata.coinbase}, {"size_bytes", std::to_string(metadata.size)},
         {"fee_atomic", std::to_string(metadata.fee)}, {"input_count", metadata.inputs.size()},
-        {"output_count", tx.vout.size()}};
+        {"output_count", tx.vout.size()}, {"inspection", [&]() {
+            json minimum = nullptr, maximum = nullptr, types = json::array();
+            for (const auto& input : metadata.inputs) {
+                const uint64_t count = input.key_offsets.size();
+                if (minimum.is_null() || count < minimum.get<uint64_t>()) minimum = count;
+                if (maximum.is_null() || count > maximum.get<uint64_t>()) maximum = count;
+            }
+            if (metadata.payment_id_present) types.push_back("legacy");
+            if (metadata.payment_id8_present) types.push_back("encrypted");
+            if (metadata.uniform_payment_id_present) types.push_back("uniform");
+            return json{{"ring_size_min", minimum.is_null() ? minimum : json(std::to_string(minimum.get<uint64_t>()))},
+                {"ring_size_max", maximum.is_null() ? maximum : json(std::to_string(maximum.get<uint64_t>()))},
+                {"payment_id_types", types}};
+        }()}};
 }
 void validate_block_id(const std::string& id) {
     if (id.size() == 64) parse_hash(id);
@@ -91,6 +104,72 @@ ApiResponse ApiV2::get(const std::string& target) {
                 {"scanned_count", window.scanned_count}, {"oldest_timestamp_unix", std::to_string(window.oldest_timestamp)},
                 {"history_limited", window.history_limited}, {"points", points}};
             return {200, {{"data", data}, {"meta", meta(window.chain_height)}}};
+        }
+        if (path == "/api/v2/mempool") {
+            unsigned limit = 50; std::string cursor;
+            bool has_limit = false, has_cursor = false;
+            if (question != std::string::npos) {
+                const auto query = target.substr(question + 1);
+                if (query.empty()) throw QueryFailure(QueryError::invalid, "Empty pool query.");
+                size_t start = 0;
+                while (start <= query.size()) {
+                    const auto end = query.find('&', start);
+                    const auto part = query.substr(start, end == std::string::npos ? end : end - start);
+                    const auto equals = part.find('=');
+                    if (equals == std::string::npos || equals == 0 || equals + 1 == part.size() ||
+                        part.find('=', equals + 1) != std::string::npos)
+                        throw QueryFailure(QueryError::invalid, "Invalid pool query.");
+                    const auto key = part.substr(0, equals), value = part.substr(equals + 1);
+                    if (key == "limit" && !has_limit) {
+                        const auto parsed = parse_uint64(value);
+                        if (!parsed || parsed > 100) throw QueryFailure(QueryError::invalid, "Invalid pool limit.");
+                        limit = static_cast<unsigned>(parsed); has_limit = true;
+                    } else if (key == "cursor" && !has_cursor) { cursor = value; has_cursor = true; }
+                    else throw QueryFailure(QueryError::invalid, "Unknown or duplicate pool parameter.");
+                    if (end == std::string::npos) break;
+                    start = end + 1;
+                }
+            }
+            auto pool = transactions_.pool(limit, cursor);
+            json items = json::array();
+            for (size_t i = 0; i < pool.transactions.size(); ++i) items.push_back(summary(pool.transactions[i], pool.metadata[i]));
+            return {200, {{"data", {{"items", items}, {"transaction_count", std::to_string(pool.count)},
+                {"size_bytes", std::to_string(pool.size)}, {"fee_atomic", std::to_string(pool.fees)},
+                {"snapshot", pool.snapshot}, {"next_cursor", pool.next_cursor.empty() ? json(nullptr) : json(pool.next_cursor)}}},
+                {"meta", meta(pool.chain_height)}}};
+        }
+        const std::string image_prefix = "/api/v2/tools/key-images/", output_prefix = "/api/v2/tools/outputs/",
+            address_prefix = "/api/v2/tools/addresses/";
+        if (path.compare(0, image_prefix.size(), image_prefix) == 0) {
+            const auto result = transactions_.key_image(path.substr(image_prefix.size()));
+            return {200, {{"data", {{"key_image", epee::string_tools::pod_to_hex(result.image)},
+                {"spent", result.spent}, {"scope", "confirmed_chain"}}}, {"meta", meta(result.chain_height)}}};
+        }
+        if (path.compare(0, output_prefix.size(), output_prefix) == 0) {
+            const auto ids = path.substr(output_prefix.size());
+            if (ids.size() != 129 || ids[64] != '/') throw QueryFailure(QueryError::invalid, "Invalid output identifiers.");
+            crypto::public_key key{};
+            if (!epee::string_tools::hex_to_pod(ids.substr(65), key)) throw QueryFailure(QueryError::invalid, "Invalid output public key.");
+            const auto result = transactions_.get(ids.substr(0, 64), false);
+            json indices = json::array();
+            for (size_t i = 0; i < result.metadata.outputs.size(); ++i)
+                if (result.metadata.outputs[i].first.key == key) indices.push_back(i);
+            return {200, {{"data", {{"transaction_hash", hex(result.metadata.hash)},
+                {"public_key", epee::string_tools::pod_to_hex(key)}, {"curve_valid", crypto::check_key(key)},
+                {"output_indices", indices}, {"state", result.in_pool ? "mempool" : "confirmed"}}},
+                {"meta", meta(result.chain_height)}}};
+        }
+        if (path.compare(0, address_prefix.size(), address_prefix) == 0) {
+            const auto result = transactions_.address(path.substr(address_prefix.size()));
+            const auto& parsed = result.parsed;
+            const auto name = result.network == cryptonote::MAINNET ? "mainnet" : result.network == cryptonote::TESTNET ? "testnet" : "stagenet";
+            return {200, {{"data", {{"address", result.address}, {"valid", result.valid},
+                {"network", result.valid ? json(name) : json(nullptr)}, {"matches_reader", result.matches_reader},
+                {"kind", result.valid ? json(parsed.is_kurz ? "kurz" : parsed.has_payment_id ? "integrated" : parsed.is_subaddress ? "subaddress" : "standard") : json(nullptr)},
+                {"spend_public_key", result.valid ? optional_key(parsed.address.m_spend_public_key) : json(nullptr)},
+                {"view_public_key", result.valid ? optional_key(parsed.address.m_view_public_key) : json(nullptr)},
+                {"payment_id8", result.valid && parsed.has_payment_id ? json(epee::string_tools::pod_to_hex(parsed.payment_id)) : json(nullptr)}}},
+                {"meta", meta(result.chain_height)}}};
         }
         if (path == "/api/v2/network") {
             const auto snapshot = network_.get();

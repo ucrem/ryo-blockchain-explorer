@@ -278,6 +278,9 @@ export default async function Dashboard({
               <dd>{network?.data.native_core_version ?? "Unavailable"}</dd>
             </div>
           </dl>
+          <a className="text-link" href="/mempool">
+            Browse pending transactions
+          </a>
           <a href="/json/network" className="text-link">
             Inspect network JSON <ArrowUpRight size={16} aria-hidden="true" />
           </a>

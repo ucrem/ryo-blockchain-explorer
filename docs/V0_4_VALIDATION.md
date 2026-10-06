@@ -380,6 +380,85 @@ tools are not implemented. The reference uses a different core version string
 and is at a much newer height; current-tip parity and full-chain capacity are
 not established by this historical smoke.
 
+## Paginated public pool and native inspection tools
+
+The owner authorized the remaining public mempool listing, ring/payment-ID
+summaries and dedicated public tools on 2026-10-06. The implementation adds
+`/mempool`, `/tools` and additive native API v2 routes on TransactionService,
+with no new store, private-key flow or core revision change. Transaction detail
+links prefill public key-image/output checks. Native `inspection` is shared by
+block, transaction and pool summaries; old DTOs remain accepted as unknown.
+
+The incremental Ubuntu 24.04 build and all five CTests passed in 30.34 seconds
+(`build/v04-pool-native-build.log`, `build/v04-pool-native-tests.log`). Native
+coverage exercises complete two-entry pool traversal, hash cursor mutation,
+do-not-relay exclusion, fee/blob identity, native uniform-ID and ring presence,
+negative/confirmed-positive key-image index checks, output match/absence, valid
+mainnet/testnet public-address decoding and a rejected checksum. These storage
+fixtures do not claim consensus-valid synthetic block/transaction mutations.
+HTTP checks validate actual empty pool and public tool DTOs, native examples,
+no POST writes and rejection of secret/duplicate/unbounded query parameters.
+Legacy contracts and schema checks pass with the additive fields/routes.
+
+Production frontend build/TypeScript and ESLint passed. Seventeen Node checks
+passed in 10.71 seconds, including pool/inspection DTO bounds, unknown metadata,
+ring ranges and rejection of secret/duplicate/noncanonical tool/list inputs.
+All sixteen production Chromium scenarios passed (`build/v04-pool-browser-tests.log`),
+including 53-entry traversal through 50 + 3 rows, live mutation recovery, pause,
+empty/outage states, public tool forms and negative/positive result meanings,
+embedded JSON, mobile overflow and accessibility. The chart geometry regression
+now waits for ResizeObserver layout before inspecting native point centers;
+its 4/10/20-bar dimensions/count assertions remain intact.
+
+A real historical mainnet browser at chain height 230,077 inspected transaction
+`a8e36d10afc78d258f6f438a04f9da04ad103794de926cd105b7f57ef8a3e0e3`:
+ring size 25, native uniform-ID presence, confirmed spent key image and output
+key membership at index 0. The public dev-fund address from the pinned core's
+configuration passed native mainnet decoding. The initial real local pool was empty. A later browser at height 230,110 showed
+six real pending transactions, 22,999 bytes and 87,500,000 atomic aggregate fees;
+its tracked screenshot uses that actual populated state. Three native pages
+with limit 2 traversed all six unique hashes and independently matched both
+size and fee sums (`build/v04-native-smoke/live-pool-independent-check.json`).
+The real browser opened a pending TX detail and displayed mempool inclusion,
+zero confirmations, ring size 25 and uniform-ID presence, with no page errors
+or axe violations (`build/v04-native-smoke/live-pool-browser-result.json`).
+Browser requests stayed on the website origin, with zero page errors, no mobile
+document overflow and zero axe violations on the pool, tool and mobile result
+views. Evidence is `build/v04-native-smoke/pool-tools-browser-result.json`.
+Mainnet sync remained running throughout verification.
+
+![Native confirmed key-image check](images/v0.4-native-key-image-tool.png)
+
+![Actual six-transaction local pool during historical sync](images/v0.4-native-mempool.png)
+
+The public tools do not decrypt wallet exports or perform private-key ownership
+verification. Output checks require a transaction hash rather than claiming a
+new global public-key search index. Key-image status covers confirmed reader
+membership only. Pool reads bound total metadata to 10,000 entries and selected
+blobs to 100 per native page; limits fail truthfully instead of returning partial
+success. Full-pool load/performance and all address-format fixtures remain unverified.
+Pool membership does not establish consensus validity at the current network tip. Full native CI
+was not redispatched and its manual-only workflow is unchanged.
+
+## Observed daemon synchronization failure
+
+During final verification on 2026-10-06, the unchanged pinned daemon stopped
+advancing at chain height 230,110 while continuing to run and reconnect. Its
+native log repeatedly reports transaction verification failure during
+`NOTIFY_RESPONSE_GET_OBJECTS`, with the transaction blob identifier logged as
+`tx_id`
+`d921a38e147c8d782c1000d1350cc400e045d828dba98fea04471b631651c45c`.
+RPC still reports a much newer peer target and `is_ready: false`. The cause is
+not established; this is not evidence of a browser-refresh failure or proof
+that a peer's transaction is invalid on the current consensus chain.
+
+The daemon has not been stopped, reset, rewound or patched, and validation has
+not been bypassed. The native core pin is unchanged. This runtime failure must
+be diagnosed before claiming current-tip synchronization or current-protocol
+production readiness. The new public pool/tool checks above validate reads of
+available local data; they do not resolve this daemon synchronization problem.
+No peer identifiers or node propagation records are committed.
+
 ## Limits and release gate
 
 Full-chain performance, live mapping growth/external writers, wider historical

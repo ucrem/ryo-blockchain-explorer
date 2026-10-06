@@ -1,3 +1,4 @@
+import { ringSize, paymentIdTypes } from "@/lib/format";
 import { ArrowUpRight, ArrowRightLeft } from "lucide-react";
 import {
   Table,
@@ -81,6 +82,8 @@ export async function RecentTransactions({
                 <TableHead>Block</TableHead>
                 <TableHead className="text-right">Fee · RYO</TableHead>
                 <TableHead>Inputs / Outputs</TableHead>
+                <TableHead>Ring size</TableHead>
+                <TableHead>Payment ID</TableHead>
                 <TableHead>TX size</TableHead>
                 <TableHead>Timestamp · UTC</TableHead>
               </TableRow>
@@ -136,6 +139,14 @@ export async function RecentTransactions({
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     {tx.inputCount ?? "—"} / {tx.outputCount ?? "—"}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {ringSize(tx.inspection)}
+                  </TableCell>
+                  <TableCell title="Native payment-ID presence; encrypted and uniform payloads are not decrypted.">
+                    {tx.coinbase
+                      ? "—"
+                      : paymentIdTypes(tx.inspection?.payment_id_types)}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     {tx.sizeBytes ? bytes(tx.sizeBytes) : "—"}

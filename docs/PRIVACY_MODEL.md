@@ -8,8 +8,8 @@ not described as decrypted recipient information. Read-only GETs accept only
 bounded public block-list parameters; no private-key input or propagation data
 is exposed. Existing [legacy privacy differences](HTTP_SERVER.md) remain explicit.
 
-The active project has native services and an opt-in read-only HTTP subset,
-without a browser flow. Its block/transaction/raw/version routes accept no
+The native foundation has services and an opt-in read-only HTTP subset; the
+v0.4 website consumes its public DTOs. Its block/transaction/raw/version routes accept no
 private keys, wallet uploads, or transaction submission, and omit local pool
 receive/relay times. See [HTTP_SERVER.md](HTTP_SERVER.md) for the explicit legacy
 privacy differences. Legacy endpoint/browser risks below describe the inspected
@@ -87,6 +87,22 @@ Network hashrate is an estimate based on chain difficulty/target. Connection and
 peer-list counts, uptime, synchronization, and daemon health describe the explorer
 node. They do not measure total network peers. Separate these categories in v2,
 including snapshot freshness and partial failures.
+
+## Shipped public inspection tools
+
+v0.4 adds native public checks for confirmed-chain key-image membership, output
+membership within an identified transaction and public-address decoding.
+They take no private keys or wallet exports. A negative key-image result is
+limited to this reader's confirmed chain and does not prove wallet spendability,
+identify a real ring member or check pending conflicts. Output-key membership
+is not recipient/ownership proof. Address decoding yields format/network and
+public keys, without balance or history inference. These are distinct from the
+legacy export-decryption/signature and secret-based output-verification flows.
+
+The full public pool list is bounded, excludes `do_not_relay` and orders by hash,
+with a native membership digest for pagination. It exposes no local receive or
+relay timestamps. Ring summary ranges count candidates; ID markers distinguish
+native legacy/encrypted/uniform presence without decrypting encrypted IDs.
 
 ## Target local verification
 

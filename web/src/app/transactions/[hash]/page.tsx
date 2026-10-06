@@ -1,7 +1,14 @@
 import { notFound } from "next/navigation";
 import { ApiError, readTransaction } from "@/lib/api";
 import { publicIdentifier } from "@/lib/contracts";
-import { bytes, coins, integer, timestamp } from "@/lib/format";
+import {
+  bytes,
+  coins,
+  integer,
+  timestamp,
+  ringSize,
+  paymentIdTypes,
+} from "@/lib/format";
 import { slicePage, viewPages, type ViewQuery } from "@/lib/view-pages";
 import {
   DetailHeading,
@@ -111,6 +118,10 @@ export default async function TransactionPage({
         <DetailRow label="Outputs">{integer(t.output_count)}</DetailRow>
         <DetailRow label="Version">{t.version}</DetailRow>
         <DetailRow label="RingCT type">{t.ringct_type}</DetailRow>
+        <DetailRow label="Ring size">{ringSize(t.inspection)}</DetailRow>
+        <DetailRow label="Payment ID type">
+          {t.coinbase ? "—" : paymentIdTypes(t.inspection?.payment_id_types)}
+        </DetailRow>
       </dl>
       <section
         className="blocks-section detail-table"
@@ -138,6 +149,7 @@ export default async function TransactionPage({
                   <TableHead>Index</TableHead>
                   <TableHead>Output public key</TableHead>
                   <TableHead>Amount</TableHead>
+                  <TableHead>Check</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -151,6 +163,14 @@ export default async function TransactionPage({
                       {o.amount_atomic === null
                         ? "Hidden by RingCT"
                         : coins(o.amount_atomic)}
+                    </TableCell>
+                    <TableCell>
+                      <a
+                        className="text-link"
+                        href={`/tools?tool=output&transaction=${t.hash}&value=${o.public_key}`}
+                      >
+                        Check output key
+                      </a>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -198,6 +218,12 @@ export default async function TransactionPage({
                 <dl>
                   <DetailRow label="Key image">
                     <code className="full-hash">{input.key_image}</code>
+                    <a
+                      className="text-link"
+                      href={`/tools?tool=key-image&value=${input.key_image}`}
+                    >
+                      Check spent status
+                    </a>
                   </DetailRow>
                   <DetailRow label="Relative output offsets">
                     <code className="full-hash">

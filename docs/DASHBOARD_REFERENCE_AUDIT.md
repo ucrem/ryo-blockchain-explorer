@@ -36,10 +36,10 @@ imported. Existing Ryo branding and both dashboard tables are preserved.
 | Time and synchronization | Page/live-check UTC times; reader height alone | Retained timestamps and added an optional node connection panel: sync counts, target, progress, peer count and observation time. |
 | Median block size | Missing | Added native median size over the last 100 blocks, or the actual smaller sample on a short chain. |
 | Confirmed transactions | Recent bounded preview | Retained preview and added total confirmed ordinary transaction count, excluding coinbase. |
-| Mempool | Known transaction detail by hash only | Added relayable local pool count and total serialized size. Full pending-transaction listing is still absent. |
+| Mempool | Known transaction detail by hash only | Added relayable local pool count/size and `/mempool` with full bounded pagination, aggregate fees and membership-aware live updates. |
 | TX fee, size and inputs/outputs | Exact fee in preview; remaining metadata in detail | Preview now includes native size, input/output counts and exact fee per KiB when already available from its bounded block-detail reads. Header-only coinbase rows show unavailable fields as a dash. |
-| Ring size and payment-ID marker | Available in transaction details | Still absent from the dashboard preview. Avoid extra per-transaction lookups merely to populate these columns. |
-| Address / verification / submission tools | Height/hash search and public metadata inspection | Public-address parsing, key-image/output checkers, secret-based verification and transaction submission remain outside this release. No unsupported navigation is advertised. |
+| Ring size and payment-ID marker | Available in transaction details | Now included in dashboard, block and pool summaries through native `inspection`, without extra per-transaction lookups; uniform/encrypted presence is explicit. |
+| Address / verification / submission tools | Height/hash search and public metadata inspection | Added `/tools` for native public-address parsing, confirmed key-image membership and output-key membership within a transaction. Secret-based verification/export checks and submission remain outside this release. |
 | Interval history and JSON | Native windows and embedded exact JSON | Preserved our additional chart, inspection hold, live recovery, readable details and contextual JSON views. |
 
 ## Correctness findings
@@ -123,10 +123,15 @@ Independent reader/list/node requests need not describe one shared instant.
 
 ![Real mainnet dashboard during historical synchronization](images/v0.4-mainnet-overview.png)
 
-Full pending-transaction listing and dashboard ring/payment-ID summaries need
-separate bounded native summary work. Address parsing and verification tools
-need explicit coverage and privacy design; transaction submission is a write
-capability, outside the read-only scope. Existing detail pages remain usable.
+The owner authorized the remaining public listing/inspection work after this
+initial comparison. `/mempool` now traverses relayable entries through bounded
+membership cursors and handles changes/empty/unavailable states. Native summary
+inspection adds ring ranges and all three payment-ID presence types. `/tools`
+checks public key images, transaction output membership and address formats,
+with direct links from detail pages. Native and browser evidence is recorded in
+[V0_4_VALIDATION.md](V0_4_VALIDATION.md). These public tools are not the legacy
+secret-based wallet-export checks. Private-key/output verification and transaction
+submission remain separate capabilities outside the read-only public scope.
 
 The reference footer advertises core `0.6.3.99-release/dev-github-actions`; our
 unchanged pin reports `0.6.1.0-185dd1f/master`. A version-string difference is

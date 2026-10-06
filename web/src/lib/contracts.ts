@@ -204,6 +204,37 @@ export const blockIntervalsResponse = z
 export type BlockIntervalsResponse = z.infer<typeof blockIntervalsResponse>;
 
 const count = z.number().int().min(0).max(4294967295);
+export const transactionInspection = z
+  .object({
+    ring_size_min: uint64.nullable(),
+    ring_size_max: uint64.nullable(),
+    payment_id_types: z
+      .array(z.enum(["legacy", "encrypted", "uniform"]))
+      .max(3),
+  })
+  .refine((value) => {
+    if (new Set(value.payment_id_types).size !== value.payment_id_types.length)
+      return false;
+    if (value.ring_size_min === null || value.ring_size_max === null)
+      return value.ring_size_min === value.ring_size_max;
+    return (
+      uint64.safeParse(value.ring_size_min).success &&
+      uint64.safeParse(value.ring_size_max).success &&
+      BigInt(value.ring_size_min) <= BigInt(value.ring_size_max) &&
+      new Set(value.payment_id_types).size === value.payment_id_types.length
+    );
+  });
+export type TransactionInspection = z.infer<typeof transactionInspection>;
+export const publicAddress = z
+  .string()
+  .min(40)
+  .max(200)
+  .regex(/^[1-9A-HJ-NP-Za-km-z]+$/);
+export const poolCursor = z
+  .string()
+  .max(70)
+  .regex(/^[0-9a-f]{64}\.[1-9][0-9]{0,4}$/)
+  .refine((value) => Number(value.slice(65)) <= 10000);
 const transactionSummary = z.object({
   hash,
   version: z.number().int().min(0).max(255),
@@ -213,6 +244,7 @@ const transactionSummary = z.object({
   fee_atomic: uint64,
   input_count: count,
   output_count: count,
+  inspection: transactionInspection.optional(),
 });
 export const blockResponse = z
   .object({
@@ -315,6 +347,81 @@ export const transactionResponse = z
         : t.coinbase_height === null)
     );
   });
+export const mempoolResponse = z
+  .object({
+    meta,
+    data: z.object({
+      items: z.array(transactionSummary).max(100),
+      transaction_count: uint64,
+      size_bytes: uint64,
+      fee_atomic: uint64,
+      snapshot: hash,
+      next_cursor: poolCursor.nullable(),
+    }),
+  })
+  .refine((response) => {
+    const d = response.data;
+    return (
+      uint64.safeParse(d.transaction_count).success &&
+      BigInt(d.transaction_count) <= 10000n &&
+      BigInt(d.transaction_count) >= BigInt(d.items.length) &&
+      d.items.every(
+        (item, i) =>
+          !item.coinbase && (i === 0 || d.items[i - 1].hash < item.hash),
+      ) &&
+      (!d.next_cursor || d.next_cursor.startsWith(`${d.snapshot}.`))
+    );
+  });
+export type MempoolResponse = z.infer<typeof mempoolResponse>;
+export const keyImageResponse = z.object({
+  meta,
+  data: z.object({
+    key_image: hash,
+    spent: z.boolean(),
+    scope: z.literal("confirmed_chain"),
+  }),
+});
+export const outputCheckResponse = z.object({
+  meta,
+  data: z.object({
+    transaction_hash: hash,
+    public_key: hash,
+    curve_valid: z.boolean(),
+    output_indices: z.array(count),
+    state: z.enum(["confirmed", "mempool"]),
+  }),
+});
+export const addressResponse = z
+  .object({
+    meta,
+    data: z.object({
+      address: publicAddress,
+      valid: z.boolean(),
+      network: z.enum(["mainnet", "testnet", "stagenet"]).nullable(),
+      matches_reader: z.boolean(),
+      kind: z.enum(["standard", "integrated", "subaddress", "kurz"]).nullable(),
+      spend_public_key: hash.nullable(),
+      view_public_key: hash.nullable(),
+      payment_id8: z
+        .string()
+        .regex(/^[0-9a-f]{16}$/)
+        .nullable(),
+    }),
+  })
+  .refine((r) =>
+    r.data.valid
+      ? r.data.network !== null &&
+        r.data.kind !== null &&
+        r.data.spend_public_key !== null &&
+        r.data.view_public_key !== null &&
+        r.data.matches_reader === (r.data.network === r.meta.network)
+      : !r.data.matches_reader &&
+        r.data.network === null &&
+        r.data.kind === null &&
+        r.data.spend_public_key === null &&
+        r.data.view_public_key === null &&
+        r.data.payment_id8 === null,
+  );
 export type BlockResponse = z.infer<typeof blockResponse>;
 export type TransactionResponse = z.infer<typeof transactionResponse>;
 
@@ -335,6 +442,29 @@ export function publicIdentifier(
 }
 
 export function publicPath(path: string, query: URLSearchParams): boolean {
+  if (path === "mempool") {
+    if (
+      [...query.keys()].some((key) => !["limit", "cursor"].includes(key)) ||
+      query.getAll("limit").length > 1 ||
+      query.getAll("cursor").length > 1
+    )
+      return false;
+    const limit = query.get("limit"),
+      cursor = query.get("cursor");
+    return (
+      (limit === null || /^(?:[1-9]|[1-9][0-9]|100)$/.test(limit)) &&
+      (cursor === null || poolCursor.safeParse(cursor).success)
+    );
+  }
+  if (path.startsWith("tools/")) {
+    if (query.size) return false;
+    return (
+      /^tools\/key-images\/[0-9a-fA-F]{64}$/.test(path) ||
+      /^tools\/outputs\/[0-9a-fA-F]{64}\/[0-9a-fA-F]{64}$/.test(path) ||
+      (path.startsWith("tools/addresses/") &&
+        publicAddress.safeParse(path.slice(16)).success)
+    );
+  }
   if (path === "block-intervals") {
     if (
       [...query.keys()].some((key) => !["window", "anchor"].includes(key)) ||

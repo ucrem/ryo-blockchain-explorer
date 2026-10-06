@@ -2,7 +2,14 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { ApiError, readBlock } from "@/lib/api";
 import { publicIdentifier } from "@/lib/contracts";
-import { bytes, coins, integer, timestamp } from "@/lib/format";
+import {
+  bytes,
+  coins,
+  integer,
+  timestamp,
+  ringSize,
+  paymentIdTypes,
+} from "@/lib/format";
 import { slicePage, viewPages, type ViewQuery } from "@/lib/view-pages";
 import {
   DetailHeading,
@@ -147,6 +154,8 @@ export default async function BlockPage({
               <TableHead>Transaction hash</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Fee</TableHead>
+              <TableHead>Ring size</TableHead>
+              <TableHead>Payment ID</TableHead>
               <TableHead>Size</TableHead>
             </TableRow>
           </TableHeader>
@@ -163,6 +172,12 @@ export default async function BlockPage({
                 </TableCell>
                 <TableCell>{t.coinbase ? "Coinbase" : "Transfer"}</TableCell>
                 <TableCell>{coins(t.fee_atomic)}</TableCell>
+                <TableCell>{ringSize(t.inspection)}</TableCell>
+                <TableCell>
+                  {t.coinbase
+                    ? "—"
+                    : paymentIdTypes(t.inspection?.payment_id_types)}
+                </TableCell>
                 <TableCell>{bytes(t.size_bytes)}</TableCell>
               </TableRow>
             ))}

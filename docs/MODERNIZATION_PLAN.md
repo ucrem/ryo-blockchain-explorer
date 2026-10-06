@@ -26,6 +26,9 @@ block/transaction HTML details, public height/hash search and bounded live tip
 polling, validated during a limited real mainnet sync.
 The dashboard also pairs full-width block and confirmed-transaction tables using
 existing bounded native reads, with mobile stacking and live updates.
+The owner additionally authorized a paginated public mempool, ring/payment-ID
+summaries and native public key-image/output/address inspection tools in v0.4.
+Wallet-export/private-key verification remains a separate later capability.
 v0.5 follows with richer detail inspection, presentation and wider historical validation.
 
 ## Target data flow
@@ -89,7 +92,7 @@ block/transaction metadata and owned snapshots, legacy JSON adaptation, and
 separate bounded HTTP transport. The legacy HTML-bound code remains an upstream
 reference, outside this project. The approved v0.3 increment adds a native chain
 snapshot, bounded block-summary pagination, v2 serialization/routing and OpenAPI;
-pool listing, advanced search, extended emission analytics and verification
+Advanced search, extended emission analytics and secret-based verification
 remain later focused extraction. The owner's reference-dashboard request adds
 bounded native overview aggregates and optional server-only public node status
 in v0.4; see [the comparison](DASHBOARD_REFERENCE_AUDIT.md).

@@ -5,6 +5,26 @@ import { Button } from "@/components/ui/button";
 export const metadata: Metadata = { title: "Developer API" };
 const routes = [
   [
+    "/api/v2/mempool?limit=50",
+    "Paginated relayable local pool, native summaries and membership cursor",
+    "/api/v2/mempool?limit=50",
+  ],
+  [
+    "/api/v2/tools/key-images/{image}",
+    "Confirmed-chain public key-image membership",
+    null,
+  ],
+  [
+    "/api/v2/tools/outputs/{transaction}/{key}",
+    "Public output membership within a transaction",
+    null,
+  ],
+  [
+    "/api/v2/tools/addresses/{address}",
+    "Native public address format and network inspection",
+    null,
+  ],
+  [
     "/api/v2/block-intervals?window=1h",
     "Native block timestamp differences; 1h, 24h, 7d or 30d",
     "/api/v2/block-intervals?window=1h",

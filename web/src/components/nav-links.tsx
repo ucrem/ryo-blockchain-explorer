@@ -1,5 +1,12 @@
 "use client";
-import { ArrowUpRight, Blocks, Code2, LayoutDashboard } from "lucide-react";
+import {
+  ArrowUpRight,
+  Blocks,
+  Code2,
+  LayoutDashboard,
+  ListOrdered,
+  ScanSearch,
+} from "lucide-react";
 import { usePathname } from "next/navigation";
 export function NavLinks() {
   const current = usePathname();
@@ -7,6 +14,8 @@ export function NavLinks() {
     <>
       {[
         { href: "/", label: "Overview", icon: LayoutDashboard },
+        { href: "/mempool", label: "Mempool", icon: ListOrdered },
+        { href: "/tools", label: "Tools", icon: ScanSearch },
         { href: "/developers", label: "Developer API", icon: Code2 },
         {
           href: "https://github.com/ucrem/ryo-blockchain-explorer",

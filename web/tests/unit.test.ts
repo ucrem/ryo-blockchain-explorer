@@ -3,6 +3,11 @@ import { after, before, test } from "node:test";
 import { createServer, type Server } from "node:http";
 import { readFileSync } from "node:fs";
 import {
+  mempoolResponse,
+  keyImageResponse,
+  outputCheckResponse,
+  addressResponse,
+  transactionInspection,
   blockResponse,
   transactionResponse,
   publicIdentifier,
@@ -15,6 +20,8 @@ import {
 import { publicNodeStatus } from "../src/lib/node-status";
 import { intervalPlot } from "../src/lib/interval-plot";
 import {
+  ringSize,
+  paymentIdTypes,
   bytes,
   coins,
   integer,
@@ -27,6 +34,7 @@ import { ApiError, upstreamOrigin, upstreamRead } from "../src/lib/upstream";
 import { viewPages, slicePage } from "../src/lib/view-pages";
 
 import { prettyJson, JsonPreviewLimit } from "../src/lib/pretty-json";
+import { toolQuery } from "../src/lib/tool-query";
 import { recentTransactions } from "../src/lib/recent-transactions";
 
 const examples = JSON.parse(
@@ -275,6 +283,7 @@ test("public route allowlist rejects secret queries, arbitrary targets and inval
   for (const path of [
     "network",
     "openapi.json",
+    "mempool",
     "blocks/0",
     "raw/block/0",
     `transactions/${"a".repeat(64)}`,
@@ -285,7 +294,6 @@ test("public route allowlist rejects secret queries, arbitrary targets and inval
     "../network",
     "https://example.com",
     "outputs",
-    "mempool",
     "raw/blocks/0",
     "block/0",
     "blocks/00",
@@ -565,4 +573,89 @@ test("embedded JSON formatting has explicit size, depth and expansion bounds", (
   const deepArray =
     "[".repeat(60) + Array(40000).fill("0").join(",") + "]".repeat(60);
   assert.throws(() => prettyJson(deepArray), JsonPreviewLimit);
+});
+
+test("pool pages and inspection tools preserve public scope, exact metadata and request bounds", () => {
+  assert.equal(
+    mempoolResponse.parse(examples.MempoolResponse).data.transaction_count,
+    "0",
+  );
+  assert.equal(
+    keyImageResponse.parse(examples.KeyImageResponse).data.scope,
+    "confirmed_chain",
+  );
+  assert.deepEqual(
+    outputCheckResponse.parse(examples.OutputCheckResponse).data.output_indices,
+    [0],
+  );
+  assert.equal(
+    addressResponse.parse(examples.AddressResponse).data.valid,
+    false,
+  );
+  const inspection = {
+    ring_size_min: "3",
+    ring_size_max: "5",
+    payment_id_types: ["uniform"],
+  };
+  assert.equal(transactionInspection.safeParse(inspection).success, true);
+  assert.equal(ringSize(inspection), "3–5");
+  assert.equal(paymentIdTypes(inspection.payment_id_types), "Uniform");
+  assert.equal(ringSize(undefined), "—");
+  assert.equal(paymentIdTypes(undefined), "—");
+  assert.equal(
+    transactionInspection.safeParse({ ...inspection, ring_size_min: "6" })
+      .success,
+    false,
+  );
+  assert.equal(
+    transactionInspection.safeParse({
+      ...inspection,
+      payment_id_types: ["uniform", "uniform"],
+    }).success,
+    false,
+  );
+  const broken = structuredClone(examples.MempoolResponse);
+  broken.data.items = [examples.BlockResponse.data.transactions[0]];
+  assert.equal(mempoolResponse.safeParse(broken).success, false);
+  for (const query of [
+    "limit=101",
+    "limit=0",
+    "cursor=" + "a".repeat(64) + ".10001",
+    "limit=1&limit=2",
+    "viewkey=secret",
+  ])
+    assert.equal(publicPath("mempool", new URLSearchParams(query)), false);
+  assert.equal(
+    publicPath(
+      "mempool",
+      new URLSearchParams({ limit: "100", cursor: "a".repeat(64) + ".100" }),
+    ),
+    true,
+  );
+  assert.equal(
+    publicPath("tools/key-images/" + "a".repeat(64), new URLSearchParams()),
+    true,
+  );
+  assert.equal(
+    publicPath(
+      "tools/key-images/" + "a".repeat(64),
+      new URLSearchParams("viewkey=secret"),
+    ),
+    false,
+  );
+  assert.equal(
+    publicPath("tools/addresses/" + "1".repeat(201), new URLSearchParams()),
+    false,
+  );
+  assert.deepEqual(toolQuery({ tool: "key-image", value: "A".repeat(64) }), {
+    tool: "key-image",
+    value: "a".repeat(64),
+    transaction: undefined,
+  });
+  assert.equal(toolQuery({ tool: "output", value: "a".repeat(64) }), null);
+  assert.equal(toolQuery({ tool: "key-image", value: ["a".repeat(64)] }), null);
+  assert.equal(
+    toolQuery({ tool: "address", value: "1".repeat(95), viewkey: "secret" }),
+    null,
+  );
 });

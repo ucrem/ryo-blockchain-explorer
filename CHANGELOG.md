@@ -33,6 +33,11 @@ retroactively.
   suspension, retained browser state and retry after reader outages.
 - Readable block/transaction detail pages and global public height/hash search,
   with exact fees, paginated rows and privacy-safe RingCT/input/output views.
+- Paginated relayable mempool with membership-bound cursors, exact native
+  summaries and ten-second pool updates with pause/mutation recovery.
+- Ring size ranges and legacy/encrypted/uniform payment-ID presence in summaries.
+- Public native key-image/output-membership/address tools, linked from details,
+  with contextual results and embedded JSON.
 - Contextual explanations of structured/native JSON, hexadecimal serialization,
   exact integer strings, hidden amounts and formatting.
 - Embedded formatted JSON/raw views retaining the explorer layout, with exact
@@ -57,8 +62,8 @@ retroactively.
 
 ### Known Issues
 
-- Address search, pool listing, SSE, advanced analytics and verification
-  remain later milestones. Full-chain/deployment
+- Address balance/history search, wallet-export/private-key verification, SSE
+  and advanced analytics remain later milestones. Full-chain/deployment
   capacity is not established. The developer-only ESLint glob dependency has
   the unpatched braces advisory documented in `docs/V0_4_VALIDATION.md`.
 

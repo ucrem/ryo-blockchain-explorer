@@ -48,3 +48,30 @@ export function feePerKiB(fee: string, size: string): string | null {
     ? null
     : coins(((BigInt(fee) * 1024n) / bytes).toString());
 }
+
+export function ringSize(
+  value:
+    | { ring_size_min: string | null; ring_size_max: string | null }
+    | null
+    | undefined,
+) {
+  if (!value || value.ring_size_min === null || value.ring_size_max === null)
+    return "—";
+  return value.ring_size_min === value.ring_size_max
+    ? integer(value.ring_size_min)
+    : `${integer(value.ring_size_min)}–${integer(value.ring_size_max)}`;
+}
+export function paymentIdTypes(types: string[] | undefined) {
+  if (!types) return "—";
+  return types.length
+    ? types
+        .map((type) =>
+          type === "legacy"
+            ? "Legacy"
+            : type === "uniform"
+              ? "Uniform"
+              : "Encrypted",
+        )
+        .join(" · ")
+    : "None";
+}

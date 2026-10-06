@@ -99,21 +99,33 @@ export default async function JsonPage({
         ? "Network JSON"
         : path === "blocks"
           ? "Block list JSON"
-          : "OpenAPI JSON";
+          : path === "mempool"
+            ? "Mempool JSON"
+            : path.startsWith("tools/")
+              ? "Inspection result JSON"
+              : "OpenAPI JSON";
   const back = blockId
     ? `/blocks/${publicIdentifier(blockId)?.value ?? blockId}`
     : txHash
       ? `/transactions/${txHash.toLowerCase()}`
-      : path === "openapi.json"
-        ? "/developers"
-        : "/";
+      : path === "mempool"
+        ? "/mempool"
+        : path.startsWith("tools/")
+          ? "/tools"
+          : path === "openapi.json"
+            ? "/developers"
+            : "/";
   const backLabel = blockId
     ? "Back to block"
     : txHash
       ? "Back to transaction"
-      : path === "openapi.json"
-        ? "Back to developer API"
-        : "Back to overview";
+      : path === "mempool"
+        ? "Back to mempool"
+        : path.startsWith("tools/")
+          ? "Back to tools"
+          : path === "openapi.json"
+            ? "Back to developer API"
+            : "Back to overview";
   const api = `/api/v2/${path}${query.size ? `?${query}` : ""}`;
   return (
     <>

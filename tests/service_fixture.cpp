@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
         ApiRouter api(legacy, v2);
         cryptonote::txpool_tx_meta_t meta{};
         meta.receive_time = 123456789; meta.last_relayed_time = 987654321;
-        meta.blob_size = ordinary_metadata.size; meta.relayed = true;
+        meta.blob_size = ordinary_metadata.size; meta.fee = ordinary_metadata.fee; meta.relayed = true;
         writer.block_txn_start(false); writer.add_txpool_tx(ordinary, meta); writer.block_txn_stop();
         const auto pool_overview = network.get();
         check(pool_overview.pool_transactions == 1 && pool_overview.pool_size == ordinary_metadata.size && pool_overview.pool_complete,
@@ -154,6 +154,49 @@ int main(int argc, char** argv) {
               "Do-not-relay pool transactions leaked into public overview.");
         writer.block_txn_start(false); writer.remove_txpool_tx(cryptonote::get_transaction_hash(private_pool_tx)); writer.block_txn_stop();
 
+        const auto pool_page = transactions.pool(1);
+        check(pool_page.count == 1 && pool_page.metadata.size() == 1 && pool_page.metadata[0].hash == ordinary_metadata.hash &&
+              pool_page.fees == ordinary_metadata.fee && pool_page.next_cursor.empty(), "Native public pool page failed.");
+        record(api, "/api/v2/mempool?limit=1", "MempoolResponse");
+        auto second_meta = meta; second_meta.do_not_relay = false;
+        second_meta.blob_size = cryptonote::get_object_blobsize(private_pool_tx);
+        writer.block_txn_start(false); writer.add_txpool_tx(private_pool_tx, second_meta); writer.block_txn_stop();
+        const auto first_pool_page = transactions.pool(1);
+        check(first_pool_page.count == 2 && !first_pool_page.next_cursor.empty(), "Pool pagination failed.");
+        const auto final_pool_page = transactions.pool(1, first_pool_page.next_cursor);
+        check(final_pool_page.metadata.size() == 1 && final_pool_page.next_cursor.empty() &&
+              final_pool_page.metadata[0].hash != first_pool_page.metadata[0].hash, "Pool traversal duplicated or omitted a transaction.");
+        writer.block_txn_start(false); writer.remove_txpool_tx(cryptonote::get_transaction_hash(private_pool_tx)); writer.block_txn_stop();
+        expect_failure([&] { transactions.pool(1, first_pool_page.next_cursor); }, QueryError::chain_changed);
+        check(api.get("/api/v2/mempool?limit=101").status == 400 &&
+              api.get("/api/v2/mempool?viewkey=x").status == 400 &&
+              api.get("/api/v2/mempool?limit=1&limit=2").status == 400, "Unsafe pool queries accepted.");
+        const auto image = ordinary_metadata.inputs.at(0).k_image;
+        const auto image_text = epee::string_tools::pod_to_hex(image);
+        check(!transactions.key_image(image_text).spent, "Unknown key image labeled spent.");
+        record(api, "/api/v2/tools/key-images/" + image_text, "KeyImageResponse");
+        const auto output_key = epee::string_tools::pod_to_hex(ordinary_metadata.outputs.at(0).first.key);
+        const auto output_check = record(api, "/api/v2/tools/outputs/" + ordinary_hash + "/" + output_key, "OutputCheckResponse");
+        check(output_check["data"]["output_indices"] == xmreg::json::array({0}) && output_check["data"]["curve_valid"] == true,
+              "Native public output membership failed.");
+        check(api.get("/api/v2/tools/outputs/" + ordinary_hash + "/" + std::string(64, '0')).body["data"]["output_indices"].empty(),
+              "Absent output key was reported present.");
+        cryptonote::account_public_address public_address{};
+        public_address.m_spend_public_key = ordinary_metadata.outputs.at(0).first.key;
+        public_address.m_view_public_key = ordinary_metadata.outputs.at(1).first.key;
+        const auto address_text = cryptonote::get_public_address_as_str(cryptonote::MAINNET, false, public_address);
+        const auto address_check = record(api, "/api/v2/tools/addresses/" + address_text, "AddressResponse");
+        check(address_check["data"]["valid"] == true && address_check["data"]["matches_reader"] == true &&
+              address_check["data"]["spend_public_key"] == output_key, "Native address decoding failed.");
+        const auto test_address = cryptonote::get_public_address_as_str(cryptonote::TESTNET, false, public_address);
+        check(transactions.address(test_address).valid && !transactions.address(test_address).matches_reader,
+              "Cross-network public address was mislabeled.");
+        auto malformed_address = address_text; malformed_address.back() = malformed_address.back() == '1' ? '2' : '1';
+        check(!transactions.address(malformed_address).valid, "Bad address checksum was accepted.");
+        const auto pool_summary = api.get("/api/v2/mempool").body["data"]["items"][0];
+        check(pool_summary["inspection"]["ring_size_min"] == std::to_string(ordinary_metadata.inputs.at(0).key_offsets.size()) &&
+              pool_summary["inspection"]["payment_id_types"] == xmreg::json::array({"uniform"}),
+              "Native uniform ID or ring summary failed.");
         auto pooled = transactions.get(ordinary_hash, false);
         check(pooled.in_pool && pooled.confirmations == 0 && pooled.timestamp == 0,
               "Pool provenance or local timestamp policy failed.");
@@ -224,6 +267,7 @@ int main(int argc, char** argv) {
         synthetic.invalidate_hashes();
         writer.add_block(synthetic, cryptonote::get_object_blobsize(synthetic) + ordinary_blob.size(), 2,
                          8800000000000001ULL, {ordinary});
+        check(transactions.key_image(image_text).spent, "Native confirmed key image was missed.");
         check(!transactions.get(ordinary_hash, false).in_pool &&
               transactions.get(ordinary_hash, false).confirmations == 1, "Confirmed provenance failed.");
         check(blocks.get("1").transactions.size() == 2, "Block transaction snapshot failed.");

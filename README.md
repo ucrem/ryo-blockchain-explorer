@@ -80,8 +80,9 @@ when its services are built. Phase 0 does not claim browser crypto parity,
 full-chain/reorg correctness, production readiness, or completed analytics.
 
 The v0.4 frontend uses Next.js, TypeScript, Tailwind CSS, and shadcn/ui, with
-Server Components by default. Extended inspection and later tools remain
-future milestones. LMDB remains authoritative;
+Server Components by default. Public mempool/key-image/output/address inspection
+is available; secret-based verification and advanced analytics remain future
+milestones. LMDB remains authoritative;
 there is no mandatory PostgreSQL, Redis, additional service infrastructure,
 tracking, external runtime CDN, or speculative Proof of Stake functionality.
 
@@ -116,5 +117,6 @@ embedded formatted JSON/raw views,
 native-reader chain status, ten-second live tip updates, recent block pagination, observed header
 interval windows with 1h/24h/7d/30d controls and developer API access. Native
 supply/payout, hashrate estimates, median size and local pool metrics supplement
-an optional node-sync panel. See [the reference comparison](docs/DASHBOARD_REFERENCE_AUDIT.md),
+an optional node-sync panel. Dedicated mempool and public inspection pages
+include native ring/payment-ID summaries and contextual verification results. See [the reference comparison](docs/DASHBOARD_REFERENCE_AUDIT.md),
 [the scope](docs/V0_4_WEB_PROPOSAL.md) and [validation](docs/V0_4_VALIDATION.md).

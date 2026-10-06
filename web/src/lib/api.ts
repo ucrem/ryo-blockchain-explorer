@@ -1,6 +1,10 @@
 import "server-only";
 import { z } from "zod";
 import {
+  mempoolResponse,
+  keyImageResponse,
+  outputCheckResponse,
+  addressResponse,
   blockResponse,
   blocksResponse,
   hash,
@@ -109,6 +113,48 @@ export async function readTransaction(value: string) {
       503,
       "unavailable",
       "The chain reader returned a different transaction.",
+    );
+  return result;
+}
+
+export function readMempool(cursor?: string, limit = 50) {
+  const query = new URLSearchParams({ limit: String(limit) });
+  if (cursor) query.set("cursor", cursor);
+  return readData("mempool", mempoolResponse, query);
+}
+export async function checkKeyImage(value: string) {
+  const result = await readData(`tools/key-images/${value}`, keyImageResponse);
+  if (result.data.key_image !== value)
+    throw new ApiError(
+      503,
+      "unavailable",
+      "The reader returned a different key image.",
+    );
+  return result;
+}
+export async function checkOutput(transaction: string, key: string) {
+  const result = await readData(
+    `tools/outputs/${transaction}/${key}`,
+    outputCheckResponse,
+  );
+  if (
+    result.data.transaction_hash !== transaction ||
+    result.data.public_key !== key
+  )
+    throw new ApiError(
+      503,
+      "unavailable",
+      "The reader returned different output identifiers.",
+    );
+  return result;
+}
+export async function inspectAddress(value: string) {
+  const result = await readData(`tools/addresses/${value}`, addressResponse);
+  if (result.data.address !== value)
+    throw new ApiError(
+      503,
+      "unavailable",
+      "The reader returned a different address.",
     );
   return result;
 }

@@ -73,6 +73,79 @@ createServer((req, res) => {
     res.end('{"error":{"code":"unavailable","message":"Unavailable"}}');
     return;
   }
+  if (url.pathname === "/api/v2/mempool") {
+    const empty = ["pool-empty", "genesis"].includes(mode);
+    const snapshot = makeHash(mode === "pool-mutated" ? 999n : 998n);
+    const cursor = url.searchParams.get("cursor");
+    if (cursor && !cursor.startsWith(snapshot + ".")) {
+      res.statusCode = 409;
+      res.end('{"error":{"code":"chain_changed","message":"Pool changed."}}');
+      return;
+    }
+    const count = empty ? 0 : mode === "pool-mutated" ? 54 : 53;
+    const offset = cursor ? Number(cursor.slice(65)) : 0;
+    const limit = Number(url.searchParams.get("limit") ?? 50);
+    const end = Math.min(count, offset + limit);
+    const items = Array.from({ length: Math.max(0, end - offset) }, (_, i) => ({
+      ...examples.BlockResponse.data.transactions[0],
+      hash: makeHash(1000n + BigInt(offset + i)),
+      coinbase: false,
+      fee_atomic: "30000000",
+      size_bytes: "4500",
+      input_count: 2,
+      output_count: 2,
+      inspection: {
+        ring_size_min: "25",
+        ring_size_max: "25",
+        payment_id_types: ["uniform"],
+      },
+    }));
+    res.end(
+      JSON.stringify({
+        meta: { network: "mainnet", chain_height: (anchor + 1n).toString() },
+        data: {
+          items,
+          transaction_count: String(count),
+          size_bytes: String(count * 4500),
+          fee_atomic: String(count * 30000000),
+          snapshot,
+          next_cursor: end < count ? snapshot + "." + end : null,
+        },
+      }),
+    );
+    return;
+  }
+  if (url.pathname.startsWith("/api/v2/tools/")) {
+    const data = url.pathname.includes("/key-images/")
+      ? {
+          ...examples.KeyImageResponse.data,
+          key_image: url.pathname.split("/").at(-1),
+          spent: mode === "image-spent",
+        }
+      : url.pathname.includes("/outputs/")
+        ? {
+            ...examples.OutputCheckResponse.data,
+            transaction_hash: url.pathname.split("/").at(-2),
+            public_key: url.pathname.split("/").at(-1),
+            output_indices: mode === "output-absent" ? [] : [0],
+          }
+        : {
+            ...examples.AddressResponse.data,
+            address: url.pathname.split("/").at(-1),
+            ...(mode === "address-valid"
+              ? {
+                  valid: true,
+                  network: "mainnet",
+                  matches_reader: true,
+                  kind: "standard",
+                  spend_public_key: "a".repeat(64),
+                  view_public_key: "b".repeat(64),
+                }
+              : {}),
+          };
+    res.end(JSON.stringify({ meta: examples.NetworkResponse.meta, data }));
+    return;
+  }
   if (url.pathname === "/api/v2/block-intervals") {
     if (mode === "genesis") {
       const result = structuredClone(examples.BlockIntervalsResponse);
@@ -181,6 +254,14 @@ createServer((req, res) => {
                     i === 0
                       ? header.coinbase_hash
                       : makeHash((height << 8n) + (1n << 96n) + BigInt(i)),
+                  inspection:
+                    i === 0
+                      ? examples.BlockResponse.data.transactions[0].inspection
+                      : {
+                          ring_size_min: "25",
+                          ring_size_max: "25",
+                          payment_id_types: ["uniform"],
+                        },
                   coinbase: i === 0,
                   fee_atomic: i === 0 ? "0" : "9007199254740993",
                 }),

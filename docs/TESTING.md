@@ -94,8 +94,9 @@ genesis amounts/raw bytes, uppercase hash equivalence, the bundled OpenAPI JSON,
 400/404/409/405 mappings, v2 body/header errors, duplicate/unknown/empty/encoded
 parameters, concurrent v2 pages and all four combinations of independent API
 flags. `ryo_api_v2_schema` checks the repository schemas/examples. With HTTP
-enabled, CTest therefore contains five checks; the default library build retains
-the three native checks without requiring the HTTP Python packages.
+enabled, CTest now contains seven checks; the default library build retains
+five checks without requiring the HTTP Python packages. The two maintenance
+checks below supplement the three existing native fixtures.
 
 Actual mapping-growth recovery, larger/live pool ring lookups, external-writer
 load/reorg stress, full-chain capacity, broader historical fixtures, and positive
@@ -181,10 +182,38 @@ is not proof of full-chain consensus or the exact original failure context.
 See [the correction proposal](POINT_IDENTITY_FIX_PROPOSAL.md) and
 [fixture provenance](../tests/fixtures/README.md).
 
-For a local SDK regression check after rebuilding both patches, enable the
+For a local SDK regression check after rebuilding the reviewed patches, enable the
 pinned core's `BUILD_TESTS`, build `cncrypto-tests` and `unit_tests`, then run
 `ctest -R '^cncrypto$' --output-on-failure` in its release build directory and
 `tests/unit_tests/unit_tests --gtest_filter='bulletproofs.*:bulletproof.*:bp_blobs.*:multiexp.*:ringct.*:Crypto.*'`.
 This selects the native proof/point paths rather than unrelated upstream tests;
-it supplements the explorer's five CTests. The normal SDK build helper restores
-`BUILD_TESTS=OFF` without removing either reviewed source patch.
+it supplements the explorer's seven CTests with HTTP enabled. The normal SDK
+build helper restores `BUILD_TESTS=OFF` without removing reviewed source patches.
+
+## Native maintenance compatibility
+
+`ryo_native_compatibility` runs against another disposable offline daemon. It
+verifies native SHA-256 known answers for empty/abc inputs and file chunks at
+4096/4097/8193 bytes, empty null-buffer handling, missing files and Boost overwrite
+content. Synthetic loopback identity/counters check full connection-context copy
+and the existing assignment reset semantics; type aliases remain compatible.
+Two real ZMQ `get_height` requests preserve IDs and genesis height across an idle
+period longer than the server receive timeout. No mainnet node or real pool
+observation is used. The runner's `--compatibility` mode supplies only its owned
+loopback ZMQ endpoint.
+
+`ryo_sdk_patch_guard` uses disposable shared SDK clones to exercise all eight
+exact reviewed patch subsets, repeat application and preservation of the pin and
+unstaged state. It rejects unrelated edits, staged edits, a different revision
+and a nested path, comparing source, index, refs and object-store contents before
+and after refusal. A record-only CMake fixture checks migration of cached legacy
+error exemptions while preserving other operator flags; it is not build evidence.
+Actual SDK/explorer builds are verified separately.
+
+For changes to software AES copies, build the pinned upstream `hash-tests` target
+and run `ctest -R '^hash-' -E '^hash-target$' --output-on-failure`, then repeat
+its PoW vector cases with `RYO_USE_SOFTWARE_AES=1`. The separately built
+`hash-target-tests` target is not part of the eight hash-vector cases. Native
+crypto vectors and selected proof/point tests remain useful alongside these
+checks; append `:sha256.*` to the unit-test filter above for native SHA-256 cases.
+See [maintenance evidence](NATIVE_WARNING_CLEANUP.md).

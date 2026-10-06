@@ -6,6 +6,25 @@ retroactively.
 
 ## [Unreleased]
 
+### Fixed
+
+- Reviewed SDK maintenance patch replaces deprecated C++/Boost/OpenSSL/cppzmq
+  interfaces, clarifies native pool/blockchain storage binding and preserves
+  memberwise connection/AES copies, SHA-256 bytes and native interpretation.
+- Supported CMake builds use current minimum versions, Boost config discovery,
+  explicit RPC source extension and matching Miniupnpc package naming.
+
+### Changed
+
+- SDK upgrades accept only exact reviewed patch subsets and preserve unrelated
+  edits, staged changes, index and refs on refusal. Legacy copy/indentation error
+  exemptions are removed from existing caches without replacing other flags.
+
+### Added
+
+- Native SHA-256/file/copy/real-ZMQ compatibility checks and SDK patch-guard
+  regression coverage. Full native CI remains manual-only.
+
 ## [0.4.0] - 2026-10-05
 
 ### Added

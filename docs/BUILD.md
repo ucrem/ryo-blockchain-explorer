@@ -37,25 +37,31 @@ git -C .deps/ryo-core checkout 185dd1fa33ba88c88bb22df9069ad368c0f9a27e
 bash scripts/build-ryo-core.sh .deps/ryo-core 2
 ```
 
-The pin is recorded in `scripts/ryo-core-revision.txt`. The helper applies
-`scripts/patches/ryo-ubuntu24.patch` and the separately reviewed
-`scripts/patches/ryo-point-identity.patch` to the clean pinned checkout. It also
-accepts that exact pair already applied, or migrates the exact compatibility-only
-state by adding the identity correction. It refuses staged/unexpected tracked
-changes; it never overwrites unrelated source edits.
-Compatibility fixes add a direct Boost MPL include, qualify bind placeholders,
-correct indentation, and supply a missing explicit native template instantiation.
-The patch also makes native LMDB sync a no-op for a read-only environment, so
-native shutdown does not fail by trying to flush a `DBF_RDONLY` database.
-Proof equations and native consensus checks remain in place. The identity patch
-corrects the native C point predicate to compare field elements modulo the prime,
-rather than comparing their raw limbs; invalid zero projective coordinates and
-nonidentity/torsion points are rejected. Rebuild both the SDK and native
-explorer, then restart native processes using the existing database. See
-[the measured proposal](POINT_IDENTITY_FIX_PROPOSAL.md) and
-[validation](V0_4_VALIDATION.md). GCC's `deprecated-copy`
-and `misleading-indentation` diagnostics remain visible as warnings; other
-existing warning/error settings remain in effect.
+The pin is recorded in `scripts/ryo-core-revision.txt`. The helper applies three
+separately reviewed patches: `ryo-ubuntu24.patch`, `ryo-point-identity.patch` and
+`ryo-native-warnings.patch` in `scripts/patches/`. Its Python guard accepts only
+exact combinations of these patches and adds the missing ones, including an
+existing v0.4 compatibility/identity SDK. It refuses staged or unrelated tracked
+changes before modifying source. Candidate comparisons use a disposable Git
+index/object directory; the SDK's index, references and unrelated edits remain
+intact. Python 3 and Git are required, as listed above.
+
+Compatibility fixes retain the direct Boost MPL include, explicit placeholders,
+native template instantiation and read-only LMDB shutdown behavior. The identity
+patch compares native field equivalence while retaining native proof equations
+and checks; see [the proposal](POINT_IDENTITY_FIX_PROPOSAL.md).
+The maintenance patch updates deprecated C++/Boost/OpenSSL/cppzmq interfaces and
+CMake configuration, with preserved native digest/serialization/copy behavior.
+Native CMake now requires 3.24 and Boost's 1.83 config package; the explorer already
+requires those versions. Optional missing Qt translation tooling is an explicit
+status message, and Qt remains optional.
+
+The two legacy `-Wno-error=deprecated-copy`/`misleading-indentation` exemptions
+are no longer added. Existing cache values lose only those exact standalone
+flags; other operator flags are preserved. Existing upstream warning policy is
+otherwise retained, with no new warning-disable flags. Rebuild SDK and explorer
+archives together when upgrading; this maintenance requires no database reset
+or migration. See [maintenance scope and validation](NATIVE_WARNING_CLEANUP.md).
 
 The helper builds `wallet` (the required archive), `daemon`, and their dependencies.
 It does not build the standalone wallet CLI/RPC applications, whose exploratory
@@ -124,7 +130,7 @@ RYO_BUILD_HTTP=ON bash scripts/build-baseline.sh .deps/ryo-core build/native 2
 
 The default is `OFF`, preserving the native-library development workflow. The
 opt-in builds `ryo_explorer_http` and runs its real HTTP contract test in addition
-to the three native fixtures and an OpenAPI/DTO schema check. PyYAML bundles
+to the five native/SDK checks and an OpenAPI/DTO schema check. PyYAML bundles
 the OpenAPI contract into the executable at build time; jsonschema validates
 actual native/HTTP responses in tests. These Python packages are development
 dependencies for the HTTP option, not runtime dependencies of the binary or

@@ -28,11 +28,15 @@ def main():
                         help="Run HTTP contracts using the supplied server executable.")
     parser.add_argument("--api-v2-contracts", action="store_true",
                         help="Validate native service fixture responses against API v2 DTO schemas.")
+    parser.add_argument("--compatibility", action="store_true",
+                        help="Pass the disposable daemon's ZMQ endpoint to native compatibility checks.")
     parser.add_argument("--result-file", type=Path,
                         help="Save the native executable's stdout to this diagnostic file.")
     parser.add_argument("--timeout", type=float, default=30,
                         help="Native executable timeout in seconds (default: 30).")
     args = parser.parse_args()
+    if args.compatibility and (args.http or args.api_v2_contracts):
+        parser.error("--compatibility is a separate native fixture mode.")
     if not math.isfinite(args.timeout) or args.timeout <= 0:
         parser.error("--timeout must be finite and positive.")
     daemon = args.ryod.resolve(strict=True)
@@ -68,6 +72,8 @@ def main():
                 else:
                     raise RuntimeError("Offline daemon readiness timed out.")
                 command = [str(fixture), str(work / "chain" / "lmdb02"), base]
+                if args.compatibility:
+                    command.append(f"tcp://127.0.0.1:{zmq}")
                 if args.http:
                     command = [sys.executable, str(Path(__file__).with_name("http-contract-test.py"))] + command
                 if args.result_file:

@@ -38,13 +38,22 @@ bash scripts/build-ryo-core.sh .deps/ryo-core 2
 ```
 
 The pin is recorded in `scripts/ryo-core-revision.txt`. The helper applies
-`scripts/patches/ryo-ubuntu24.patch` only to the clean pinned checkout, or accepts
-that exact patch already applied. It refuses staged/unexpected tracked changes.
+`scripts/patches/ryo-ubuntu24.patch` and the separately reviewed
+`scripts/patches/ryo-point-identity.patch` to the clean pinned checkout. It also
+accepts that exact pair already applied, or migrates the exact compatibility-only
+state by adding the identity correction. It refuses staged/unexpected tracked
+changes; it never overwrites unrelated source edits.
 Compatibility fixes add a direct Boost MPL include, qualify bind placeholders,
 correct indentation, and supply a missing explicit native template instantiation.
 The patch also makes native LMDB sync a no-op for a read-only environment, so
 native shutdown does not fail by trying to flush a `DBF_RDONLY` database.
-Consensus and cryptographic algorithms are unchanged. GCC's `deprecated-copy`
+Proof equations and native consensus checks remain in place. The identity patch
+corrects the native C point predicate to compare field elements modulo the prime,
+rather than comparing their raw limbs; invalid zero projective coordinates and
+nonidentity/torsion points are rejected. Rebuild both the SDK and native
+explorer, then restart native processes using the existing database. See
+[the measured proposal](POINT_IDENTITY_FIX_PROPOSAL.md) and
+[validation](V0_4_VALIDATION.md). GCC's `deprecated-copy`
 and `misleading-indentation` diagnostics remain visible as warnings; other
 existing warning/error settings remain in effect.
 
@@ -123,7 +132,9 @@ requirements of the default native-library build. Existing Boost 1.83 provides B
 vendored library is required. See [HTTP_SERVER.md](HTTP_SERVER.md) for startup,
 implemented routes, compatibility changes, resource limits, and deployment gaps.
 API v2 is independently enabled with `--enable-api-v2`; see [API_V2.md](API_V2.md).
-Upgrading from v0.2 needs no new core pin or compatibility patch, only a rebuilt
+The core pin remains unchanged. v0.4 adds the native point-identity patch on top
+of the existing compatibility patch; use the guarded SDK helper to rebuild it.
+The earlier v0.2-to-v0.3 upgrade needed only a rebuilt
 explorer and the documented HTTP build/test dependencies.
 
 ## v0.4 web application

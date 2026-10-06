@@ -61,3 +61,12 @@ valid RingCT/Bulletproof semantics and rejection after altering the proof. This
 extends the earlier interpretation-only checks with a narrow native semantic
 verification regression; it does not prove the input-ring signatures or full
 block consensus. See [recovery evidence](../../docs/NODE_SYNC_DIAGNOSTICS.md).
+
+`ringct-sync-recurrence-transaction.hex` adds the public transaction
+`64bab57b60c5efa5a3d8cba6f079e333269c376ed6ef809d94426c8aac78314f`
+from mainnet block 238,751, fetched over public daemon RPC on 2026-10-06. Its
+native blob identifier is
+`0493d486575cb5732308956c82a4deb284b85db32a810ea9f3d889e4c949bde9`,
+matching the second rejected blob. Native identity/serialization and positive/
+altered-proof semantics are checked alongside the earlier public fixture. No
+source peer or local receive-time records are committed.

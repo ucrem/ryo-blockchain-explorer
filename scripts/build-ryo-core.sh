@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Apply only the reviewed compatibility patch to the pinned Ryo checkout.
+# Apply only the reviewed compatibility and native identity patches to the pin.
 set -euo pipefail
 if [[ $# -lt 1 || $# -gt 2 ]]; then
     printf 'Usage: bash scripts/build-ryo-core.sh RYO_SOURCE [JOBS]\n' >&2
@@ -18,15 +18,20 @@ if [[ $(git -C "$task_core" rev-parse HEAD) != "$task_pin" ]]; then
     exit 1
 fi
 task_patch="$task_root/scripts/patches/ryo-ubuntu24.patch"
+task_identity_patch="$task_root/scripts/patches/ryo-point-identity.patch"
 if ! git -C "$task_core" diff --cached --quiet; then
     printf 'Refusing to modify a core checkout with staged changes.\n' >&2
     exit 1
 fi
 if git -C "$task_core" diff --quiet; then
-    git -C "$task_core" apply --check "$task_patch"
-    git -C "$task_core" apply "$task_patch"
+    git -C "$task_core" apply --check "$task_patch" "$task_identity_patch"
+    git -C "$task_core" apply "$task_patch" "$task_identity_patch"
+elif git -C "$task_core" diff --binary -- ':(exclude)src/crypto/crypto-ops.c' | cmp -s - "$task_patch" &&
+     git -C "$task_core" diff --binary -- src/crypto/crypto-ops.c | cmp -s - "$task_identity_patch"; then
+    printf 'The reviewed compatibility and identity patches are already applied.\n'
 elif git -C "$task_core" diff --binary | cmp -s - "$task_patch"; then
-    printf 'The baseline compatibility patch is already applied.\n'
+    git -C "$task_core" apply --check "$task_identity_patch"
+    git -C "$task_core" apply "$task_identity_patch"
 else
     printf 'Unexpected Ryo source modifications; refusing to overwrite them.\n' >&2
     exit 1

@@ -51,9 +51,13 @@ retroactively.
 
 ### Fixed
 
-- Recovered the development node's historical sync stall after verified native
-  replay and a graceful restart preserving chain data; added the public
-  transaction's positive/altered-proof regression fixture. Core checks stay intact.
+- Corrected the pinned native core's raw-limb point-identity comparison with
+  existing field helpers and a nonzero projective denominator. Added old/new
+  coordinate regressions and both public sync-boundary transactions with
+  positive/altered-proof checks; native proof equations remain intact.
+- Rebuilt and resumed the development daemon from its existing database after
+  recurring semantic failures; direct attribution of the intermittent failures
+  to the reproducible predicate defect remains unverified.
 
 ### Changed
 
@@ -66,6 +70,9 @@ retroactively.
 
 ### Upgrade Notes
 
+- Rebuild the pinned core with both reviewed patches through
+  `scripts/build-ryo-core.sh`, then rebuild/restart daemon and explorer using the
+  existing database. Unrelated SDK changes are refused; see `docs/BUILD.md`.
 - The frontend adds Node.js 24 LTS and a separate process. Run `npm ci`,
   `npm run build` and `npm run start` in `web/`; enable native API v2 and configure
   the server-only `RYO_API_URL`. See `docs/WEB.md`.

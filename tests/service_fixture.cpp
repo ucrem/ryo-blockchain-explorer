@@ -5,6 +5,7 @@
 #include <fstream>
 #include <thread>
 #include <atomic>
+#include <cstring>
 #include "ringct/rctSigs.h"
 
 using namespace ryo_explorer;
@@ -24,26 +25,65 @@ static void expect_failure(std::function<void()> operation, QueryError expected)
     }
     throw std::runtime_error("Expected a query failure.");
 }
+static void check_native_point_identity() {
+    const unsigned char identity[32] = {1};
+    auto assert_identity = [&](const ge_p3& point, const char* message) {
+        unsigned char encoded[32]; ge_p3_tobytes(encoded, &point);
+        check(std::memcmp(encoded, identity, sizeof(encoded)) == 0, "Point fixture does not encode as identity.");
+        check(ge_p3_is_point_at_infinity(&point), message);
+    };
+    auto point = ge_p3_identity;
+    assert_identity(point, "Canonical native identity rejected.");
+    point.X[0] = 1 << 26; point.X[1] = -1;
+    assert_identity(point, "Equivalent carried-zero X rejected.");
+    point = ge_p3_identity; point.X[0] = -19; point.X[9] = 1 << 25;
+    assert_identity(point, "Field-modulus zero X rejected.");
+    point = ge_p3_identity; point.T[0] = 1 << 26; point.T[1] = -1;
+    assert_identity(point, "Equivalent carried-zero T rejected.");
+    point = ge_p3_identity; point.Y[0] = 1 + (1 << 26); point.Y[1] = -1;
+    assert_identity(point, "Equivalent carried Y/Z rejected.");
+    point = ge_p3_identity; point.Z[0] = -18; point.Z[9] = 1 << 25;
+    assert_identity(point, "Equivalent modular Y/Z rejected.");
+    point = ge_p3_identity; point.Y[0] = point.Z[0] = 2;
+    assert_identity(point, "Rescaled native identity rejected.");
+    point = ge_p3_identity; point.Y[0] = -1;
+    check(!ge_p3_is_point_at_infinity(&point), "Order-two torsion was accepted as identity.");
+    point = ge_p3_identity; point.X[0] = 1;
+    check(!ge_p3_is_point_at_infinity(&point), "Nonzero X was accepted as identity.");
+    point = ge_p3_identity; point.T[0] = 1;
+    check(!ge_p3_is_point_at_infinity(&point), "Nonzero T was accepted as identity.");
+    point = ge_p3{};
+    check(!ge_p3_is_point_at_infinity(&point), "Invalid zero projective coordinates were accepted.");
+    ge_scalarmult_base(&point, identity);
+    check(!ge_p3_is_point_at_infinity(&point), "Base point was accepted as identity.");
+}
+static void check_public_recovery_proof(const char* name, const char* expected_hash, const char* expected_blob_hash) {
+    const auto recovery_blob = fixture_blob(name);
+    cryptonote::transaction recovery_tx;
+    crypto::hash recovery_hash, recovery_prefix;
+    check(cryptonote::parse_and_validate_tx_from_blob(recovery_blob, recovery_tx, recovery_hash, recovery_prefix),
+          "Recovery fixture native parse failed.");
+    check(epee::string_tools::pod_to_hex(recovery_hash) == expected_hash &&
+          epee::string_tools::pod_to_hex(cryptonote::get_blob_hash(recovery_blob)) == expected_blob_hash &&
+          cryptonote::tx_to_blob(recovery_tx) == recovery_blob,
+          "Recovery transaction/blob identity or roundtrip failed.");
+    check(recovery_tx.rct_signatures.type == rct::RCTTypeBulletproof &&
+          recovery_tx.rct_signatures.p.bulletproofs.size() == 1 &&
+          rct::verRctSemanticsSimple(recovery_tx.rct_signatures), "Public recovery proof failed native semantics.");
+    auto altered_recovery = recovery_tx.rct_signatures;
+    altered_recovery.p.bulletproofs[0].t.bytes[0] ^= 1;
+    check(!rct::verRctSemanticsSimple(altered_recovery), "Altered recovery proof passed native semantics.");
+}
 int main(int argc, char** argv) {
     try {
         check(argc == 3, "Expected offline LMDB and RPC arguments.");
-        // Public mainnet transaction from the recovered sync boundary. Validate
-        // fresh native semantics, and ensure altering its proof is rejected.
-        const auto recovery_blob = fixture_blob("ringct-sync-recovery-transaction.hex");
-        cryptonote::transaction recovery_tx;
-        crypto::hash recovery_hash, recovery_prefix;
-        check(cryptonote::parse_and_validate_tx_from_blob(recovery_blob, recovery_tx, recovery_hash, recovery_prefix),
-              "Recovery fixture native parse failed.");
-        check(epee::string_tools::pod_to_hex(recovery_hash) == "c133f8d2a67df074f683115156fd3eddb4481bef1b68666171932bb46950fce0" &&
-              epee::string_tools::pod_to_hex(cryptonote::get_blob_hash(recovery_blob)) == "d921a38e147c8d782c1000d1350cc400e045d828dba98fea04471b631651c45c" &&
-              cryptonote::tx_to_blob(recovery_tx) == recovery_blob,
-              "Recovery transaction/blob identity or roundtrip failed.");
-        check(recovery_tx.rct_signatures.type == rct::RCTTypeBulletproof &&
-              recovery_tx.rct_signatures.p.bulletproofs.size() == 1 &&
-              rct::verRctSemanticsSimple(recovery_tx.rct_signatures), "Public recovery proof failed native semantics.");
-        auto altered_recovery = recovery_tx.rct_signatures;
-        altered_recovery.p.bulletproofs[0].t.bytes[0] ^= 1;
-        check(!rct::verRctSemanticsSimple(altered_recovery), "Altered recovery proof passed native semantics.");
+        check_native_point_identity();
+        check_public_recovery_proof("ringct-sync-recovery-transaction.hex",
+            "c133f8d2a67df074f683115156fd3eddb4481bef1b68666171932bb46950fce0",
+            "d921a38e147c8d782c1000d1350cc400e045d828dba98fea04471b631651c45c");
+        check_public_recovery_proof("ringct-sync-recurrence-transaction.hex",
+            "64bab57b60c5efa5a3d8cba6f079e333269c376ed6ef809d94426c8aac78314f",
+            "0493d486575cb5732308956c82a4deb284b85db32a810ea9f3d889e4c949bde9");
         cryptonote::transaction ordinary;
         const auto ordinary_blob = fixture_blob("ringct-v3-transaction.hex");
         check(cryptonote::parse_and_validate_tx_from_blob(ordinary_blob, ordinary), "Native RingCT parse failed.");

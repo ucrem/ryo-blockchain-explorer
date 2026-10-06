@@ -1,16 +1,19 @@
 # v0.4 validation evidence
 
-Recorded 2026-10-05 (UTC). This report covers the v0.4 web implementation, not
+Recorded 2026-10-05; native sync correction added 2026-10-06 (UTC). This report covers the v0.4 web implementation, not
 full-chain production capacity. Release publication is a separate owner-authorized
 step; the prepared release notes are in [releases/v0.4.0.md](releases/v0.4.0.md).
 
 ## Native foundation and compatibility
 
 The pinned official core remains `185dd1fa33ba88c88bb22df9069ad368c0f9a27e`, with
-the existing isolated Ubuntu 24.04 compatibility patch. The native implementation
-changes are product/OpenAPI metadata from 0.3.0 to 0.4.0 and an additive bounded
-timestamp-window method/route on BlockService. Core pin, cryptographic
-interpretation, read-only LMDB access and existing route contracts are preserved.
+the existing isolated Ubuntu 24.04 compatibility patch and the reviewed native
+point-identity correction described below. Explorer additions include product
+metadata, timestamp windows, overview metrics and public pool/inspection reads;
+their validation is recorded in the corresponding sections. Core pin, native proof equations, read-only LMDB access and existing route
+contracts are preserved. The correction changes the native identity predicate
+to compare field equivalence rather than raw limbs; native processes require
+a rebuild with both reviewed patches.
 
 The HTTP/benchmark-enabled build passed in the established Ubuntu 24.04 PRoot
 environment (GCC 13, Boost 1.83, OpenSSL 3), using the real pinned core archives.
@@ -502,39 +505,60 @@ no native consensus/service/workflow or daemon behavior changed. The deeper
 initial Bulletproof/RingCT diagnostics and next isolation steps are recorded
 in [node diagnosis](NODE_SYNC_DIAGNOSTICS.md), without claiming a resolved sync.
 
-## Daemon synchronization failure recovered
+## Recurring native sync failure and point-identity correction
 
-The pinned daemon initially stopped after block 230,109 (chain height 230,110)
-with a repeated transaction/object-response verification error. Its initial
-batch also logged Bulletproof step-1 and RingCT semantic failures. Two public
-nodes returned identical full block/transaction bytes at the boundary. The exact
-logged blob maps natively to transaction
-`c133f8d2a67df074f683115156fd3eddb4481bef1b68666171932bb46950fce0`.
+The unchanged daemon first stalled at chain height 230,110. Native replay
+accepted the exact public bytes, and a graceful restart cleared its in-memory
+bad-semantics cache. After another 8,641 blocks, synchronization failed again at
+height 238,751 on a different transaction. A second restart alone was therefore
+insufficient evidence of a durable fix.
 
-The same native verifier accepted all seven public transactions in an isolated
-process. The formerly rejected blob passed 300 serial/concurrent fresh checks;
-generated proofs across nine output counts passed and altered proofs failed.
-Under the owner's explicit unblock request, a graceful restart discarded the
-in-memory bad-semantics cache and resumed from the existing database. Block
-230,110 and following blocks then passed the unchanged native daemon. No
-rewind/reset, validation bypass, core patch or dependency upgrade was performed.
+Isolated replay accepts all 17 public transactions from both boundaries. An
+instrumented 30,000-check run using the old predicate did not reproduce the
+runtime failure. Independently, a deterministic coordinate test demonstrates
+that the old native point-identity predicate rejects equivalent field
+representations that native encoding recognizes as the identity; it also accepts
+invalid all-zero projective coordinates. The new regression failed against the
+old SDK and passes with the narrowly scoped field-equivalence patch.
 
-The real browser saw tips 230,389 and 230,469 on successive live checks, then
-reader height 230,510, with zero page errors and the node panel showing
-"Synchronizing" (`build/v04-native-smoke/sync-recovery-browser-result.json`).
-The new public fixture independently checks native identifiers/serialization,
-positive RingCT semantics and altered-proof rejection in the permanent service
-test. The incremental native build and all five CTests passed in 26.07 seconds
-(`build/v04-sync-recovery-native-build.log`, `build/v04-sync-recovery-native-tests.log`).
-A later read of the recovered TX returned confirmed inclusion at block 230,110
-with 1,580 confirmations (`build/v04-native-smoke/recovered-transaction-v2.json`).
-Exact bytes/provenance and limits are documented in the
-[fixture guide](../tests/fixtures/README.md) and [recovery report](NODE_SYNC_DIAGNOSTICS.md).
+The reviewed patch uses native field helpers, requires nonzero projective Z and
+preserves proof equations and semantic/scalar checks. Negative tests reject
+order-two torsion, nonidentity/base points, nonzero X/T and invalid projective
+coordinates. The core pin is unchanged. The guarded build helper accepts clean,
+exactly patched and compatibility-only SDKs, rejecting/preserving unrelated
+tracked or staged changes (`build/v04-core-guard-probe-result.json`).
 
-The operational stall is recovered. The original cryptographic rejection has
-not been reproduced, so its underlying cause and full current-tip parity remain
-unverified. The daemon continues syncing; precise node observation/peer records
-remain outside committed evidence.
+The corrected core wallet/daemon build and explorer native build pass. The
+pinned upstream `cncrypto` vector test also passes in 9.21 seconds
+(`build/v04-point-identity-upstream-crypto-tests.log`). All 179 selected upstream
+Bulletproof, public-blob, multiexponentiation, RingCT and Crypto tests pass in
+27.67 seconds, including aggregated proofs and invalid torsion cases
+(`build/v04-point-identity-upstream-proof-tests.log`). All five
+CTest checks pass in 26.42 seconds (`build/v04-point-identity-native-tests.log`).
+Both public regression fixtures check native consensus/blob identifiers,
+serialization, valid semantics and rejection of an altered proof. Fresh replay
+passes all 17 boundary transactions; the corrected verifier passes 30,000
+sequential/concurrent checks with zero failures. Generated proofs across nine
+output counts pass, and altered proofs fail. Logs remain in ignored build files.
+
+The daemon and API were rebuilt against the same corrected archives and
+restarted gracefully, preserving the existing database. Block 238,751 passed and
+native synchronization resumed. The production browser observed displayed tips
+242,370 through 242,590 without reload, with zero page errors and "Synchronizing";
+the rejected transaction is now confirmed in block 238,751. A later sample
+reports chain height 247,931 (stored tip 247,930), another 9,180 blocks past the
+boundary, exceeding the prior 8,641-block recurrence interval without new
+verification errors. Browser/live observations are saved in
+`build/v04-native-smoke/point-identity-browser-result.json` and
+`point-identity-sync-observations.json`; precise node timestamps and peer records
+remain outside committed evidence. The [diagnostic report](NODE_SYNC_DIAGNOSTICS.md)
+and [proposal](POINT_IDENTITY_FIX_PROPOSAL.md) distinguish the reproducible
+predicate defect from the unreproduced initial daemon failures.
+
+The defect is corrected and the operational stall is recovered. Direct
+attribution of the original intermittent failures to this predicate and full
+current-tip parity remain unverified; bounded runtime progress is not a proof
+that every verifier fault has been eliminated. Full native CI remains manual-only.
 
 ## Limits and release gate
 

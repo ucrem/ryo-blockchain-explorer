@@ -1,0 +1,25 @@
+diff --git a/src/crypto/crypto-ops.c b/src/crypto/crypto-ops.c
+index 371b19c..75d6a40 100644
+--- a/src/crypto/crypto-ops.c
++++ b/src/crypto/crypto-ops.c
+@@ -4773,14 +4773,11 @@ int sc_isnonzero(const unsigned char *s)
+ 
+ int ge_p3_is_point_at_infinity(const ge_p3 *p)
+ {
+-	// X = 0 and Y == Z
+-	int n;
+-	for (n = 0; n < 10; ++n)
+-	{
+-		if (p->X[n] | p->T[n])
+-			return 0;
+-		if (p->Y[n] != p->Z[n])
++	/* Field elements have multiple limb representations. Check equality
++	 * modulo the field prime, with a nonzero projective denominator. */
++	fe difference;
++	if (fe_isnonzero(p->X) || fe_isnonzero(p->T) || !fe_isnonzero(p->Z))
+ 		return 0;
+-	}
+-	return 1;
++	fe_sub(difference, p->Y, p->Z);
++	return !fe_isnonzero(difference);
+ }

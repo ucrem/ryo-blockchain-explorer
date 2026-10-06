@@ -100,6 +100,7 @@ PoolPage TransactionService::pool(unsigned limit, const std::string& cursor) {
             if (epee::string_tools::pod_to_hex(metadata.hash) != entries[i].id || metadata.coinbase ||
                 metadata.size != entries[i].meta.blob_size || metadata.fee != entries[i].meta.fee)
                 throw QueryFailure(QueryError::database, "Pool metadata does not match native bytes.");
+            result.receive_times.push_back(entries[i].meta.receive_time);
             result.transactions.push_back(std::move(tx)); result.metadata.push_back(std::move(metadata));
         }
         if (end < entries.size()) result.next_cursor = result.snapshot + "." + std::to_string(end);

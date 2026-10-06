@@ -351,7 +351,13 @@ export const mempoolResponse = z
   .object({
     meta,
     data: z.object({
-      items: z.array(transactionSummary).max(100),
+      items: z
+        .array(
+          transactionSummary.extend({
+            local_received_timestamp_unix: uint64.nullable().optional(),
+          }),
+        )
+        .max(100),
       transaction_count: uint64,
       size_bytes: uint64,
       fee_atomic: uint64,

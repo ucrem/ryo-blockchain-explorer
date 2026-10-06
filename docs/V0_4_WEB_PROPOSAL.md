@@ -139,3 +139,14 @@ fields are retained. Additive routes/schemas, closed-validator migration,
 reorg/pool mutation behavior and explicit unknown states need native fixture,
 HTTP, schema and production browser checks. All changes remain on the open PR;
 mainnet sync continues and the full native workflow remains manual-only.
+
+## Owner-authorized local pool receive time
+
+On 2026-10-06 the owner requested a timestamp/age in the pool with a tooltip
+explaining that it belongs to this node. This explicitly refines the previous
+receive-time exclusion for `/mempool` only. An optional decimal-string/null
+`local_received_timestamp_unix` is added to pool rows from native metadata;
+ordinary transaction inclusion, relay times and peer/source data stay unchanged.
+The UI explains creation/confirmation/network-first-seen differences, supports
+hover/focus/tap, displays unknown values truthfully and updates relative age
+without changing pool pagination order or introducing a propagation archive.

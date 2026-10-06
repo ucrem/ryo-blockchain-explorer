@@ -16,6 +16,8 @@ struct TransactionResult {
 struct PoolPage {
     std::vector<cryptonote::transaction> transactions;
     std::vector<TransactionMetadata> metadata;
+    // Owner-authorized local pool observation, separate from chain inclusion time.
+    std::vector<uint64_t> receive_times;
     uint64_t chain_height = 0, count = 0, size = 0, fees = 0;
     std::string snapshot, next_cursor;
 };

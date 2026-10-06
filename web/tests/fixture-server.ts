@@ -91,6 +91,8 @@ createServer((req, res) => {
       hash: makeHash(1000n + BigInt(offset + i)),
       coinbase: false,
       fee_atomic: "30000000",
+      local_received_timestamp_unix:
+        mode === "pool-time-unknown" ? null : "1791291000",
       size_bytes: "4500",
       input_count: 2,
       output_count: 2,

@@ -845,6 +845,7 @@ test("JSON links preserve the explorer layout, format exactly and safely, with o
 test("mempool pages cover all entries, detect membership changes and recover from empty and unavailable states", async ({
   page,
   request,
+  browser,
 }) => {
   await page.clock.install();
   await page.goto("/mempool");
@@ -853,6 +854,22 @@ test("mempool pages cover all entries, detect membership changes and recover fro
     exact: true,
   });
   await expect(table.locator("tbody tr")).toHaveCount(50);
+  const received = table
+    .getByRole("button", { name: /About this node's receive time/ })
+    .first();
+  await expect(received).toContainText("2026-10-06 12:50:00");
+  await received.hover();
+  await expect(page.getByRole("tooltip")).toContainText(
+    "When this node recorded the transaction",
+  );
+  await expect(page.getByRole("tooltip")).toContainText(
+    "Other nodes may record a different time",
+  );
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await received.focus();
+  await expect(page.getByRole("tooltip")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.mouse.move(0, 0);
   await expect(table).toContainText("Uniform");
   await expect(table.locator("tbody tr").first()).toContainText("25");
   await expect(page.locator(".section-note")).toContainText("1–50 of 53");
@@ -882,6 +899,33 @@ test("mempool pages cover all entries, detect membership changes and recover fro
     ),
   ).toBe(false);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  const touchContext = await browser.newContext({
+    baseURL: "http://127.0.0.1:3100",
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true,
+  });
+  try {
+    const touchPage = await touchContext.newPage();
+    await touchPage.goto("/mempool");
+    await touchPage
+      .getByRole("button", { name: /About this node's receive time/ })
+      .first()
+      .tap();
+    await expect(touchPage.getByRole("tooltip")).toContainText(
+      "Other nodes may record a different time",
+    );
+    expect(
+      (await new AxeBuilder({ page: touchPage }).analyze()).violations,
+    ).toEqual([]);
+  } finally {
+    await touchContext.close();
+  }
+  await request.get("http://127.0.0.1:3101/__control?mode=pool-time-unknown");
+  await page.reload();
+  await expect(table.getByLabel("Local receive time unavailable")).toHaveCount(
+    50,
+  );
   await request.get("http://127.0.0.1:3101/__control?mode=pool-empty");
   await page.reload();
   await expect(

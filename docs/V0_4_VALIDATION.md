@@ -429,7 +429,7 @@ Mainnet sync remained running throughout verification.
 
 ![Native confirmed key-image check](images/v0.4-native-key-image-tool.png)
 
-![Actual six-transaction local pool during historical sync](images/v0.4-native-mempool.png)
+![Native local pool; receipt date and age cells masked in committed evidence](images/v0.4-native-mempool.png)
 
 The public tools do not decrypt wallet exports or perform private-key ownership
 verification. Output checks require a transaction hash rather than claiming a
@@ -439,6 +439,35 @@ blobs to 100 per native page; limits fail truthfully instead of returning partia
 success. Full-pool load/performance and all address-format fixtures remain unverified.
 Pool membership does not establish consensus validity at the current network tip. Full native CI
 was not redispatched and its manual-only workflow is unchanged.
+
+## Owner-requested local receive timestamp and tooltip
+
+The owner explicitly authorized native local pool receive time after the public
+pool/tool extension. Each pool row now optionally includes decimal-string/null
+`local_received_timestamp_unix`, distinct from transaction inclusion. The UI
+labels the column "Seen by this node · UTC", displays relative age and provides
+an accessible hover/focus/tap tooltip explaining node differences and historical
+sync. Missing/older-server values remain unavailable; future local times show a
+clock-difference label. Visible-tab age updates use the original timestamp and
+introduce no extra backend polling or persistent observation archive.
+
+The Ubuntu 24.04 incremental build and all five CTests passed in 28.21 seconds
+(`build/v04-pool-time-native-build.log`, `build/v04-pool-time-native-tests.log`).
+New native checks preserve the supplied local receipt time, map unknown zero to
+null and continue excluding relay-time fields. Production build/TypeScript,
+ESLint, eighteen Node checks and all sixteen Chromium scenarios passed (the
+final browser run took 59.6 seconds). The pool scenario checks exact UTC display,
+hover/keyboard and true touch tooltip content, unknown times, mutation handling
+and mobile overflow/accessibility, including axe checks with the tooltip open. Unit checks
+cover older DTOs, numeric-token rejection, relative age and clock differences.
+
+A real native browser confirms the displayed date/age and tooltip against the
+pool DTO (`build/v04-native-smoke/pool-receive-time-browser-result.json`), with
+zero axe violations/page errors and a working mobile tap tooltip. The updated
+tracked pool screenshot masks receipt date/age cells; precise node receipt
+records remain outside committed evidence. The owner-authorized UI/API field
+is documented in the updated privacy model. Relay/source records, native core
+pin, workflows and daemon operation remain unchanged.
 
 ## Observed daemon synchronization failure
 

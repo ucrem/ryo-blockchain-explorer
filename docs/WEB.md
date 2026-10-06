@@ -106,13 +106,23 @@ The UI has no placeholder navigation advertising those capabilities.
 exact fees/fee per KiB, native size, input/output counts, ring size and payment-ID
 presence. All entries can be traversed within the native 10,000-entry bound;
 exceeding it produces unavailable, rather than a silently partial list. Native
-hash order gives stable pagination without exposing receive/relay timestamps.
+hash order gives stable pagination independently of local receive time. Relay
+timestamps remain excluded.
 A membership digest binds each cursor; a changed pool returns HTTP 409 with a
 restart link. Live checks every ten seconds compare membership, including
 replacements with the same count/size, and return to the first page on change.
 Updates can be paused; hidden tabs do not make pool reads. Failures retain the
 visible page and retry. Inspection reads preserve hidden amounts and do-not-relay
 exclusion. An empty pool is an explicit local observation, not a network claim.
+
+At the owner's request, a "Seen by this node · UTC" column shows native pool
+receive time and a relative age. Hover, keyboard focus or tap opens a tooltip
+explaining that other nodes may observe different times and that sync can record
+a downloaded historical TX. It is not creation or confirmation time. Age updates
+every ten seconds in visible tabs from the stored timestamp; missing/older-server
+values show a dash and a clock ahead of the browser shows "Clock difference".
+Membership still controls page refresh; manual refresh rereads native metadata.
+No relay timestamp or peer/source record is added.
 
 Transaction summaries on the dashboard, block pages and pool now show an
 optional native `inspection` object. Ring size counts every candidate per input,

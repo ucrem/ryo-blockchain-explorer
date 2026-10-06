@@ -11,6 +11,7 @@ import {
   paymentIdTypes,
 } from "@/lib/format";
 import { ResourceFailure } from "@/components/detail";
+import { PoolReceiveTime } from "@/components/pool-receive-time";
 import { LiveMempool } from "@/components/live-mempool";
 import { Button } from "@/components/ui/button";
 import {
@@ -65,6 +66,8 @@ export default async function Mempool({
     return <ResourceFailure kind="Mempool" error={error} />;
   }
   const pool = response.data;
+  const pageRead = new Date();
+  const nowUnix = Math.floor(pageRead.getTime() / 1000).toString();
   const offset = query.cursor ? Number((query.cursor as string).slice(65)) : 0;
   const json = `/json/mempool?limit=50${query.cursor ? `&cursor=${query.cursor}` : ""}`;
   return (
@@ -72,7 +75,7 @@ export default async function Mempool({
       <div className="page-topline">
         <span className="eyebrow">EXPLORER / MEMPOOL</span>
         <span className="read-time">
-          Page read · {new Date().toISOString().slice(11, 19)} UTC
+          Page read · {pageRead.toISOString().slice(11, 19)} UTC
         </span>
       </div>
       <div className="page-heading">
@@ -134,6 +137,7 @@ export default async function Mempool({
             <TableHeader>
               <TableRow>
                 <TableHead>Transaction hash</TableHead>
+                <TableHead>Seen by this node · UTC</TableHead>
                 <TableHead>Fee · RYO</TableHead>
                 <TableHead>Fee / KiB</TableHead>
                 <TableHead>Inputs / Outputs</TableHead>
@@ -152,6 +156,12 @@ export default async function Mempool({
                     >
                       <code>{tx.hash}</code>
                     </a>
+                  </TableCell>
+                  <TableCell>
+                    <PoolReceiveTime
+                      value={tx.local_received_timestamp_unix}
+                      nowUnix={nowUnix}
+                    />
                   </TableCell>
                   <TableCell>
                     {coins(tx.fee_atomic).replace(" RYO", "")}
@@ -189,9 +199,9 @@ export default async function Mempool({
         </div>
         <p className="table-note">
           This is the local relayable pool, not a network-wide list or a
-          confirmation. Receive times are not exposed. Live membership changes
-          restart pagination; pause updates to keep inspecting this page.
-          Entries marked do-not-relay are excluded.
+          confirmation. Live membership changes restart pagination; pause
+          updates to keep inspecting this page. Entries marked do-not-relay are
+          excluded.
         </p>
       </section>
     </>

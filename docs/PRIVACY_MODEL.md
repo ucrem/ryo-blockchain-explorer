@@ -5,8 +5,10 @@ inclusion height/timestamp `null`, and ring candidates alternatives without a
 real-spend marker. Network responses describe this native reader's chain.
 Payment IDs/public extra remain public native bytes; encrypted short IDs are
 not described as decrypted recipient information. Read-only GETs accept only
-bounded public block-list parameters; no private-key input or propagation data
-is exposed. Existing [legacy privacy differences](HTTP_SERVER.md) remain explicit.
+bounded public query parameters; no private-key input is exposed. The owner
+authorized a narrowly scoped local receive timestamp in the v0.4 pool list,
+separate from chain inclusion; relay times and peer/source records stay excluded.
+Existing [legacy privacy differences](HTTP_SERVER.md) remain explicit.
 
 The native foundation has services and an opt-in read-only HTTP subset; the
 v0.4 website consumes its public DTOs. Its block/transaction/raw/version routes accept no
@@ -76,8 +78,14 @@ document the exact inputs and verification meaning in each future flow.
 
 Legacy `MempoolStatus` sorts by receive time and the API exposes it as timestamp.
 It is this node's observation, not a chain inclusion timestamp. Some transaction
-lookup fallback responses expose it too. Future v2 models must omit precise
-first-seen/receive/relay times, source peer/IP data, and propagation information.
+lookup fallback responses expose it too. The original v2 policy excluded these
+local times. On 2026-10-06 the owner explicitly requested the receive timestamp
+with a tooltip explaining its node-local meaning. The pool list now exposes
+optional `local_received_timestamp_unix` from native metadata, with null when
+missing. It is this node's record, not transaction creation, confirmation or
+network-wide first sighting; historical synchronization can create such a record.
+Relay times and peer/source/propagation records remain excluded. Ordinary TX
+inclusion timestamps retain their existing confirmed/mempool semantics.
 Safe public summaries include transaction hash, size, fee, input/output counts,
 and aggregate count/size/fees. Aggregation must avoid reconstructing propagation
 history. Realtime events should not add local observation timestamps as public
@@ -100,8 +108,9 @@ public keys, without balance or history inference. These are distinct from the
 legacy export-decryption/signature and secret-based output-verification flows.
 
 The full public pool list is bounded, excludes `do_not_relay` and orders by hash,
-with a native membership digest for pagination. It exposes no local receive or
-relay timestamps. Ring summary ranges count candidates; ID markers distinguish
+with a native membership digest for pagination. The owner-authorized local
+receive timestamp is labeled and explained; relay timestamps remain excluded.
+Ring summary ranges count candidates; ID markers distinguish
 native legacy/encrypted/uniform presence without decrypting encrypted IDs.
 
 ## Target local verification
@@ -137,8 +146,9 @@ It exposes no browser RPC route, internal URL, peer list/IP, uptime or unselecte
 RPC fields. Peer counts and sync targets describe this configured node. A saved
 public observation can survive a failed read for at most 60 seconds, marked
 delayed with its original timestamp. Native pool aggregates exclude entries
-marked `do_not_relay`; receive/relay timestamps and propagation records stay
-excluded. Issued supply does not imply spendability or address balance inference.
+marked `do_not_relay`; only the explicitly authorized local receive time is
+added to pool rows. Relay timestamps and propagation records stay excluded.
+Issued supply does not imply spendability or address balance inference.
 
 No trackers, analytics SDKs, fingerprinting, runtime CDNs, external fonts, or
 unnecessary cookies. Bundle assets. Source inspection found local scripts/assets;

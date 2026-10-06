@@ -132,7 +132,12 @@ ApiResponse ApiV2::get(const std::string& target) {
             }
             auto pool = transactions_.pool(limit, cursor);
             json items = json::array();
-            for (size_t i = 0; i < pool.transactions.size(); ++i) items.push_back(summary(pool.transactions[i], pool.metadata[i]));
+            for (size_t i = 0; i < pool.transactions.size(); ++i) {
+                auto item = summary(pool.transactions[i], pool.metadata[i]);
+                item["local_received_timestamp_unix"] = pool.receive_times.at(i) ?
+                    json(std::to_string(pool.receive_times.at(i))) : json(nullptr);
+                items.push_back(std::move(item));
+            }
             return {200, {{"data", {{"items", items}, {"transaction_count", std::to_string(pool.count)},
                 {"size_bytes", std::to_string(pool.size)}, {"fee_atomic", std::to_string(pool.fees)},
                 {"snapshot", pool.snapshot}, {"next_cursor", pool.next_cursor.empty() ? json(nullptr) : json(pool.next_cursor)}}},

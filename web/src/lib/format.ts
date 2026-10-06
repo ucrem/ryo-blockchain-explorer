@@ -75,3 +75,12 @@ export function paymentIdTypes(types: string[] | undefined) {
         .join(" · ")
     : "None";
 }
+
+export function poolAge(value: string, now: string): string {
+  const elapsed = BigInt(now) - BigInt(value);
+  if (elapsed < 0n) return "Clock difference";
+  if (elapsed < 60n) return `${integer(elapsed)} s ago`;
+  if (elapsed < 3600n) return `${integer(elapsed / 60n)} min ago`;
+  if (elapsed < 86400n) return `${integer(elapsed / 3600n)} h ago`;
+  return `${integer(elapsed / 86400n)} d ago`;
+}

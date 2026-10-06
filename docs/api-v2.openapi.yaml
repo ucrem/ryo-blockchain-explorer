@@ -33,7 +33,7 @@ paths:
     get:
       operationId: getMempool
       summary: List relayable local pool transactions in deterministic hash order
-      description: At most 100 transaction blobs per page and 10000 metadata entries. Membership changes invalidate cursors with 409. No local receive/relay times; no persistent snapshot store.
+      description: At most 100 transaction blobs per page and 10000 metadata entries. Membership changes invalidate cursors with 409. Owner-authorized local receive time is explicitly scoped to this node; relay times remain excluded. No persistent snapshot store.
       parameters:
         - name: limit
           in: query
@@ -596,6 +596,16 @@ components:
           maxItems: 3
           items: { type: string, enum: [legacy, encrypted, uniform] }
           description: Native extra presence only. Uniform and short encrypted IDs are not decrypted recipient information.
+    PoolTransactionSummary:
+      type: object
+      allOf:
+        - { $ref: '#/components/schemas/TransactionSummaryFields' }
+      unevaluatedProperties: false
+      properties:
+        local_received_timestamp_unix:
+          allOf:
+            - { $ref: '#/components/schemas/NullableUInt64' }
+          description: Native pool receive_time on this node, in Unix seconds. Null when unavailable; not creation, confirmation or network-wide first-seen time. Added with owner approval; omitted by older servers.
     MempoolResponse:
       type: object
       additionalProperties: false
@@ -610,7 +620,7 @@ components:
             items:
               type: array
               maxItems: 100
-              items: { $ref: '#/components/schemas/TransactionSummary' }
+              items: { $ref: '#/components/schemas/PoolTransactionSummary' }
             transaction_count: { $ref: '#/components/schemas/UInt64' }
             size_bytes: { $ref: '#/components/schemas/UInt64' }
             fee_atomic: { $ref: '#/components/schemas/UInt64' }

@@ -156,8 +156,16 @@ int main(int argc, char** argv) {
 
         const auto pool_page = transactions.pool(1);
         check(pool_page.count == 1 && pool_page.metadata.size() == 1 && pool_page.metadata[0].hash == ordinary_metadata.hash &&
-              pool_page.fees == ordinary_metadata.fee && pool_page.next_cursor.empty(), "Native public pool page failed.");
+              pool_page.fees == ordinary_metadata.fee && pool_page.receive_times.at(0) == meta.receive_time && pool_page.next_cursor.empty(), "Native public pool page failed.");
         record(api, "/api/v2/mempool?limit=1", "MempoolResponse");
+        const auto observed_pool = api.get("/api/v2/mempool?limit=1").body["data"]["items"][0];
+        check(observed_pool["local_received_timestamp_unix"] == "123456789" &&
+              observed_pool.find("last_relayed_time") == observed_pool.end(), "Local receive time provenance or relay-time exclusion failed.");
+        auto unknown_time_meta = meta; unknown_time_meta.receive_time = 0;
+        writer.block_txn_start(false); writer.update_txpool_tx(ordinary_metadata.hash, unknown_time_meta); writer.block_txn_stop();
+        check(api.get("/api/v2/mempool").body["data"]["items"][0]["local_received_timestamp_unix"].is_null(),
+              "Missing receive time was invented.");
+        writer.block_txn_start(false); writer.update_txpool_tx(ordinary_metadata.hash, meta); writer.block_txn_stop();
         auto second_meta = meta; second_meta.do_not_relay = false;
         second_meta.blob_size = cryptonote::get_object_blobsize(private_pool_tx);
         writer.block_txn_start(false); writer.add_txpool_tx(private_pool_tx, second_meta); writer.block_txn_stop();

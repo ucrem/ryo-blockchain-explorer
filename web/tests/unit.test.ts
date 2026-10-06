@@ -20,6 +20,7 @@ import {
 import { publicNodeStatus } from "../src/lib/node-status";
 import { intervalPlot } from "../src/lib/interval-plot";
 import {
+  poolAge,
   ringSize,
   paymentIdTypes,
   bytes,
@@ -657,5 +658,38 @@ test("pool pages and inspection tools preserve public scope, exact metadata and 
   assert.equal(
     toolQuery({ tool: "address", value: "1".repeat(95), viewkey: "secret" }),
     null,
+  );
+});
+
+test("local pool receipt timestamps preserve node provenance, unknown values and clock differences", () => {
+  const pool = structuredClone(examples.MempoolResponse);
+  pool.data.transaction_count = "1";
+  pool.data.items = [
+    {
+      ...examples.BlockResponse.data.transactions[0],
+      coinbase: false,
+      local_received_timestamp_unix: "1791291000",
+    },
+  ];
+  assert.equal(
+    mempoolResponse.parse(pool).data.items[0].local_received_timestamp_unix,
+    "1791291000",
+  );
+  assert.equal(poolAge("1791291000", "1791291180"), "3 min ago");
+  assert.equal(poolAge("1791291000", "1791291001"), "1 s ago");
+  assert.equal(poolAge("1791291000", "1791290999"), "Clock difference");
+  pool.data.items[0].local_received_timestamp_unix = 1791291000;
+  assert.equal(mempoolResponse.safeParse(pool).success, false);
+  pool.data.items[0].local_received_timestamp_unix = null;
+  assert.equal(mempoolResponse.safeParse(pool).success, true);
+  delete pool.data.items[0].local_received_timestamp_unix;
+  assert.equal(mempoolResponse.safeParse(pool).success, true);
+  assert.equal(examples.TransactionResponse.data.inclusion.timestamp_unix, "0");
+  assert.equal(
+    Object.hasOwn(
+      examples.TransactionResponse.data,
+      "local_received_timestamp_unix",
+    ),
+    false,
   );
 });

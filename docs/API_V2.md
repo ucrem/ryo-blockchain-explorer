@@ -85,10 +85,11 @@ Confirmed transaction inclusion contains its block height/timestamp and
 `chain_height - block_height` confirmations, including its own block. A known
 pool transaction has `state: mempool`, `confirmations: "0"` and `null` chain
 height/timestamp. Pool storage membership does not imply confirmation or
-consensus validation. No node-local receive/relay time, peer/source information,
-private-key input, address balance/history inference or transaction push is
-exposed. Ring candidates remain alternatives; none is identified as the real
-spent output. An empty candidate array means unavailable in the queried snapshot.
+consensus validation. Transaction details omit node-local receive/relay time,
+peer/source information, private-key input, address balance/history inference
+and transaction push. The separately authorized local receive timestamp is
+limited to pool-list rows, as documented below. Ring candidates remain
+alternatives; none is identified as the real spent output. An empty candidate array means unavailable in the queried snapshot.
 
 `/network` reports the native reader's chain, not daemon synchronization,
 network-wide peer counts or independently verified consensus. Its target
@@ -141,7 +142,11 @@ to 4 MiB). Native bytes must match hash, size and fee metadata. Hash sorting and
 native `cn_fast_hash` over concatenated lowercase hashes form the membership
 `snapshot`. Cursors contain `snapshot.offset`, at most 70 characters; offset is
 canonical 1–10,000. Membership changes return 409 and require restarting. No
-persistent snapshot or local transaction observation times are exposed.
+persistent snapshot is stored. The owner-authorized optional pool-row field
+`local_received_timestamp_unix` reports this node's native `receive_time` as a
+decimal string; zero/missing native time is null and older servers may omit it.
+It is separate from block inclusion, transaction creation and network-wide
+first-seen time. Relay/peer/source records stay excluded.
 The response includes `items`, decimal-string `transaction_count`, `size_bytes`,
 aggregate `fee_atomic`, `snapshot` and nullable `next_cursor`. Following cursors
 to null traverses the entire relayable pool within the bound; larger/inconsistent

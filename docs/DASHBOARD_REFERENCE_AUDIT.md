@@ -76,8 +76,10 @@ calling it a mining subsidy would be misleading.
 **Pool and transaction units need explicit scope.** A local pool can be empty
 while another explorer has pending transactions, particularly during sync.
 Our public aggregate excludes native entries marked `do_not_relay`, has a
-10,000-entry scan bound and returns unavailable metrics if incomplete. It does
-not expose receive times or peer/source records. KiB means exactly 1,024 bytes;
+10,000-entry scan bound and returns unavailable metrics if incomplete. It now
+exposes an owner-authorized local receive timestamp with explicit node
+provenance; relay times and peer/source records remain excluded. KiB means
+exactly 1,024 bytes;
 fee rates truncate to an atomic unit using BigInt, not floating-point money.
 Hidden RingCT amounts remain unknown, including on transaction details.
 

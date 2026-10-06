@@ -35,6 +35,8 @@ retroactively.
   with exact fees, paginated rows and privacy-safe RingCT/input/output views.
 - Paginated relayable mempool with membership-bound cursors, exact native
   summaries and ten-second pool updates with pause/mutation recovery.
+- Owner-requested mempool receive time/age with an explicit node-local tooltip;
+  unknown timestamps remain unavailable and relay/source records stay excluded.
 - Ring size ranges and legacy/encrypted/uniform payment-ID presence in summaries.
 - Public native key-image/output-membership/address tools, linked from details,
   with contextual results and embedded JSON.

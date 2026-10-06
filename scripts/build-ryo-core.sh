@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Apply only the reviewed compatibility and native identity patches to the pin.
+# Build the pinned SDK with only its reviewed native maintenance patches.
 set -euo pipefail
 if [[ $# -lt 1 || $# -gt 2 ]]; then
     printf 'Usage: bash scripts/build-ryo-core.sh RYO_SOURCE [JOBS]\n' >&2
@@ -17,27 +17,26 @@ if [[ $(git -C "$task_core" rev-parse HEAD) != "$task_pin" ]]; then
     printf 'Ryo checkout must match %s. No checkout/history changes were made.\n' "$task_pin" >&2
     exit 1
 fi
-task_patch="$task_root/scripts/patches/ryo-ubuntu24.patch"
-task_identity_patch="$task_root/scripts/patches/ryo-point-identity.patch"
-if ! git -C "$task_core" diff --cached --quiet; then
-    printf 'Refusing to modify a core checkout with staged changes.\n' >&2
-    exit 1
-fi
-if git -C "$task_core" diff --quiet; then
-    git -C "$task_core" apply --check "$task_patch" "$task_identity_patch"
-    git -C "$task_core" apply "$task_patch" "$task_identity_patch"
-elif git -C "$task_core" diff --binary -- ':(exclude)src/crypto/crypto-ops.c' | cmp -s - "$task_patch" &&
-     git -C "$task_core" diff --binary -- src/crypto/crypto-ops.c | cmp -s - "$task_identity_patch"; then
-    printf 'The reviewed compatibility and identity patches are already applied.\n'
-elif git -C "$task_core" diff --binary | cmp -s - "$task_patch"; then
-    git -C "$task_core" apply --check "$task_identity_patch"
-    git -C "$task_core" apply "$task_identity_patch"
-else
-    printf 'Unexpected Ryo source modifications; refusing to overwrite them.\n' >&2
-    exit 1
+python3 "$task_root/scripts/apply-ryo-patches.py" "$task_core"
+task_config_flags=()
+if [[ -f "$task_core/build/release/CMakeCache.txt" ]]; then
+    task_cxx_flags=$(python3 - "$task_core/build/release/CMakeCache.txt" <<'PY'
+from pathlib import Path
+import re
+import sys
+for line in Path(sys.argv[1]).read_text().splitlines():
+    if line.startswith("CMAKE_CXX_FLAGS:STRING="):
+        flags = line.split("=", 1)[1]
+        cleaned = re.sub(r"(?<!\S)-Wno-error=(?:deprecated-copy|misleading-indentation)(?!\S)", "", flags).strip()
+        if cleaned != flags:
+            print("Removed the baseline's legacy copy/indentation error exemptions.", file=sys.stderr)
+        print(cleaned)
+        break
+PY
+)
+    task_config_flags+=("-DCMAKE_CXX_FLAGS=$task_cxx_flags")
 fi
 cmake -S "$task_core" -B "$task_core/build/release" \
     -DCMAKE_BUILD_TYPE=Release -DARCH=default \
-    -DBUILD_TESTS=OFF -DBUILD_DOCUMENTATION=OFF \
-    '-DCMAKE_CXX_FLAGS=-Wno-error=deprecated-copy -Wno-error=misleading-indentation'
+    -DBUILD_TESTS=OFF -DBUILD_DOCUMENTATION=OFF "${task_config_flags[@]}"
 cmake --build "$task_core/build/release" --parallel "$task_jobs" --target wallet daemon

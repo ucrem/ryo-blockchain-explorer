@@ -23,7 +23,7 @@ target_include_directories(ryo_native_dependencies SYSTEM INTERFACE
     "${RYO_CORE_DIR}/contrib/epee/include"
     "${RYO_CORE_DIR}/external/db_drivers/liblmdb")
 
-find_package(Boost 1.83 REQUIRED COMPONENTS system filesystem thread date_time
+find_package(Boost 1.83 CONFIG REQUIRED COMPONENTS system filesystem thread date_time
     chrono regex serialization program_options locale)
 find_package(Threads REQUIRED)
 target_link_libraries(ryo_native_dependencies INTERFACE

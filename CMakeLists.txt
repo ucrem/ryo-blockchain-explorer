@@ -88,6 +88,15 @@ if(BUILD_TESTING)
         "${CMAKE_CURRENT_SOURCE_DIR}/scripts/offline-native-test.py"
         "${RYO_CORE_BUILD_DIR}/bin/ryod" $<TARGET_FILE:ryo_service_fixture> ${RYO_SERVICE_TEST_ARGS})
     set_tests_properties(ryo_native_services PROPERTIES TIMEOUT 180)
+    add_executable(ryo_native_compatibility_fixture tests/native_compatibility_fixture.cpp)
+    target_link_libraries(ryo_native_compatibility_fixture PRIVATE ryo_explorer_core zmq)
+    add_test(NAME ryo_native_compatibility COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/offline-native-test.py"
+        "${RYO_CORE_BUILD_DIR}/bin/ryod" $<TARGET_FILE:ryo_native_compatibility_fixture> --compatibility)
+    set_tests_properties(ryo_native_compatibility PROPERTIES TIMEOUT 180)
+    add_test(NAME ryo_sdk_patch_guard COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/sdk_patch_guard.py" "${RYO_CORE_DIR}")
+    set_tests_properties(ryo_sdk_patch_guard PROPERTIES TIMEOUT 180)
     if(RYO_BUILD_HTTP)
         add_test(NAME ryo_api_v2_schema COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/scripts/check-api-v2-contract.py")

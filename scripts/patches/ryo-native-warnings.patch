@@ -1,0 +1,470 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index fd97bf1..f63a908 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -54,7 +54,7 @@ if (IOS)
+     INCLUDE(CmakeLists_IOS.txt)
+ endif()
+ 
+-cmake_minimum_required(VERSION 3.1.0)
++cmake_minimum_required(VERSION 3.24)
+ 
+ project(ryo)
+ 
+@@ -848,7 +848,7 @@ if(STATIC)
+   set(Boost_USE_STATIC_LIBS ON)
+   set(Boost_USE_STATIC_RUNTIME ON)
+ endif()
+-find_package(Boost 1.58 QUIET REQUIRED COMPONENTS system filesystem thread date_time chrono regex serialization program_options locale)
++find_package(Boost 1.83 CONFIG REQUIRED COMPONENTS system filesystem thread date_time chrono regex serialization program_options locale)
+ 
+ set(CMAKE_FIND_LIBRARY_SUFFIXES ${OLD_LIB_SUFFIXES})
+ if(NOT Boost_FOUND)
+diff --git a/cmake/FindMiniupnpc.cmake b/cmake/FindMiniupnpc.cmake
+index ad2004a..7f4bb68 100644
+--- a/cmake/FindMiniupnpc.cmake
++++ b/cmake/FindMiniupnpc.cmake
+@@ -37,7 +37,7 @@ set(MINIUPNP_STATIC_LIBRARIES ${MINIUPNP_STATIC_LIBRARY})
+ 
+ include(FindPackageHandleStandardArgs)
+ find_package_handle_standard_args(
+-  MiniUPnPc DEFAULT_MSG
++  Miniupnpc DEFAULT_MSG
+   MINIUPNP_INCLUDE_DIR
+   MINIUPNP_LIBRARY
+ )
+diff --git a/contrib/epee/include/misc_language.h b/contrib/epee/include/misc_language.h
+index 64bbb15..126c95e 100644
+--- a/contrib/epee/include/misc_language.h
++++ b/contrib/epee/include/misc_language.h
+@@ -82,8 +82,10 @@ t_iterator move_it_backward(t_iterator it, size_t count)
+ // TEMPLATE STRUCT less
+ template <class _Ty>
+ struct less_as_pod
+-	: public std::binary_function<_Ty, _Ty, bool>
+ { // functor for operator<
++	using first_argument_type = _Ty;
++	using second_argument_type = _Ty;
++	using result_type = bool;
+ 	bool operator()(const _Ty &_Left, const _Ty &_Right) const
+ 	{ // apply operator< to operands
+ 		return memcmp(&_Left, &_Right, sizeof(_Left)) < 0;
+diff --git a/contrib/epee/include/net/http_server_impl_base.h b/contrib/epee/include/net/http_server_impl_base.h
+index 25cbe25..420ee79 100644
+--- a/contrib/epee/include/net/http_server_impl_base.h
++++ b/contrib/epee/include/net/http_server_impl_base.h
+@@ -26,7 +26,7 @@
+ 
+ #pragma once
+ 
+-#include <boost/bind.hpp>
++#include <boost/bind/bind.hpp>
+ #include <boost/thread.hpp>
+ 
+ #include "net/http_server_cp2.h"
+diff --git a/contrib/epee/include/net/jsonrpc_server_impl_base.h b/contrib/epee/include/net/jsonrpc_server_impl_base.h
+index 8da1f81..558258f 100644
+--- a/contrib/epee/include/net/jsonrpc_server_impl_base.h
++++ b/contrib/epee/include/net/jsonrpc_server_impl_base.h
+@@ -1,7 +1,7 @@
+ #ifndef JSONRPC_SERVER_IMPL_BASE_H
+ #define JSONRPC_SERVER_IMPL_BASE_H
+ 
+-#include <boost/bind.hpp>
++#include <boost/bind/bind.hpp>
+ #include <boost/thread.hpp>
+ 
+ #include "net/abstract_tcp_server2.h"
+diff --git a/contrib/epee/include/net/net_utils_base.h b/contrib/epee/include/net/net_utils_base.h
+index d1bff09..cb1ad21 100644
+--- a/contrib/epee/include/net/net_utils_base.h
++++ b/contrib/epee/include/net/net_utils_base.h
+@@ -295,6 +295,8 @@ struct connection_context_base
+ 	{
+ 	}
+ 
++	connection_context_base(const connection_context_base &) = default;
++
+ 	connection_context_base &operator=(const connection_context_base &a)
+ 	{
+ 		set_details(a.m_connection_id, a.m_remote_address, a.m_is_income);
+diff --git a/external/fmt/CMakeLists.txt b/external/fmt/CMakeLists.txt
+index 78016a9..528befd 100644
+--- a/external/fmt/CMakeLists.txt
++++ b/external/fmt/CMakeLists.txt
+@@ -1,6 +1,6 @@
+ message(STATUS "CMake version: ${CMAKE_VERSION}")
+ 
+-cmake_minimum_required(VERSION 3.1.0)
++cmake_minimum_required(VERSION 3.10)
+ 
+ # Determine if fmt is built as a subproject (using add_subdirectory)
+ # or if it is the master project.
+diff --git a/external/miniupnp/miniupnpc/CMakeLists.txt b/external/miniupnp/miniupnpc/CMakeLists.txt
+index cb997dc..22c34b3 100644
+--- a/external/miniupnp/miniupnpc/CMakeLists.txt
++++ b/external/miniupnp/miniupnpc/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-cmake_minimum_required (VERSION 2.6)
++cmake_minimum_required(VERSION 3.10)
+ 
+ project (miniupnpc C)
+ set (MINIUPNPC_VERSION 2.0)
+diff --git a/src/common/boost_serialization_helper.h b/src/common/boost_serialization_helper.h
+index 508cbd5..3dc51d6 100644
+--- a/src/common/boost_serialization_helper.h
++++ b/src/common/boost_serialization_helper.h
+@@ -128,7 +128,7 @@ bool unserialize_obj_from_file(t_object &obj, const std::string &file_path)
+ 	catch(...)
+ 	{
+ 		// if failed, try reading in unportable mode
+-		boost::filesystem::copy_file(file_path, file_path + ".unportable", boost::filesystem::copy_option::overwrite_if_exists);
++		boost::filesystem::copy_file(file_path, file_path + ".unportable", boost::filesystem::copy_options::overwrite_existing);
+ 		data_file.close();
+ 		data_file.open(file_path, std::ios_base::binary | std::ios_base::in);
+ 		if(data_file.fail())
+diff --git a/src/common/util.cpp b/src/common/util.cpp
+index 66e2846..a7b33af 100644
+--- a/src/common/util.cpp
++++ b/src/common/util.cpp
+@@ -45,6 +45,7 @@
+ // Parts of this file are originally copyright (c) 2012-2013 The Cryptonote developers
+ 
+ #include <cstdio>
++#include <memory>
+ 
+ #ifdef __GLIBC__
+ #include <gnu/libc-version.h>
+@@ -76,7 +77,7 @@ using namespace epee;
+ #include <boost/algorithm/string.hpp>
+ #include <boost/asio.hpp>
+ #include <boost/filesystem.hpp>
+-#include <openssl/sha.h>
++#include <openssl/evp.h>
+ 
+ 
+ namespace tools
+@@ -735,14 +736,14 @@ int vercmp(const char *v0, const char *v1)
+ 
+ bool sha256sum(const uint8_t *data, size_t len, crypto::hash &hash)
+ {
+-	SHA256_CTX ctx;
+-	if(!SHA256_Init(&ctx))
++	std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> ctx(EVP_MD_CTX_new(), EVP_MD_CTX_free);
++	if(!ctx || EVP_DigestInit_ex(ctx.get(), EVP_sha256(), nullptr) != 1)
+ 		return false;
+-	if(!SHA256_Update(&ctx, data, len))
++	if(EVP_DigestUpdate(ctx.get(), data, len) != 1)
+ 		return false;
+-	if(!SHA256_Final((unsigned char *)hash.data, &ctx))
+-		return false;
+-	return true;
++	unsigned int digest_size = 0;
++	return EVP_DigestFinal_ex(ctx.get(), reinterpret_cast<unsigned char *>(hash.data), &digest_size) == 1 &&
++		   digest_size == sizeof(hash.data);
+ }
+ 
+ bool sha256sum(const std::string &filename, crypto::hash &hash)
+@@ -755,8 +756,8 @@ bool sha256sum(const std::string &filename, crypto::hash &hash)
+ 	if(!f)
+ 		return false;
+ 	std::ifstream::pos_type file_size = f.tellg();
+-	SHA256_CTX ctx;
+-	if(!SHA256_Init(&ctx))
++	std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> ctx(EVP_MD_CTX_new(), EVP_MD_CTX_free);
++	if(!ctx || EVP_DigestInit_ex(ctx.get(), EVP_sha256(), nullptr) != 1)
+ 		return false;
+ 	size_t size_left = file_size;
+ 	f.seekg(0, std::ios::beg);
+@@ -767,13 +768,13 @@ bool sha256sum(const std::string &filename, crypto::hash &hash)
+ 		f.read(buf, read_size);
+ 		if(!f || !f.good())
+ 			return false;
+-		if(!SHA256_Update(&ctx, buf, read_size))
++		if(EVP_DigestUpdate(ctx.get(), buf, read_size) != 1)
+ 			return false;
+ 		size_left -= read_size;
+ 	}
+ 	f.close();
+-	if(!SHA256_Final((unsigned char *)hash.data, &ctx))
+-		return false;
+-	return true;
++	unsigned int digest_size = 0;
++	return EVP_DigestFinal_ex(ctx.get(), reinterpret_cast<unsigned char *>(hash.data), &digest_size) == 1 &&
++		   digest_size == sizeof(hash.data);
+ }
+ }
+diff --git a/src/crypto/pow_hash/cn_slow_hash_soft.cpp b/src/crypto/pow_hash/cn_slow_hash_soft.cpp
+index 9fab887..9d11645 100644
+--- a/src/crypto/pow_hash/cn_slow_hash_soft.cpp
++++ b/src/crypto/pow_hash/cn_slow_hash_soft.cpp
+@@ -124,6 +124,9 @@ alignas(16) extern const uint8_t saes_sbox[256] = saes_data(saes_h0);
+ 
+ struct aesdata
+ {
++	aesdata() = default;
++	aesdata(const aesdata&) = default;
++
+ 	uint64_t v64x0;
+ 	uint64_t v64x1;
+ 
+diff --git a/src/cryptonote_basic/cryptonote_basic_impl.h b/src/cryptonote_basic/cryptonote_basic_impl.h
+index 168cc0c..dc9d5c0 100644
+--- a/src/cryptonote_basic/cryptonote_basic_impl.h
++++ b/src/cryptonote_basic/cryptonote_basic_impl.h
+@@ -56,8 +56,10 @@ namespace cryptonote
+ /*                                                                      */
+ /************************************************************************/
+ template <class t_array>
+-struct array_hasher : std::unary_function<t_array &, std::size_t>
++struct array_hasher
+ {
++	using argument_type = t_array &;
++	using result_type = std::size_t;
+ 	std::size_t operator()(const t_array &val) const
+ 	{
+ 		return boost::hash_range(&val.data[0], &val.data[sizeof(val.data)]);
+diff --git a/src/cryptonote_core/cryptonote_core.cpp b/src/cryptonote_core/cryptonote_core.cpp
+index f7ee931..febef4c 100644
+--- a/src/cryptonote_core/cryptonote_core.cpp
++++ b/src/cryptonote_core/cryptonote_core.cpp
+@@ -124,7 +124,7 @@ static const command_line::arg_descriptor<size_t> arg_max_txpool_size = {
+ 	"max-txpool-size", "Set maximum txpool size in bytes.", DEFAULT_TXPOOL_MAX_SIZE};
+ 
+ //-----------------------------------------------------------------------------------------------
+-core::core(i_cryptonote_protocol *pprotocol) : m_mempool(m_blockchain_storage),
++core::core(i_cryptonote_protocol *pprotocol) : m_mempool(&m_blockchain_storage),
+ 											   m_blockchain_storage(m_mempool),
+ 											   m_miner(this),
+ 											   m_miner_address(boost::value_initialized<account_public_address>()),
+@@ -1303,7 +1303,7 @@ bool core::on_idle()
+ 			main_message = "The daemon is running offline and will not attempt to sync to the Ryo network.";
+ 		else
+ 			main_message = "The daemon will start synchronizing with the network. This may take a long time to complete.";
+-			GULPS_GLOBAL_PRINT_CLR(gulps::COLOR_BOLD_YELLOW, "\n**********************************************************************\n",
++		GULPS_GLOBAL_PRINT_CLR(gulps::COLOR_BOLD_YELLOW, "\n**********************************************************************\n",
+ 						   main_message,
+ 						   "\n\nYou can set the level of process detailization through \"set_log <level|categories>\" command,\n",
+ 						   "where <level> is between 0 (no details) and 4 (very verbose), or custom category based levels (eg, *:WARNING).\n\n",
+diff --git a/src/cryptonote_core/tx_pool.cpp b/src/cryptonote_core/tx_pool.cpp
+index 2981841..04813f9 100644
+--- a/src/cryptonote_core/tx_pool.cpp
++++ b/src/cryptonote_core/tx_pool.cpp
+@@ -131,7 +131,12 @@ class LockedTXN
+ }
+ //---------------------------------------------------------------------------------
+ //---------------------------------------------------------------------------------
+-tx_memory_pool::tx_memory_pool(Blockchain &bchs) : m_blockchain(bchs), m_txpool_max_size(DEFAULT_TXPOOL_MAX_SIZE), m_txpool_size(0)
++tx_memory_pool::tx_memory_pool(Blockchain &bchs) : tx_memory_pool(&bchs)
++{
++}
++
++// Both callers pass existing nonnull storage; this only binds the reference.
++tx_memory_pool::tx_memory_pool(Blockchain *bchs) : m_blockchain(*bchs), m_txpool_max_size(DEFAULT_TXPOOL_MAX_SIZE), m_txpool_size(0)
+ {
+ }
+ //---------------------------------------------------------------------------------
+diff --git a/src/cryptonote_core/tx_pool.h b/src/cryptonote_core/tx_pool.h
+index 1a969ce..23cb183 100644
+--- a/src/cryptonote_core/tx_pool.h
++++ b/src/cryptonote_core/tx_pool.h
+@@ -441,6 +441,11 @@ class tx_memory_pool : boost::noncopyable
+ 	};
+ 
+   private:
++	friend class core;
++	// Bind core's nonnull blockchain storage without reading it before its
++	// constructor runs. The public reference constructor retains its contract.
++	explicit tx_memory_pool(Blockchain *bchs);
++
+ 	/**
+      * @brief insert key images into m_spent_key_images
+      *
+diff --git a/src/cryptonote_protocol/CMakeLists.txt b/src/cryptonote_protocol/CMakeLists.txt
+index a78d9fb..6a5548e 100644
+--- a/src/cryptonote_protocol/CMakeLists.txt
++++ b/src/cryptonote_protocol/CMakeLists.txt
+@@ -42,7 +42,7 @@
+ # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+ # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+-cmake_minimum_required (VERSION 3.1.0)
++cmake_minimum_required(VERSION 3.24)
+ project (ryo CXX)
+ 
+ file(GLOB CRYPTONOTE_PROTOCOL *)
+diff --git a/src/p2p/CMakeLists.txt b/src/p2p/CMakeLists.txt
+index aced5f5..66ca3e6 100644
+--- a/src/p2p/CMakeLists.txt
++++ b/src/p2p/CMakeLists.txt
+@@ -42,7 +42,7 @@
+ # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+ # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+-cmake_minimum_required (VERSION 3.1.0)
++cmake_minimum_required(VERSION 3.24)
+ project (ryo CXX)
+ 
+ file(GLOB P2P *)
+diff --git a/src/p2p/net_node.inl b/src/p2p/net_node.inl
+index 4450c9b..41edd92 100644
+--- a/src/p2p/net_node.inl
++++ b/src/p2p/net_node.inl
+@@ -48,7 +48,7 @@
+ 
+ #include <algorithm>
+ #include <atomic>
+-#include <boost/bind.hpp>
++#include <boost/bind/bind.hpp>
+ #include <boost/date_time/posix_time/posix_time.hpp>
+ #include <boost/thread/thread.hpp>
+ 
+@@ -122,7 +122,7 @@ bool node_server<t_payload_net_handler>::init_config()
+ 		catch(...)
+ 		{
+ 			// if failed, try reading in unportable mode
+-			boost::filesystem::copy_file(state_file_path, state_file_path + ".unportable", boost::filesystem::copy_option::overwrite_if_exists);
++			boost::filesystem::copy_file(state_file_path, state_file_path + ".unportable", boost::filesystem::copy_options::overwrite_existing);
+ 			p2p_data.close();
+ 			p2p_data.open(state_file_path, std::ios_base::binary | std::ios_base::in);
+ 			if(!p2p_data.fail())
+diff --git a/src/rpc/CMakeLists.txt b/src/rpc/CMakeLists.txt
+index 3e9ded8..e312729 100644
+--- a/src/rpc/CMakeLists.txt
++++ b/src/rpc/CMakeLists.txt
+@@ -47,7 +47,7 @@ set(rpc_base_sources
+ 
+ set(rpc_sources
+   core_rpc_server.cpp
+-  instanciations)
++  instanciations.cpp)
+ 
+ set(daemon_messages_sources
+   message.cpp
+diff --git a/src/rpc/rpc_args.cpp b/src/rpc/rpc_args.cpp
+index 257c652..c3e3cba 100644
+--- a/src/rpc/rpc_args.cpp
++++ b/src/rpc/rpc_args.cpp
+@@ -49,7 +49,7 @@
+ #include "common/i18n.h"
+ #include <boost/algorithm/string.hpp>
+ #include <boost/asio/ip/address.hpp>
+-#include <boost/bind.hpp>
++#include <boost/bind/bind.hpp>
+ 
+ #include "common/gulps.hpp"
+ 
+@@ -123,7 +123,7 @@ boost::optional<rpc_args> rpc_args::process(const boost::program_options::variab
+ 
+ 		std::vector<std::string> access_control_origins;
+ 		boost::split(access_control_origins, access_control_origins_input, boost::is_any_of(","));
+-		std::for_each(access_control_origins.begin(), access_control_origins.end(), boost::bind(&boost::trim<std::string>, _1, std::locale::classic()));
++		std::for_each(access_control_origins.begin(), access_control_origins.end(), boost::bind(&boost::trim<std::string>, boost::placeholders::_1, std::locale::classic()));
+ 		config.access_control_origins = std::move(access_control_origins);
+ 	}
+ 
+diff --git a/src/rpc/zmq_server.cpp b/src/rpc/zmq_server.cpp
+index bb88591..3f4f36d 100644
+--- a/src/rpc/zmq_server.cpp
++++ b/src/rpc/zmq_server.cpp
+@@ -78,7 +78,7 @@ void ZmqServer::serve()
+ 			{
+ 				throw std::runtime_error("ZMQ RPC server reply socket is null");
+ 			}
+-			while(rep_socket->recv(&message))
++			while(rep_socket->recv(message, zmq::recv_flags::none))
+ 			{
+ 				std::string message_string(reinterpret_cast<const char *>(message.data()), message.size());
+ 
+@@ -89,7 +89,11 @@ void ZmqServer::serve()
+ 				zmq::message_t reply(response.size());
+ 				memcpy((void *)reply.data(), response.c_str(), response.size());
+ 
+-				rep_socket->send(reply);
++				if(!rep_socket->send(reply, zmq::send_flags::none))
++				{
++					GULPS_ERROR("ZMQ RPC reply was not sent.");
++					break;
++				}
+ 				GULPS_LOG_L1(std::string("Sent RPC reply: \""), response, "\"");
+ 			}
+ 		}
+@@ -119,7 +123,7 @@ bool ZmqServer::addTCPSocket(std::string address, std::string port)
+ 
+ 		rep_socket.reset(new zmq::socket_t(context, ZMQ_REP));
+ 
+-		rep_socket->setsockopt(ZMQ_RCVTIMEO, &DEFAULT_RPC_RECV_TIMEOUT_MS, sizeof(DEFAULT_RPC_RECV_TIMEOUT_MS));
++		rep_socket->set(zmq::sockopt::rcvtimeo, DEFAULT_RPC_RECV_TIMEOUT_MS);
+ 
+ 		std::string bind_address = addr_prefix + address + std::string(":") + port;
+ 		rep_socket->bind(bind_address.c_str());
+diff --git a/src/serialization/binary_archive.h b/src/serialization/binary_archive.h
+index ac1fa55..8716de5 100644
+--- a/src/serialization/binary_archive.h
++++ b/src/serialization/binary_archive.h
+@@ -115,7 +115,7 @@ struct binary_archive<false> : public binary_archive_base<std::istream, false>
+ 
+ 	explicit binary_archive(stream_type &s) : base_type(s)
+ 	{
+-		stream_type::streampos pos = stream_.tellg();
++		std::streampos pos = stream_.tellg();
+ 		stream_.seekg(0, std::ios_base::end);
+ 		eof_pos_ = stream_.tellg();
+ 		stream_.seekg(pos);
+diff --git a/src/simplewallet/simplewallet.cpp b/src/simplewallet/simplewallet.cpp
+index 7261fd1..7aec5d5 100644
+--- a/src/simplewallet/simplewallet.cpp
++++ b/src/simplewallet/simplewallet.cpp
+@@ -70,6 +70,8 @@
+ #include "storages/http_abstract_invoke.h"
+ #include "version.h"
+ #include "wallet/wallet_args.h"
++// Standalone CLI retains its own legacy global Bind placeholders.
++#include <boost/bind.hpp>
+ #include <boost/algorithm/string.hpp>
+ #include <boost/format.hpp>
+ #include <boost/lexical_cast.hpp>
+diff --git a/src/wallet/wallet2.cpp b/src/wallet/wallet2.cpp
+index 2b7d5e8..e405fe8 100644
+--- a/src/wallet/wallet2.cpp
++++ b/src/wallet/wallet2.cpp
+@@ -3758,7 +3758,7 @@ void wallet2::load(const std::string &wallet_, const epee::wipeable_string &pass
+ 					try
+ 					{
+ 						GULPS_LOG_L0("Failed to open portable binary, trying unportable");
+-						boost::filesystem::copy_file(m_wallet_file, m_wallet_file + ".unportable", boost::filesystem::copy_option::overwrite_if_exists);
++						boost::filesystem::copy_file(m_wallet_file, m_wallet_file + ".unportable", boost::filesystem::copy_options::overwrite_existing);
+ 						std::stringstream iss;
+ 						iss.str("");
+ 						iss << cache_data;
+@@ -3789,7 +3789,7 @@ void wallet2::load(const std::string &wallet_, const epee::wipeable_string &pass
+ 				try
+ 				{
+ 					GULPS_LOG_L0("Failed to open portable binary, trying unportable");
+-					boost::filesystem::copy_file(m_wallet_file, m_wallet_file + ".unportable", boost::filesystem::copy_option::overwrite_if_exists);
++					boost::filesystem::copy_file(m_wallet_file, m_wallet_file + ".unportable", boost::filesystem::copy_options::overwrite_existing);
+ 					std::stringstream iss;
+ 					iss.str("");
+ 					iss << buf;
+diff --git a/translations/CMakeLists.txt b/translations/CMakeLists.txt
+index db60190..8aebb47 100644
+--- a/translations/CMakeLists.txt
++++ b/translations/CMakeLists.txt
+@@ -26,7 +26,7 @@
+ # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+ # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+-cmake_minimum_required(VERSION 2.8.7)
++cmake_minimum_required(VERSION 3.24)
+ 
+ project(translations)
+ 
+@@ -35,7 +35,7 @@ add_executable(generate_translations_header generate_translations_header.c)
+ find_program(LRELEASE lrelease)
+ if(LRELEASE STREQUAL "LRELEASE-NOTFOUND")
+   set(ts_files "")
+-  message(WARNING "lrelease program not found, translation files not built")
++  message(STATUS "Optional lrelease tool not found; native translations are not embedded")
+ else()
+   execute_process(COMMAND ${LRELEASE} -version
+     RESULT_VARIABLE lrelease_ret)

@@ -42,4 +42,4 @@ jobs:
       - name: Check script syntax
         run: |
           bash -n scripts/environment-report.sh scripts/build-ryo-core.sh scripts/build-baseline.sh
-          python3 -m py_compile scripts/offline-native-test.py scripts/http-contract-test.py scripts/check-api-v2-contract.py scripts/bundle-openapi.py
+          python3 -m py_compile scripts/apply-ryo-patches.py scripts/offline-native-test.py scripts/http-contract-test.py scripts/check-api-v2-contract.py scripts/bundle-openapi.py tests/sdk_patch_guard.py

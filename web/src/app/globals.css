@@ -1362,3 +1362,39 @@ html {
     font-size: 10px;
   }
 }
+
+.node-status-panel {
+  margin-bottom: 24px;
+  padding: 18px 22px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  font-size: 12px;
+}
+.node-status-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.node-status-panel progress {
+  width: 100%;
+  height: 10px;
+  accent-color: var(--primary);
+  margin: 12px 0 4px;
+}
+.node-status-panel p {
+  color: var(--muted-foreground);
+  overflow-wrap: anywhere;
+}
+.chain-context dd {
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.fee-rate {
+  display: block;
+  font-size: 10px;
+  color: var(--muted-foreground);
+  margin-top: 3px;
+}

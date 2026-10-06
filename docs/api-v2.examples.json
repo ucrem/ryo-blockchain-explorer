@@ -23,7 +23,16 @@
       },
       "explorer_version": "0.4.0",
       "native_core_version": "fixture-example",
-      "api_version": "2"
+      "api_version": "2",
+      "overview": {
+        "issued_atomic": "8800000000000000",
+        "tip_coinbase_atomic": "8800000000000000",
+        "median_block_size_bytes": "82",
+        "median_sample_blocks": 1,
+        "confirmed_transactions": "0",
+        "pool_transactions": "0",
+        "pool_size_bytes": "0"
+      }
     },
     "meta": {
       "network": "mainnet",

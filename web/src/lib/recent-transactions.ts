@@ -9,6 +9,9 @@ export type RecentTransaction = {
   timestamp: string;
   coinbase: boolean;
   feeAtomic: string | null;
+  sizeBytes: string | null;
+  inputCount: number | null;
+  outputCount: number | null;
 };
 
 // Native summaries already identify a block's coinbase. Read detail only when
@@ -50,7 +53,14 @@ export async function recentTransactions(
   const items: RecentTransaction[] = [];
   for (const block of selected) {
     const transactions = details.get(block.hash)?.data.transactions ?? [
-      { hash: block.coinbase_hash, coinbase: true, fee_atomic: null },
+      {
+        hash: block.coinbase_hash,
+        coinbase: true,
+        fee_atomic: null,
+        size_bytes: null,
+        input_count: 0,
+        output_count: null,
+      },
     ];
     for (const transaction of transactions) {
       if (items.length === 20) break;
@@ -61,6 +71,9 @@ export async function recentTransactions(
         timestamp: block.timestamp_unix,
         coinbase: transaction.coinbase,
         feeAtomic: transaction.coinbase ? null : transaction.fee_atomic,
+        sizeBytes: transaction.size_bytes,
+        inputCount: transaction.input_count,
+        outputCount: transaction.output_count,
       });
     }
   }

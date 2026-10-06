@@ -30,8 +30,8 @@ The owner's subsequent synchronization request adds ten-second same-origin tip
 polling on the latest dashboard, with pause, hidden-tab suspension, bounded reads
 and Server Component refresh on hash/network changes. Existing cursor pages stay
 anchored. A limited real mainnet sync validates reader updates without claiming
-network-wide synchronization or freshly mined-block observation. SSE and live
-pool/network monitoring remain later milestones.
+network-wide synchronization or freshly mined-block observation. SSE and full live
+pool listing remain later milestones.
 The owner's layout request adds full-width desktop block/confirmed-transaction
 tables side by side, stacking on smaller screens. A bounded server-rendered
 transaction preview reuses existing headers and block details, includes labeled
@@ -46,16 +46,38 @@ architecture and existing route contracts remain compatible; no extra store is
 introduced. Client inspection and selected periods persist across live refresh.
 
 A server-only API client uses a configured fixed upstream origin, deadlines,
-response size bounds, no redirect following and no persistent caching. A
+response size bounds, no redirect following and no persistent chain caching. A
 same-origin read-only adapter exposes only the existing public v2 routes; it
 never proxies arbitrary URLs, private-key inputs or transaction submission.
-Runtime checks preserve canonical uint64 strings. No wallet balance, peer count,
-chain synchronization, network-wide hashrate or emission estimate is invented.
+Runtime checks preserve canonical uint64 strings. No wallet balance or
+network-wide consensus/synchronization is inferred.
 
 Affected files are `web/`, build/version metadata, README, build/testing/server
 and privacy documentation, release notes, changelog and the milestone plan.
-The native core pin, LMDB interpretation, legacy contracts and API v2 schemas
-remain compatible; product version metadata advances to 0.4.0.
+The native core pin, LMDB interpretation and legacy contracts are retained.
+Product version metadata advances to 0.4.0; additive v2 schema changes are
+documented below.
+
+## Reference-driven overview extension
+
+The owner's 2026-10-06 request to compare `explorer.ryo.tools` and add key missing
+information extends the dashboard with native issued supply, tip coinbase
+payout, last-100 median block size, confirmed ordinary count and relayable local
+pool count/size. The existing `NetworkService` supplies an optional additive
+`overview` object; older DTOs remain accepted by the UI and legacy fields stay
+unchanged. Closed-schema clients must update the bundled contract. The core pin
+and read-only LMDB architecture remain unchanged, with bounded native reads and
+native dev-fund helpers rather than reimplemented emission rules.
+
+Optional server-only daemon GET `/get_info` supplies public sync/peer/next-block
+metrics, distinguished from confirmed reader data. It is not required for chain
+operation, exposes no browser RPC route and has fixed-origin/time/body/capacity
+bounds. A marked public observation may survive a failed read for at most 60
+seconds; no persistent store is introduced. TX previews reuse existing bounded
+summary reads for size, input/output counts and fee/KiB. The
+[comparison report](DASHBOARD_REFERENCE_AUDIT.md) records definitions, tests,
+version/height differences and missing pool listing/tools. These additions do
+not authorize transaction writes, secret handling or a core dependency upgrade.
 
 ## Migration and risks
 

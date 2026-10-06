@@ -12,14 +12,22 @@ search and a developer API guide.
   returns when scrolling back. Draft, input focus/caret and page position are
   preserved. Desktop and mobile menus retain navigation/theme controls; a
   reserved page slot prevents content jumps. Search still submits GET only.
-- `/`: native-reader network and chain status, exact tip height/difficulty,
-  configured block target, recent block summaries and anchored earlier pages.
+- `/`: native-reader chain status, exact tip height/difficulty, configured block
+  target, estimated hashrate, issued supply including the native dev fund,
+  latest coinbase payout including fees, median size over up to 100 blocks,
+  confirmed ordinary transaction count and bounded relayable local pool metrics.
+  Optional node status separately shows synchronization, peers and next-block
+  difficulty/hashrate. See the [reference comparison](DASHBOARD_REFERENCE_AUDIT.md)
+  for definitions and remaining coverage. Recent blocks and earlier pages remain.
 - Full-width desktop layout pairs the block and confirmed-transaction tables;
   below 1,200 px they stack, with keyboard-accessible local table scrolling.
   The TX preview contains at most twenty transactions from the displayed block
   window, newest blocks first and native transaction order within each block.
   Coinbase is explicitly labeled and has no transaction fee. Ordinary fees
   preserve all nine RYO decimals; timestamps are those of the containing block.
+  Native input/output counts and transaction size appear when already supplied
+  by block-detail reads. Header-only coinbase rows show unknown metadata as a
+  dash. Fee per KiB uses exactly 1,024 bytes and truncates to an atomic unit.
   Coinbase-only headers need no detail lookup. At most four block-detail reads
   run concurrently with the existing five-second bounds; the preview can have
   fewer than twenty rows. Complete lists remain on block pages. Every detail
@@ -33,7 +41,9 @@ search and a developer API guide.
   retaining the displayed data. Earlier cursor pages stay anchored and do not poll.
   This observes blocks entering the local reader, including historical sync;
   it does not establish that a block was just mined or the node is synchronized.
-  A changed tip refreshes both block and transaction tables together. The live
+  A changed tip refreshes both block and transaction tables together. Changed
+  local pool count/size also refreshes the dashboard; membership changes with
+  the same count/size do not trigger a refresh. The live
   controls show the UTC time and local block height of the last successful check.
 - A block-interval bar chart with block number on X and the exact signed timestamp
   difference from its predecessor, in seconds, on Y. Period controls select 1h,
@@ -140,6 +150,22 @@ It accepts no credentials, path prefix, query or fragment. It is not a
 The operator controls this fixed trusted origin; visitors cannot select it.
 `NEXT_TELEMETRY_DISABLED=1` disables Next.js development/build telemetry.
 
+Optionally set `RYO_DAEMON_RPC_URL` to the private daemon HTTP(S) origin, for
+example `http://127.0.0.1:12211`. It follows the same origin restrictions and is
+never a browser setting. Only a fixed server-side GET `/get_info` is made: no
+credentials, browser headers, arbitrary RPC paths or write calls are forwarded.
+The selected public fields have a five-second deadline and 64-KiB response cap,
+sharing the process's 16-read bound. Numeric RPC values must be exact safe JSON
+integers or canonical uint64 strings. Network mismatch suppresses display.
+This setting is optional; native chain data works without it.
+
+Node observations show their original UTC read time. If a read fails, the
+process may retain its last successful public observation for at most 60 seconds,
+explicitly marked delayed. Beyond that, the panel reports unavailable. Node
+status is checked on page refresh, including live tip/pool refreshes; there is
+no independent node-status polling loop. Targets and peer counts are reported
+by this node and do not prove network-wide consensus or synchronization.
+
 The adapter only forwards GETs to the shipped native API v2 route shapes.
 Only block-list requests accept bounded `limit`/`cursor`; unknown, duplicate and
 secret-bearing parameters are rejected before forwarding. Requests do not
@@ -159,8 +185,10 @@ requests return 400. Next.js rejects unsupported HTTP methods with 405. The
 adapter is not a replacement for the native OpenAPI implementation; it is a
 bounded same-origin access path for the website's supported read-only subset.
 
-Both native reads and proxy responses use no-store. Dashboard navigation and
-Refresh use a full page request, with no client prefetch or persistent cache.
+Native chain reads and proxy responses use no-store. The only transient saved
+observation is the optional public node status during its bounded failure grace.
+Dashboard navigation and Refresh use a full page request, with no client
+prefetch or persistent chain cache.
 Network/list reads are independent snapshots and may have different heights.
 A replaced pagination anchor shows a restart link; appended blocks do not shift
 an anchored page. If the two reads report different networks, the block list is

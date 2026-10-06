@@ -294,6 +294,47 @@ test("scroll docks one search in the sticky menu, preserving draft and focus on 
   ).toBeVisible();
   await expect(page.locator("main").getByRole("search")).toHaveCount(1);
 });
+test("reference metrics use native semantics, node sync is explicit and pool-only changes refresh the dashboard", async ({
+  page,
+  request,
+}) => {
+  await page.clock.install();
+  await page.goto("/");
+  const node = page.getByRole("region", {
+    name: "Node connection",
+    exact: true,
+  });
+  await expect(node).toContainText("Synchronizing");
+  await expect(node).toContainText("264.695 kH/s");
+  await expect(page.getByLabel("Node synchronization progress")).toBeVisible();
+  await expect(
+    page.locator(".metric-card").filter({ hasText: "Issued supply" }),
+  ).toContainText("8,800,000.000000000 RYO");
+  await expect(
+    page.locator(".metric-card").filter({ hasText: "Latest coinbase payout" }),
+  ).toContainText("Includes transaction fees");
+  await expect(page.locator(".chain-context")).toContainText("0 pending");
+  await expect(page.locator(".chain-context")).toContainText("Block protocol");
+  expect(await page.content()).not.toContain(
+    "internal-node-address-must-not-be-exposed",
+  );
+  await request.get("http://127.0.0.1:3101/__control?mode=pool-changed");
+  await page.clock.runFor(10_100);
+  await expect(page.locator(".chain-context")).toContainText("1 pending");
+  await expect(page.getByRole("status")).toContainText(
+    "Local transaction pool changed",
+  );
+  await request.get("http://127.0.0.1:3101/__control?mode=node-outage");
+  await page.reload();
+  await expect(node).toContainText("delayed; retrying on refresh");
+  await expect(node).toContainText("Synchronizing");
+  await request.get("http://127.0.0.1:3101/__control?mode=node-wrong-network");
+  await page.reload();
+  await expect(node).toContainText("Node status unavailable");
+  await expect(
+    page.getByRole("table", { name: "Recent blocks" }),
+  ).toBeVisible();
+});
 test("full-width desktop block and transaction tables stack on mobile and preserve native fee and failure semantics", async ({
   page,
   request,
@@ -356,6 +397,9 @@ test("live reader changes refresh blocks; unchanged tips, pause, outage and earl
   await expect(live).toHaveAttribute("aria-pressed", "true");
   const metric = page.locator(".metric-card").first();
   await expect(metric).toContainText("9,007,199,254,741,023");
+  // Begin after client hydration so the poll timer is installed in the test clock.
+  await live.click();
+  await page.getByRole("button", { name: "Resume live updates" }).click();
   // Confirm an unchanged tip causes only one network read, not a route refresh.
   const before = await (
     await request.get("http://127.0.0.1:3101/__control")

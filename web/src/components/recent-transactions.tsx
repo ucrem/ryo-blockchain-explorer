@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { readBlock } from "@/lib/api";
 import type { BlocksResponse } from "@/lib/contracts";
-import { coins, integer, timestamp } from "@/lib/format";
+import { coins, integer, timestamp, bytes, feePerKiB } from "@/lib/format";
 import { recentTransactions } from "@/lib/recent-transactions";
 
 export function TransactionsLoading() {
@@ -80,6 +80,8 @@ export async function RecentTransactions({
                 <TableHead>Transaction hash</TableHead>
                 <TableHead>Block</TableHead>
                 <TableHead className="text-right">Fee · RYO</TableHead>
+                <TableHead>Inputs / Outputs</TableHead>
+                <TableHead>TX size</TableHead>
                 <TableHead>Timestamp · UTC</TableHead>
               </TableRow>
             </TableHeader>
@@ -117,8 +119,26 @@ export async function RecentTransactions({
                         —
                       </span>
                     ) : (
-                      coins(tx.feeAtomic).replace(" RYO", "")
+                      <>
+                        <span>{coins(tx.feeAtomic).replace(" RYO", "")}</span>
+                        {tx.sizeBytes &&
+                          feePerKiB(tx.feeAtomic, tx.sizeBytes) && (
+                            <small className="fee-rate">
+                              {feePerKiB(tx.feeAtomic, tx.sizeBytes)!.replace(
+                                " RYO",
+                                "",
+                              )}{" "}
+                              / KiB
+                            </small>
+                          )}
+                      </>
                     )}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {tx.inputCount ?? "—"} / {tx.outputCount ?? "—"}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {tx.sizeBytes ? bytes(tx.sizeBytes) : "—"}
                   </TableCell>
                   <TableCell className="timestamp-cell">
                     {tx.timestamp === "0"
@@ -130,7 +150,8 @@ export async function RecentTransactions({
             </TableBody>
           </Table>
           <p className="table-note">
-            Confirmed in the blocks on this page · coinbase included.
+            Confirmed in the blocks on this page · coinbase included. Fee rates
+            use 1,024 bytes; unavailable summary fields show —.
             {result.limited &&
               " Open a block to explore its complete transaction list."}
           </p>

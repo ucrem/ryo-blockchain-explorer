@@ -40,6 +40,33 @@ createServer((req, res) => {
     res.end(JSON.stringify({ reads }));
     return;
   }
+  if (url.pathname === "/get_info") {
+    if (mode === "node-outage") {
+      res.statusCode = 503;
+      res.end("{}");
+      return;
+    }
+    res.end(
+      JSON.stringify({
+        status: "OK",
+        untrusted: false,
+        height: (anchor + 1n).toString(),
+        target_height: (anchor + 5000n).toString(),
+        difficulty: 63526812,
+        target: 240,
+        top_block_hash: makeHash(anchor),
+        incoming_connections_count: 0,
+        outgoing_connections_count: 2,
+        is_ready: false,
+        offline: false,
+        mainnet: mode !== "node-wrong-network",
+        testnet: mode === "node-wrong-network",
+        stagenet: false,
+        bootstrap_daemon_address: "internal-node-address-must-not-be-exposed",
+      }),
+    );
+    return;
+  }
   reads++;
   if (mode === "outage") {
     res.statusCode = 503;
@@ -240,6 +267,11 @@ createServer((req, res) => {
         data: {
           ...examples.NetworkResponse.data,
           tip: makeBlock(tip),
+          overview: {
+            ...examples.NetworkResponse.data.overview,
+            pool_transactions: mode === "pool-changed" ? "1" : "0",
+            pool_size_bytes: mode === "pool-changed" ? "4500" : "0",
+          },
           tip_difficulty: "18446744073709551615",
         },
       }),

@@ -7,6 +7,9 @@ import {
   Layers3,
   RefreshCw,
   ShieldCheck,
+  Gauge,
+  Coins,
+  Banknote,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,8 +29,10 @@ import {
   TransactionsLoading,
 } from "@/components/recent-transactions";
 import { ApiError, readBlocks, readNetwork } from "@/lib/api";
+import { NodeStatusPanel } from "@/components/node-status";
+import { readNodeStatus } from "@/lib/daemon-api";
 import { cursor } from "@/lib/contracts";
-import { bytes, integer, timestamp } from "@/lib/format";
+import { bytes, integer, timestamp, coins, hashrate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +48,7 @@ export default async function Dashboard({
   const valid =
     Object.keys(query).every((k) => k === "cursor") &&
     (query.cursor === undefined || cursor.safeParse(query.cursor).success);
-  const [networkResult, blocksResult] = await Promise.allSettled([
+  const [networkResult, blocksResult, nodeResult] = await Promise.allSettled([
     readNetwork(),
     valid
       ? readBlocks(query.cursor as string | undefined)
@@ -54,6 +59,7 @@ export default async function Dashboard({
             "Invalid block page. Restart from the latest blocks.",
           ),
         ),
+    readNodeStatus(),
   ]);
   const network =
     networkResult.status === "fulfilled" ? networkResult.value : null;
@@ -68,6 +74,7 @@ export default async function Dashboard({
       "The chain reader changed networks. Refresh this page.",
     );
   }
+  const overview = network?.data.overview;
   const readTime = new Date().toISOString().slice(11, 19);
   const metrics = [
     {
@@ -81,7 +88,9 @@ export default async function Dashboard({
     {
       label: "Tip difficulty",
       value: network ? integer(network.data.tip_difficulty) : "—",
-      note: "Native chain difficulty",
+      note: network
+        ? `For confirmed block ${integer(network.data.tip.height)}`
+        : "Reader unavailable",
       icon: ShieldCheck,
     },
     {
@@ -91,6 +100,29 @@ export default async function Dashboard({
         : "—",
       note: "Protocol target, not observed time",
       icon: Clock3,
+    },
+    {
+      label: "Estimated hashrate",
+      value: network
+        ? hashrate(
+            network.data.tip_difficulty,
+            network.data.target_block_time_seconds,
+          )
+        : "—",
+      note: "At local tip · difficulty / target interval",
+      icon: Gauge,
+    },
+    {
+      label: "Issued supply",
+      value: overview?.issued_atomic ? coins(overview.issued_atomic) : "—",
+      note: "At local tip · emission including dev fund, excluding fees",
+      icon: Coins,
+    },
+    {
+      label: "Latest coinbase payout",
+      value: overview ? coins(overview.tip_coinbase_atomic) : "—",
+      note: "Includes transaction fees and any dev-fund payout",
+      icon: Banknote,
     },
   ];
   return (
@@ -135,6 +167,11 @@ export default async function Dashboard({
           tipHash={network?.data.tip.hash ?? null}
           tipHeight={network?.data.tip.height ?? null}
           network={network?.meta.network ?? null}
+          poolSnapshot={
+            overview
+              ? `${overview.pool_transactions}.${overview.pool_size_bytes}`
+              : null
+          }
         />
       )}
       {!network && (
@@ -148,6 +185,12 @@ export default async function Dashboard({
           </div>
         </div>
       )}
+      <NodeStatusPanel
+        status={
+          nodeResult.status === "fulfilled" ? nodeResult.value : "unavailable"
+        }
+        network={network?.meta.network}
+      />
       <div className="metric-grid">
         {metrics.map(({ label, value, note, icon: Icon }) => (
           <Card key={label} className="metric-card">
@@ -199,6 +242,40 @@ export default async function Dashboard({
             <div>
               <dt>API</dt>
               <dd>v2 · Read only</dd>
+            </div>
+            <div>
+              <dt>Block protocol</dt>
+              <dd>
+                {network ? `v${network.data.tip.major_version}` : "Unavailable"}
+              </dd>
+            </div>
+            <div>
+              <dt>Median block size</dt>
+              <dd>
+                {overview
+                  ? `${bytes(overview.median_block_size_bytes)} · ${overview.median_sample_blocks} blocks`
+                  : "Unavailable"}
+              </dd>
+            </div>
+            <div>
+              <dt>Confirmed transactions</dt>
+              <dd>
+                {overview
+                  ? integer(overview.confirmed_transactions)
+                  : "Unavailable"}
+              </dd>
+            </div>
+            <div>
+              <dt>Local transaction pool</dt>
+              <dd>
+                {overview
+                  ? `${overview.pool_transactions === null ? "count unavailable" : integer(overview.pool_transactions) + " pending"} · ${overview.pool_size_bytes === null ? "size unavailable" : bytes(overview.pool_size_bytes)}`
+                  : "Unavailable"}
+              </dd>
+            </div>
+            <div>
+              <dt>Native core</dt>
+              <dd>{network?.data.native_core_version ?? "Unavailable"}</dd>
             </div>
           </dl>
           <a href="/json/network" className="text-link">

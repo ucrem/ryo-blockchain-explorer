@@ -21,6 +21,7 @@ export default defineConfig({
       reuseExistingServer: false,
       env: {
         RYO_API_URL: "http://127.0.0.1:3101",
+        RYO_DAEMON_RPC_URL: "http://127.0.0.1:3101",
         NEXT_TELEMETRY_DISABLED: "1",
       },
     },

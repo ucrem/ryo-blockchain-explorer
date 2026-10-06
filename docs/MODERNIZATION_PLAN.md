@@ -89,7 +89,10 @@ block/transaction metadata and owned snapshots, legacy JSON adaptation, and
 separate bounded HTTP transport. The legacy HTML-bound code remains an upstream
 reference, outside this project. The approved v0.3 increment adds a native chain
 snapshot, bounded block-summary pagination, v2 serialization/routing and OpenAPI;
-pool listing, advanced search, emission and verification remain later focused extraction.
+pool listing, advanced search, extended emission analytics and verification
+remain later focused extraction. The owner's reference-dashboard request adds
+bounded native overview aggregates and optional server-only public node status
+in v0.4; see [the comparison](DASHBOARD_REFERENCE_AUDIT.md).
 
 Before implementation, provide a focused proposal with current behavior,
 problem, affected files, compatibility impact, migration/reorg/thread risks,

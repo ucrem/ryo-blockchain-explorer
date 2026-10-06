@@ -34,6 +34,15 @@ export function upstreamOrigin(
 export async function upstreamRead(
   path: string,
   query = new URLSearchParams(),
+) {
+  const url = new URL(`/api/v2/${path}`, upstreamOrigin());
+  url.search = query.toString();
+  return boundedJsonRead(url);
+}
+export async function boundedJsonRead(
+  url: URL,
+  maxBody = MAX_BODY,
+  timeoutMs = 5000,
 ): Promise<{ status: number; text: string }> {
   if (capacity.inFlight >= 16)
     throw new ApiError(
@@ -43,11 +52,9 @@ export async function upstreamRead(
     );
   capacity.inFlight++;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 5000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
   try {
-    const url = new URL(`/api/v2/${path}`, upstreamOrigin());
-    url.search = query.toString();
     const response = await fetch(url, {
       method: "GET",
       cache: "no-store",
@@ -64,7 +71,7 @@ export async function upstreamRead(
     )
       throw new Error("Unexpected upstream response");
     const length = response.headers.get("content-length");
-    if (length && (!/^\d+$/.test(length) || BigInt(length) > BigInt(MAX_BODY)))
+    if (length && (!/^\d+$/.test(length) || BigInt(length) > BigInt(maxBody)))
       throw new Error("Body limit");
     if (!response.body) throw new Error("Missing body");
     reader = response.body.getReader();
@@ -74,7 +81,7 @@ export async function upstreamRead(
       const { done, value } = await reader.read();
       if (done) break;
       size += value.byteLength;
-      if (size > MAX_BODY) throw new Error("Body limit");
+      if (size > maxBody) throw new Error("Body limit");
       chunks.push(value);
     }
     const body = new Uint8Array(size);

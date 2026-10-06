@@ -99,6 +99,14 @@ ApiResponse ApiV2::get(const std::string& target) {
             json data{{"source", "native_lmdb"}, {"tip", summary(snapshot.tip)},
                 {"tip_difficulty", std::to_string(snapshot.tip_difficulty)},
                 {"target_block_time_seconds", cryptonote::common_config::DIFFICULTY_TARGET},
+                {"overview", {
+                    {"issued_atomic", snapshot.issued_complete ? json(std::to_string(snapshot.issued_atomic)) : json(nullptr)},
+                    {"tip_coinbase_atomic", std::to_string(snapshot.tip_coinbase_atomic)},
+                    {"median_block_size_bytes", std::to_string(snapshot.median_size)},
+                    {"median_sample_blocks", snapshot.median_sample_blocks},
+                    {"confirmed_transactions", std::to_string(snapshot.confirmed_transactions)},
+                    {"pool_transactions", snapshot.pool_complete ? json(std::to_string(snapshot.pool_transactions)) : json(nullptr)},
+                    {"pool_size_bytes", snapshot.pool_complete ? json(std::to_string(snapshot.pool_size)) : json(nullptr)} }},
                 {"units", {{"symbol", "RYO"}, {"atomic_decimals", CRYPTONOTE_DISPLAY_DECIMAL_POINT},
                     {"atomic_units_per_coin", std::to_string(cryptonote::MK_COINS(1))}}},
                 {"explorer_version", "0.4.0"}, {"native_core_version", RYO_VERSION_FULL}, {"api_version", "2"}};

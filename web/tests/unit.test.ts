@@ -12,8 +12,16 @@ import {
   uint64,
   blockIntervalsResponse,
 } from "../src/lib/contracts";
+import { publicNodeStatus } from "../src/lib/node-status";
 import { intervalPlot } from "../src/lib/interval-plot";
-import { bytes, coins, integer, timestamp } from "../src/lib/format";
+import {
+  bytes,
+  coins,
+  integer,
+  timestamp,
+  hashrate,
+  feePerKiB,
+} from "../src/lib/format";
 import { ApiError, upstreamOrigin, upstreamRead } from "../src/lib/upstream";
 
 import { viewPages, slicePage } from "../src/lib/view-pages";
@@ -146,6 +154,49 @@ test("interval windows preserve exact signed deltas, continuity, axes and bounde
       publicPath("block-intervals", new URLSearchParams(query)),
       false,
     );
+});
+test("reference dashboard metrics retain exact arithmetic and reject unsafe or untrusted node replies", () => {
+  assert.equal(hashrate("63526812", 240), "264.695 kH/s");
+  assert.equal(feePerKiB("30000000", "1024"), "0.030000000 RYO");
+  assert.equal(feePerKiB("30000000", "0"), null);
+  assert.equal(hashrate("18446744073709551615", 240), "76,861,433.640 GH/s");
+  const sample = {
+    status: "OK",
+    untrusted: false,
+    height: 20,
+    target_height: 100,
+    difficulty: 63526812,
+    target: 240,
+    top_block_hash: "a".repeat(64),
+    incoming_connections_count: 0,
+    outgoing_connections_count: 2,
+    is_ready: false,
+    offline: false,
+    mainnet: true,
+    testnet: false,
+    stagenet: false,
+    bootstrap_daemon_address: "never-public",
+    extra_private_field: "must-not-leak",
+  };
+  const result = publicNodeStatus(sample);
+  assert.equal(result.height, "20");
+  assert.equal(result.network, "mainnet");
+  assert.equal(JSON.stringify(result).includes("never-public"), false);
+  assert.throws(() =>
+    publicNodeStatus({ ...sample, height: 9007199254740992 }),
+  );
+  assert.throws(() => publicNodeStatus({ ...sample, untrusted: true }));
+  assert.throws(() => publicNodeStatus({ ...sample, testnet: true }));
+  assert.equal(
+    publicNodeStatus({ ...sample, height: "18446744073709551615" }).height,
+    "18446744073709551615",
+  );
+  const overview = networkResponse.parse(examples.NetworkResponse).data
+    .overview!;
+  assert.equal(overview.issued_atomic, "8800000000000000");
+  const malformed = structuredClone(examples.NetworkResponse);
+  malformed.data.overview.issued_atomic = 8800000000000000;
+  assert.equal(networkResponse.safeParse(malformed).success, false);
 });
 test("dashboard transaction reads are bounded, exact and tied to the displayed native blocks", async () => {
   const genesis = blocksResponse.parse(examples.BlockPageResponse);

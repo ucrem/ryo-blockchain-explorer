@@ -327,6 +327,59 @@ exact counts and every bar center within view. Chart/inspection checks also cove
 read-only native time windows, precise signed values and latest-block recovery.
 Native code and workflow triggers did not change.
 
+## Reference overview comparison and native metrics
+
+The owner's 2026-10-06 request to analyze `explorer.ryo.tools` is implemented
+and recorded in [the comparison report](DASHBOARD_REFERENCE_AUDIT.md). It adds
+an optional native `overview` object, hashrate/issued-supply/payout metrics,
+median size, confirmed ordinary count and bounded public pool count/size.
+Optional fixed-origin server-side daemon status makes sync progress visible
+and distinguishes next-block difficulty from confirmed tip difficulty. TX
+previews reuse their existing bounded summaries for size, input/output counts
+and atomic-precision fee/KiB. Existing charts, layout and native crypto remain.
+
+The incremental Ubuntu 24.04 native build and all five CTests passed in 26.10
+seconds (`build/v04-overview-native-tests.log`). New service coverage checks
+native genesis issuance/payout, dev-fund activation and v2 increase, inactive
+fork exclusion, public pool size and do-not-relay exclusion, ordinary confirmed
+counts and short-chain median sampling. Schema checks cover the additive object;
+legacy/HTTP tests continue to pass. The full native GitHub workflow was not
+redispatched and remains manual-only.
+
+Production frontend build/TypeScript and ESLint passed. Sixteen Node checks
+passed (10.55 seconds), including exact hashrate/fee arithmetic, older network
+DTO acceptance, unsafe RPC integer rejection and removal of unselected RPC
+fields. All fourteen production Chromium scenarios passed in 47.3 seconds
+(`build/v04-overview-browser-tests.log`). The new scenario checks sync labels,
+progress, metrics, pool-only refresh, explicitly delayed node observations and
+network mismatch, while the existing accessibility and navigation checks pass.
+The live-timer regression establishes its polling clock after hydration by
+pausing/resuming before asserting elapsed intervals.
+
+A real mainnet production browser at block 210,557 showed 210,558 / 1,197,712
+reported blocks (17.58%), two peers, last-read time, distinct tip/next difficulty,
+17,219,715.982820500 issued RYO and 48.590000000 RYO latest coinbase payout.
+All browser requests stayed on the website origin, with no page errors or mobile
+document overflow. Evidence is
+`build/v04-native-smoke/reference-overview-browser-result.json`. Independently
+reading 100 anchored native summaries at block 210,917 produced a median of
+13,706 bytes; summing its native coinbase outputs yielded 48,621,000,000 atomic
+units. Both matched the overview
+(`build/v04-native-smoke/overview-independent-check.json`). The daemon stayed
+running throughout verification.
+
+![Real mainnet overview with node progress and native aggregates](images/v0.4-mainnet-overview.png)
+
+The optional node read has a five-second deadline and 64-KiB bound. A previous
+public observation can survive failure for at most 60 seconds, with an explicit
+delayed label and unchanged observation time; otherwise unavailable is shown.
+It refreshes with the page, not an independent polling loop. Pool scans are
+bounded to 10,000 total entries; incomplete metrics remain null. Full pending
+listing, dashboard ring/payment-ID columns and dedicated verification/submission
+tools are not implemented. The reference uses a different core version string
+and is at a much newer height; current-tip parity and full-chain capacity are
+not established by this historical smoke.
+
 ## Limits and release gate
 
 Full-chain performance, live mapping growth/external writers, wider historical

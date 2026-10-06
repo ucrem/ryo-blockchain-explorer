@@ -1,6 +1,6 @@
 # API v2
 
-v0.4 retains the v0.3 route shapes and DTO contracts while advancing product
+v0.4 retains the v0.3 route shapes and existing DTO fields while advancing product
 metadata to 0.4.0. The new [web application](WEB.md) consumes this read-only API;
 legacy clients and direct native API consumers remain supported.
 
@@ -32,7 +32,7 @@ Python, external documentation assets or a runtime CDN.
 
 | GET route | Result |
 | --- | --- |
-| `/api/v2/network` | This reader's chain height/tip/difficulty, configured network/units/target interval, explorer and linked core versions |
+| `/api/v2/network` | This reader's chain height/tip/difficulty, optional native overview aggregates, configured units/target, explorer and linked core versions |
 | `/api/v2/block-intervals?window=1h&anchor=...` | Exact consecutive timestamp differences for 1h, 24h, 7d or 30d ending at a native block; up to 50,000 timestamp reads |
 | `/api/v2/blocks?limit=10&cursor=...` | At most 20 newest-first block summaries anchored to a validated native tip |
 | `/api/v2/blocks/{id}` | Native header and coinbase-first transaction summaries |
@@ -91,6 +91,33 @@ network-wide peer counts or independently verified consensus. Its target
 interval and currency units come from the pinned native configuration; tip
 difficulty comes from LMDB. Software fields distinguish explorer and linked
 Ryo core versions, rather than claiming the version of a separate daemon.
+
+## Native network overview
+
+The optional `data.overview` object is an additive v0.4 extension:
+
+| Field | Definition |
+| --- | --- |
+| `issued_atomic` | Native already-generated counter plus eligible native dev-fund issuance through the tip, excluding fees. Null when the counter's accounting cap prevents a complete total. |
+| `tip_coinbase_atomic` | Sum of the tip coinbase's public outputs, including fees and any dev-fund payout; not subsidy alone. |
+| `median_block_size_bytes` | Native median of the last up to 100 DB block sizes, including the tip. |
+| `median_sample_blocks` | Actual sample count, 1–100. |
+| `confirmed_transactions` | Native confirmed transaction count minus one coinbase per block. |
+| `pool_transactions` / `pool_size_bytes` | Local pool count and serialized size, excluding entries marked `do_not_relay`. Both null when the bounded aggregate is incomplete. |
+
+All quantities except the small sample count are decimal strings. One native
+read scope supplies these fields and the tip. Dev-fund issuance uses the
+pinned core's `get_dev_fund_amount` and stored hard-fork metadata, with at most
+the native configured payout slots; it introduces no full-chain emission scan.
+Pool aggregation first bounds total membership to 10,000 entries and preserves
+unknown metrics as null. Public issuance does not establish spendable circulating
+supply; local pool membership is not a network-wide pending count.
+
+The new frontend accepts older responses without `overview`, showing unavailable
+aggregates. Existing fields and legacy responses are unchanged. Clients using
+an old closed OpenAPI validator must update its schema to permit the added
+optional object. Optional website daemon status is separate from this native
+DTO and does not change `/network` into a daemon RPC proxy.
 
 ## Pagination and errors
 

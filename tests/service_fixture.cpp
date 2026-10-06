@@ -71,7 +71,21 @@ int main(int argc, char** argv) {
               genesis_tx.metadata.output_amounts_visible, "Genesis metadata failed.");
         check(source_network.get().chain_height == 1 && source_network.get().tip.height == 0 &&
               source_network.get().tip_difficulty == 1, "Native network snapshot failed.");
-        record(source_api, "/api/v2/network", "NetworkResponse");
+        const auto genesis_network = record(source_api, "/api/v2/network", "NetworkResponse");
+        check(genesis_network["data"]["overview"]["issued_atomic"] == "8800000000000000" &&
+              genesis_network["data"]["overview"]["tip_coinbase_atomic"] == "8800000000000000" &&
+              genesis_network["data"]["overview"]["pool_transactions"] == "0", "Genesis overview metrics failed.");
+        uint64_t native_payout = 0;
+        cryptonote::get_dev_fund_amount<cryptonote::MAINNET>(cryptonote::config<cryptonote::MAINNET>::DEV_FUND_START, native_payout);
+        check(native_dev_fund_issued(cryptonote::MAINNET, cryptonote::config<cryptonote::MAINNET>::DEV_FUND_START - 1,
+                  [](uint64_t) { return true; }) == 0 &&
+              native_dev_fund_issued(cryptonote::MAINNET, cryptonote::config<cryptonote::MAINNET>::DEV_FUND_START,
+                  [](uint64_t) { return true; }) == native_payout &&
+              native_dev_fund_issued(cryptonote::MAINNET, cryptonote::config<cryptonote::MAINNET>::DEV_FUND_START,
+                  [](uint64_t) { return false; }) == 0, "Native dev-fund activation or aggregation failed.");
+        check(native_dev_fund_issued(cryptonote::MAINNET, cryptonote::config<cryptonote::MAINNET>::DEV_FUND_V2_START,
+                  [](uint64_t) { return true; }) == native_payout * 92,
+              "Native dev-fund v2 increase was omitted from issued supply.");
         record(source_api, "/api/v2/block-intervals?window=30d", "BlockIntervalsResponse");
         check(source_blocks.intervals(3600).points.empty(), "Genesis acquired an interval.");
         expect_failure([&] { source_blocks.intervals(1); }, QueryError::invalid);
@@ -127,7 +141,19 @@ int main(int argc, char** argv) {
         ApiRouter api(legacy, v2);
         cryptonote::txpool_tx_meta_t meta{};
         meta.receive_time = 123456789; meta.last_relayed_time = 987654321;
+        meta.blob_size = ordinary_metadata.size; meta.relayed = true;
         writer.block_txn_start(false); writer.add_txpool_tx(ordinary, meta); writer.block_txn_stop();
+        const auto pool_overview = network.get();
+        check(pool_overview.pool_transactions == 1 && pool_overview.pool_size == ordinary_metadata.size && pool_overview.pool_complete,
+              "Relayed native pool overview failed.");
+        auto private_pool_tx = ordinary;
+        private_pool_tx.extra.push_back(0); private_pool_tx.invalidate_hashes();
+        auto private_meta = meta; private_meta.relayed = false; private_meta.do_not_relay = true;
+        writer.block_txn_start(false); writer.add_txpool_tx(private_pool_tx, private_meta); writer.block_txn_stop();
+        check(network.get().pool_transactions == 1 && network.get().pool_size == ordinary_metadata.size,
+              "Do-not-relay pool transactions leaked into public overview.");
+        writer.block_txn_start(false); writer.remove_txpool_tx(cryptonote::get_transaction_hash(private_pool_tx)); writer.block_txn_stop();
+
         auto pooled = transactions.get(ordinary_hash, false);
         check(pooled.in_pool && pooled.confirmations == 0 && pooled.timestamp == 0,
               "Pool provenance or local timestamp policy failed.");
@@ -206,6 +232,9 @@ int main(int argc, char** argv) {
         record(api, "/api/v2/blocks/1", "BlockResponse");
         record(api, "/api/v2/transactions/" + ordinary_hash, "TransactionResponse");
         record(api, "/api/v2/raw/block/1", "RawResponse");
+        const auto confirmed_overview = network.get();
+        check(confirmed_overview.confirmed_transactions == 1 && confirmed_overview.median_sample_blocks == 2,
+              "Native overview count or median scope failed.");
         // Synthetic public ring references exercise native output and originating-time reads.
         auto ring_tx = ordinary;
         auto& ring_input = boost::get<cryptonote::txin_to_key>(ring_tx.vin[0]);

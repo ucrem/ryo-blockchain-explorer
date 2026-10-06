@@ -19,3 +19,32 @@ export function timestamp(value: string): string {
     .replace("T", " ")
     .replace(".000Z", " UTC");
 }
+
+export function hashrate(difficulty: string, target: number): string {
+  const hashMilli = (BigInt(difficulty) * 1000n) / BigInt(target);
+  const scale =
+    hashMilli >= 1000000000000n
+      ? 1000000000n
+      : hashMilli >= 1000000000n
+        ? 1000000n
+        : hashMilli >= 1000000n
+          ? 1000n
+          : 1n;
+  const unit =
+    scale === 1000000000n
+      ? "GH/s"
+      : scale === 1000000n
+        ? "MH/s"
+        : scale === 1000n
+          ? "kH/s"
+          : "H/s";
+  const milli = hashMilli / scale;
+  return `${integer(milli / 1000n)}.${(milli % 1000n).toString().padStart(3, "0")} ${unit}`;
+}
+
+export function feePerKiB(fee: string, size: string): string | null {
+  const bytes = BigInt(size);
+  return bytes === 0n
+    ? null
+    : coins(((BigInt(fee) * 1024n) / bytes).toString());
+}

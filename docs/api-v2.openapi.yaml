@@ -501,6 +501,28 @@ components:
             tip: { $ref: '#/components/schemas/BlockSummary' }
             tip_difficulty: { $ref: '#/components/schemas/UInt64' }
             target_block_time_seconds: { type: integer, minimum: 1 }
+            overview:
+              type: object
+              additionalProperties: false
+              description: Local-tip metrics. Issued supply includes active native dev-fund payouts, excludes fees, and is null if the subsidy counter is capped. Pool excludes entries marked do_not_relay; bytes are null beyond the bounded scan.
+              required: [issued_atomic, tip_coinbase_atomic, median_block_size_bytes, median_sample_blocks, confirmed_transactions, pool_transactions, pool_size_bytes]
+              properties:
+                issued_atomic:
+                  oneOf:
+                  - { $ref: '#/components/schemas/UInt64' }
+                  - { type: 'null' }
+                tip_coinbase_atomic: { $ref: '#/components/schemas/UInt64' }
+                median_block_size_bytes: { $ref: '#/components/schemas/UInt64' }
+                median_sample_blocks: { type: integer, minimum: 1, maximum: 100 }
+                confirmed_transactions: { $ref: '#/components/schemas/UInt64' }
+                pool_transactions:
+                  oneOf:
+                  - { $ref: '#/components/schemas/UInt64' }
+                  - { type: 'null' }
+                pool_size_bytes:
+                  oneOf:
+                  - { $ref: '#/components/schemas/UInt64' }
+                  - { type: 'null' }
             units:
               type: object
               additionalProperties: false

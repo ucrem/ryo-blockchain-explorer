@@ -34,6 +34,17 @@ export const networkResponse = z
       source: z.literal("native_lmdb"),
       tip: block,
       tip_difficulty: uint64,
+      overview: z
+        .object({
+          issued_atomic: uint64.nullable(),
+          tip_coinbase_atomic: uint64,
+          median_block_size_bytes: uint64,
+          median_sample_blocks: z.number().int().min(1).max(100),
+          confirmed_transactions: uint64,
+          pool_transactions: uint64.nullable(),
+          pool_size_bytes: uint64.nullable(),
+        })
+        .optional(),
       target_block_time_seconds: z.number().int().min(1).max(4294967295),
       units: z.object({
         symbol: z.literal("RYO"),

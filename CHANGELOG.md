@@ -17,6 +17,13 @@ retroactively.
   fonts, light/dark themes, mobile navigation and a developer API guide.
 - Native-reader chain status, exact quantities, recent block pages, reorg recovery
   and a truthful observed-header interval chart.
+- Reference-driven overview with issued supply including native dev-fund payouts,
+  latest coinbase payout, estimated hashrate, last-100 median block size,
+  confirmed ordinary count and bounded relayable local pool metrics.
+- Optional server-only node status with synchronization progress, peer count,
+  next-block difficulty/hashrate and explicitly marked delayed observations.
+- Native TX size/input/output preview fields and exact fee per KiB; pool count/size
+  changes trigger the existing ten-second dashboard refresh.
 - Labeled block-number/seconds axes and 1h/24h/7d/30d interval windows, backed by
   a bounded native timestamp API, with exact signed differences and accessible
   point inspection independent of table pagination.
@@ -36,7 +43,8 @@ retroactively.
 ### Changed
 
 - Product metadata advances to 0.4.0; supported native/legacy route shapes and
-  native Ryo interpretation remain compatible.
+  native Ryo interpretation remain compatible. Optional network overview fields
+  are additive; clients with closed old schemas must update the contract.
 - All changes reach main through PRs. Owner merging or explicit conversational
   merge authorization is required; GitHub reviews/CI checks are not mandatory.
 - Full native CI runs manually only, with no automatic PR/push build.

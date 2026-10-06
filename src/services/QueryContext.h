@@ -18,6 +18,7 @@ class QueryContext {
     std::mutex mutex_;
 public:
     explicit QueryContext(xmreg::MicroCore& core) : core_(core) {}
+    cryptonote::network_type network() const { return core_.get_core().get_nettype(); }
     class Read {
         std::unique_lock<std::mutex> lock_;
         cryptonote::BlockchainDB& db_;

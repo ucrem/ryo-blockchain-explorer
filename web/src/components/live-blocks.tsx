@@ -12,10 +12,12 @@ export function LiveBlocks({
   tipHash,
   tipHeight,
   network,
+  poolSnapshot = null,
 }: {
   tipHash: string | null;
   tipHeight: string | null;
   network: string | null;
+  poolSnapshot?: string | null;
 }) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(true);
@@ -58,9 +60,15 @@ export function LiveBlocks({
           time: new Date().toISOString().slice(11, 19),
           height: latest.data.tip.height,
         });
+        const pool = latest.data.overview;
+        const poolChanged =
+          (pool
+            ? `${pool.pool_transactions}.${pool.pool_size_bytes}`
+            : null) !== poolSnapshot;
         if (
           latest.meta.network !== network ||
-          latest.data.tip.hash !== tipHash
+          latest.data.tip.hash !== tipHash ||
+          poolChanged
         ) {
           const advanced =
             latest.meta.network === network &&
@@ -69,7 +77,9 @@ export function LiveBlocks({
           setNotice(
             advanced
               ? `Reader advanced to block ${integer(latest.data.tip.height)}.`
-              : "Chain reader changed. Updating blocks.",
+              : poolChanged && latest.data.tip.hash === tipHash
+                ? "Local transaction pool changed. Updating dashboard."
+                : "Chain reader changed. Updating blocks.",
           );
           startTransition(() => router.refresh());
         }
@@ -95,7 +105,7 @@ export function LiveBlocks({
       controller?.abort();
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [enabled, pending, tipHash, tipHeight, network, router]);
+  }, [enabled, pending, tipHash, tipHeight, network, poolSnapshot, router]);
 
   return (
     <div className="live-blocks">

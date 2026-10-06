@@ -115,6 +115,15 @@ describes the reader's chain and miner-supplied intervals, without asserting
 network-wide synchronization or identifying real spends. See [WEB.md](WEB.md)
 for exact bounds and operator-controlled deployment/logging limitations.
 
+The optional server-only daemon status reads a fixed `/get_info` path and renders
+only selected public counts, network/height/difficulty and connection state.
+It exposes no browser RPC route, internal URL, peer list/IP, uptime or unselected
+RPC fields. Peer counts and sync targets describe this configured node. A saved
+public observation can survive a failed read for at most 60 seconds, marked
+delayed with its original timestamp. Native pool aggregates exclude entries
+marked `do_not_relay`; receive/relay timestamps and propagation records stay
+excluded. Issued supply does not imply spendability or address balance inference.
+
 No trackers, analytics SDKs, fingerprinting, runtime CDNs, external fonts, or
 unnecessary cookies. Bundle assets. Source inspection found local scripts/assets;
 it is not proof about production reverse-proxy logs, host configuration, or a

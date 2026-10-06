@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { hash, uint64 } from "./contracts";
+import { nodeHealth } from "./node-health";
 const count = z.preprocess(
   (value) =>
     typeof value === "number" && Number.isSafeInteger(value) && value >= 0
@@ -31,7 +32,11 @@ export const rpcInfo = z
 export function publicNodeStatus(value: unknown) {
   const data = rpcInfo.parse(value);
   return {
-    network: data.mainnet ? "mainnet" : data.testnet ? "testnet" : "stagenet",
+    network: data.mainnet
+      ? ("mainnet" as const)
+      : data.testnet
+        ? ("testnet" as const)
+        : ("stagenet" as const),
     height: data.height,
     targetHeight: data.target_height,
     difficulty: data.difficulty,
@@ -45,7 +50,22 @@ export function publicNodeStatus(value: unknown) {
 }
 export type NodeStatus = ReturnType<typeof publicNodeStatus>;
 
-export type NodeObservation = NodeStatus & {
-  checkedAt: string;
-  stale: boolean;
-};
+export const nodeObservation = z.object({
+  network: z.enum(["mainnet", "testnet", "stagenet"]),
+  height: uint64,
+  targetHeight: uint64,
+  difficulty: uint64,
+  targetSeconds: z.number().int().min(1).max(4294967295),
+  hash,
+  incoming: uint64,
+  outgoing: uint64,
+  ready: z.boolean(),
+  offline: z.boolean(),
+  checkedAt: z.iso.datetime(),
+  stale: z.boolean(),
+  health: nodeHealth,
+});
+export type NodeObservation = z.infer<typeof nodeObservation>;
+export const nodeStatusResponse = z.object({
+  status: nodeObservation.or(z.literal("unavailable")).nullable(),
+});

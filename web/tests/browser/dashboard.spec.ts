@@ -326,12 +326,12 @@ test("reference metrics use native semantics, node sync is explicit and pool-onl
   await request.get("http://127.0.0.1:3101/__control?mode=pool-changed");
   await page.clock.runFor(10_100);
   await expect(page.locator(".chain-context")).toContainText("1 pending");
-  await expect(page.getByRole("status")).toContainText(
+  await expect(page.locator(".live-blocks").getByRole("status")).toContainText(
     "Local transaction pool changed",
   );
   await request.get("http://127.0.0.1:3101/__control?mode=node-outage");
   await page.reload();
-  await expect(node).toContainText("delayed; retrying on refresh");
+  await expect(node).toContainText("delayed; retrying automatically");
   await expect(node).toContainText("Synchronizing");
   await request.get("http://127.0.0.1:3101/__control?mode=node-wrong-network");
   await page.reload();
@@ -1014,4 +1014,67 @@ test("public tools submit native identifiers, explain negative results and rejec
   expect(
     (await (await request.get("http://127.0.0.1:3101/__control")).json()).reads,
   ).toBe(0);
+});
+
+test("node failures update without a new block, show safe details and recover independently of paused tables", async ({
+  page,
+  request,
+}) => {
+  await page.clock.install();
+  await page.goto("/");
+  const node = page.getByRole("region", {
+    name: "Node connection",
+    exact: true,
+  });
+  await expect(node).toContainText("Synchronizing");
+  await page.getByRole("button", { name: "Pause live updates" }).click();
+  const table = page.getByRole("table", { name: "Recent blocks", exact: true });
+  const oldTable = await table.innerText();
+  const stalledReply = await (
+    await request.get("/api/node-status?network=mainnet")
+  ).json();
+  stalledReply.status.health.state = "stalled";
+  stalledReply.status.health.error = null;
+  const nodeRoute = /\/api\/node-status\?network=mainnet$/;
+  await page.route(nodeRoute, (route) => route.fulfill({ json: stalledReply }));
+  await page.clock.runFor(10100);
+  await expect(node).toContainText("Synchronization stalled");
+  await expect(node).toContainText(
+    "This alone does not establish a validation error",
+  );
+  await expect(node.getByText("Error details", { exact: true })).toHaveCount(0);
+  await page.unroute(nodeRoute);
+  await request.get("http://127.0.0.1:3101/__control?mode=node-error");
+  await page.clock.runFor(10100);
+  await expect(node).toContainText("Synchronization error · retrying");
+  await node.getByText("Error details", { exact: true }).click();
+  await expect(node).toContainText(
+    "transaction verification failed on NOTIFY_RESPONSE_GET_OBJECTS",
+  );
+  await expect(node).toContainText("b".repeat(64));
+  expect(await page.content()).not.toContain("peer-private-marker");
+  expect(await table.innerText()).toBe(oldTable);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.getByRole("button", { name: "Toggle color theme" }).click();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+  ).toBe(false);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await request.get("http://127.0.0.1:3101/__control?mode=node-recovered");
+  await page.clock.runFor(10100);
+  await expect(node).toContainText("Synchronizing");
+  await expect(node.getByText("Error details", { exact: true })).toHaveCount(0);
+  await request.get("http://127.0.0.1:3101/__control?mode=node-outage");
+  await page.clock.runFor(10100);
+  await expect(node).toContainText("delayed; retrying automatically");
+  const invalid = await request.get("/api/node-status?path=/etc/passwd");
+  expect(invalid.status()).toBe(400);
+  const reply = await request.get("/api/node-status?network=mainnet");
+  expect(await reply.text()).not.toContain(
+    "internal-node-address-must-not-be-exposed",
+  );
 });

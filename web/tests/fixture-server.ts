@@ -1,7 +1,12 @@
 // Isolated browser-test fixture: synthetic headers, not consensus-valid blocks.
 // This server is never imported by application code or included in production.
 import { createServer } from "node:http";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+const logPath = new URL(
+  "../../build/v04-node-health-fixture.log",
+  import.meta.url,
+);
+writeFileSync(logPath, "");
 const examples = JSON.parse(
   readFileSync(
     new URL("../../docs/api-v2.examples.json", import.meta.url),
@@ -46,15 +51,23 @@ createServer((req, res) => {
       res.end("{}");
       return;
     }
+    writeFileSync(
+      logPath,
+      mode === "node-error"
+        ? `${new Date().toISOString().replace("T", " ").slice(0, 19)} [ERROR/LOG0] synthetic peer-private-marker transaction verification failed on NOTIFY_RESPONSE_GET_OBJECTS, tx_id = ${"b".repeat(64)}, dropping connection\n`
+        : "",
+    );
     res.end(
       JSON.stringify({
         status: "OK",
         untrusted: false,
-        height: (anchor + 1n).toString(),
+        height: (anchor + (mode === "node-recovered" ? 2n : 1n)).toString(),
         target_height: (anchor + 5000n).toString(),
         difficulty: 63526812,
         target: 240,
-        top_block_hash: makeHash(anchor),
+        top_block_hash: makeHash(
+          anchor + (mode === "node-recovered" ? 1n : 0n),
+        ),
         incoming_connections_count: 0,
         outgoing_connections_count: 2,
         is_ready: false,

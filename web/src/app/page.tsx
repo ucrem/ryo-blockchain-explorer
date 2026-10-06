@@ -186,6 +186,13 @@ export default async function Dashboard({
         </div>
       )}
       <NodeStatusPanel
+        key={
+          nodeResult.status === "fulfilled" &&
+          nodeResult.value &&
+          nodeResult.value !== "unavailable"
+            ? nodeResult.value.checkedAt
+            : "unavailable"
+        }
         status={
           nodeResult.status === "fulfilled" ? nodeResult.value : "unavailable"
         }

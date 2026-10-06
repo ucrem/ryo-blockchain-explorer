@@ -22,6 +22,8 @@ retroactively.
   confirmed ordinary count and bounded relayable local pool metrics.
 - Optional server-only node status with synchronization progress, peer count,
   next-block difficulty/hashrate and explicitly marked delayed observations.
+- Independently updating node health with visible sync failures, bounded safe
+  error details and a separate observed-stall warning; no raw log/peer disclosure.
 - Native TX size/input/output preview fields and exact fee per KiB; pool count/size
   changes trigger the existing ten-second dashboard refresh.
 - Labeled block-number/seconds axes and 1h/24h/7d/30d interval windows, backed by

@@ -47,6 +47,7 @@
   --hero: #f1d6a9;
   --hero-foreground: #113c38;
   --hero-muted: #385951;
+  --node-error: #a92e25;
 }
 .dark {
   --background: #09191b;
@@ -64,6 +65,7 @@
   --hero: #113c38;
   --hero-foreground: #ebcca5;
   --hero-muted: #d6dbc5;
+  --node-error: #ffb2a9;
 }
 @layer base {
   * {
@@ -1387,6 +1389,13 @@ html {
   color: var(--muted-foreground);
   overflow-wrap: anywhere;
 }
+.node-status-problem {border: 2px solid var(--node-error);}
+.node-status-problem .node-status-heading strong {color: var(--node-error);}
+.node-error-detail summary {cursor: pointer; padding: 8px 0; font-weight: 600;}
+.node-error-detail dl {display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 16px;}
+.node-error-detail dt {font-weight: 600;}
+.node-error-detail dd {margin: 0; overflow-wrap: anywhere;}
+@media (max-width: 600px) {.node-error-detail dl {grid-template-columns: minmax(0, 1fr); gap: 4px;} .node-error-detail dd {margin-bottom: 8px;}}
 .chain-context dd {
   overflow-wrap: anywhere;
   text-align: right;

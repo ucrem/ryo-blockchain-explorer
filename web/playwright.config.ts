@@ -1,4 +1,5 @@
 import { defineConfig } from "@playwright/test";
+import { resolve } from "node:path";
 export default defineConfig({
   testDir: "./tests/browser",
   fullyParallel: false,
@@ -22,6 +23,11 @@ export default defineConfig({
       env: {
         RYO_API_URL: "http://127.0.0.1:3101",
         RYO_DAEMON_RPC_URL: "http://127.0.0.1:3101",
+        RYO_DAEMON_LOG_PATH: resolve(
+          __dirname,
+          "../build/v04-node-health-fixture.log",
+        ),
+        RYO_DAEMON_LOG_UTC_OFFSET: "+00:00",
         NEXT_TELEMETRY_DISABLED: "1",
       },
     },

@@ -150,6 +150,15 @@ marked `do_not_relay`; only the explicitly authorized local receive time is
 added to pool rows. Relay timestamps and propagation records stay excluded.
 Issued supply does not imply spendability or address balance inference.
 
+The owner's explicit request to expose node errors authorizes a narrow operational
+status projection: recent recognized sync-failure category/time and a native blob
+identifier. `/api/node-status` returns selected status only, with a fixed daemon
+origin and an operator-configured bounded local log read. Peer addresses, raw
+log lines, local paths, arbitrary exception messages and daemon write commands
+remain excluded. The in-process progress observation is not a propagation archive;
+tracked screenshots mask precise error times and identifiers. See [WEB.md](WEB.md).
+
+
 No trackers, analytics SDKs, fingerprinting, runtime CDNs, external fonts, or
 unnecessary cookies. Bundle assets. Source inspection found local scripts/assets;
 it is not proof about production reverse-proxy logs, host configuration, or a

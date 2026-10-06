@@ -150,3 +150,16 @@ ordinary transaction inclusion, relay times and peer/source data stay unchanged.
 The UI explains creation/confirmation/network-first-seen differences, supports
 hover/focus/tap, displays unknown values truthfully and updates relative age
 without changing pool pagination order or introducing a propagation archive.
+
+## Owner-requested live node errors
+
+On 2026-10-06 the owner requested visible node failures and actionable details.
+The earlier panel only reread RPC during dashboard refresh and interpreted any
+higher peer target as synchronizing, even while validation failures prevented
+progress. A standalone ten-second public status projection now updates the panel
+without a changed tip. Optional server-only bounded log reading extracts known
+native failure categories, time and blob identifiers; raw lines and peer data
+remain excluded. An independently observed two-minute stall is distinguished
+from a confirmed log failure. Recovery clears older errors, stale reads expire
+and chain/table/chart behavior remains usable. This is an owner-authorized web
+operation change; it does not alter native consensus, core pins or daemon state.

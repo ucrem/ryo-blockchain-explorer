@@ -469,6 +469,39 @@ records remain outside committed evidence. The owner-authorized UI/API field
 is documented in the updated privacy model. Relay/source records, native core
 pin, workflows and daemon operation remain unchanged.
 
+## Owner-requested live node error visibility
+
+The earlier node panel refreshed only with the page and displayed any higher
+target as "Synchronizing", masking repeated native validation failures. At the
+owner's request the panel now reads a separate bounded website status projection
+every ten seconds, independent of block progress and table pause. It shows red
+recognized sync failures, expandable safe category/time/blob details and a
+separate two-minute observed-stall state. Unknown/unreadable diagnostics remain
+explicit; an RPC observation expires after 60 seconds of failed reads.
+
+Production build/TypeScript, ESLint and nineteen Node checks passed. All
+seventeen production Chromium scenarios passed; the refined health scenario
+also passed separately. Checks cover error detection without a
+new block, paused-table independence, recovery, stale RPC, rejected arbitrary
+path queries, synthetic peer-marker exclusion, exact identifiers, a distinct
+stall display, light/dark/mobile accessibility and document overflow. Pure
+checks cover log timestamp offsets, old/future/unknown messages, error expiry,
+progress recovery, fresh failures during partial progress and ready/offline
+precedence.
+
+A real native browser observed the current protocol failure and a successful
+independent status poll, with zero page errors, desktop/mobile axe violations
+or mobile overflow (`build/v04-native-smoke/node-error-browser-result.json`).
+The committed panel image masks precise times and the blob identifier:
+
+![Native node synchronization error with safe expandable details](images/v0.4-native-node-error.png)
+
+The full native build/CTests already passed for the preceding receive-time
+change. This health change affects only the website/operator configuration;
+no native consensus/service/workflow or daemon behavior changed. The deeper
+initial Bulletproof/RingCT diagnostics and next isolation steps are recorded
+in [node diagnosis](NODE_SYNC_DIAGNOSTICS.md), without claiming a resolved sync.
+
 ## Observed daemon synchronization failure
 
 During final verification on 2026-10-06, the unchanged pinned daemon stopped

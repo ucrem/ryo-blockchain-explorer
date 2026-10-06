@@ -18,6 +18,7 @@ import {
   blockIntervalsResponse,
 } from "../src/lib/contracts";
 import { publicNodeStatus } from "../src/lib/node-status";
+import { parseSyncError, observeNodeHealth } from "../src/lib/node-health";
 import { intervalPlot } from "../src/lib/interval-plot";
 import {
   poolAge,
@@ -692,4 +693,114 @@ test("local pool receipt timestamps preserve node provenance, unknown values and
     ),
     false,
   );
+});
+
+test("node health distinguishes a verified sync error from stalled progress and clears after recovery", () => {
+  const now = Date.parse("2026-10-06T15:00:00Z");
+  const line = `2026-10-06 14:59:59 [ERROR/LOG0] peer-private-marker transaction verification failed on NOTIFY_RESPONSE_GET_OBJECTS, tx_id = ${"b".repeat(64)}, dropping connection\n`;
+  const error = parseSyncError(line, now)!;
+  assert.equal(error.code, "transaction_verification_failed");
+  assert.equal(error.blobHash, "b".repeat(64));
+  assert.equal(JSON.stringify(error).includes("peer-private-marker"), false);
+  assert.equal(parseSyncError(line, now + 120000), null);
+  assert.equal(parseSyncError(line, now - 10000), null);
+  assert.equal(
+    parseSyncError(line.replace("14:59:59", "16:59:59"), now, "+02:00")?.at,
+    error.at,
+  );
+  assert.equal(parseSyncError(line, now, "+25:00"), null);
+  assert.equal(
+    parseSyncError(
+      "2026-10-06 14:59:59 [ERROR/LOG0] arbitrary private exception",
+      now,
+    ),
+    null,
+  );
+  assert.equal(
+    parseSyncError(line.replace("[ERROR/LOG0]", "[INFO/LOG0]"), now),
+    null,
+  );
+  const status = {
+    network: "mainnet",
+    height: "230110",
+    hash: "a".repeat(64),
+    targetHeight: "1197754",
+    ready: false,
+    offline: false,
+  };
+  const first = observeNodeHealth(status, undefined, now, null, "disabled");
+  assert.equal(first.health.state, "syncing");
+  const stalled = observeNodeHealth(
+    status,
+    first.progress,
+    now + 120000,
+    null,
+    "disabled",
+  );
+  assert.equal(stalled.health.state, "stalled");
+  assert.equal(stalled.health.error, null);
+  const failed = observeNodeHealth(
+    status,
+    first.progress,
+    now + 1000,
+    error,
+    "available",
+  );
+  assert.equal(failed.health.state, "error");
+  const newerError = { ...error, at: new Date(now + 1000).toISOString() };
+  assert.equal(
+    observeNodeHealth(
+      { ...status, height: "230111", hash: "c".repeat(64) },
+      first.progress,
+      now + 2000,
+      newerError,
+      "available",
+    ).health.state,
+    "error",
+  );
+  const recovered = observeNodeHealth(
+    { ...status, height: "230111", hash: "c".repeat(64) },
+    failed.progress,
+    now + 2000,
+    error,
+    "available",
+  );
+  assert.equal(recovered.health.state, "syncing");
+  assert.equal(recovered.health.error, null);
+  assert.equal(
+    observeNodeHealth(
+      { ...status, targetHeight: "0" },
+      first.progress,
+      now,
+      error,
+      "available",
+    ).health.state,
+    "error",
+  );
+  assert.equal(
+    observeNodeHealth(
+      { ...status, ready: true, targetHeight: "230110" },
+      first.progress,
+      now,
+      error,
+      "available",
+    ).health.state,
+    "ready",
+  );
+  assert.equal(
+    observeNodeHealth(
+      { ...status, offline: true },
+      first.progress,
+      now,
+      error,
+      "available",
+    ).health.state,
+    "offline",
+  );
+  const block = parseSyncError(
+    "2026-10-06 14:59:59 [INFO/OUTPUT0] peer-private-marker Block verification failed, dropping connection\n",
+    now,
+  )!;
+  assert.equal(block.code, "block_verification_failed");
+  assert.equal(block.blobHash, null);
 });

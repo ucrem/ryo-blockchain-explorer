@@ -100,6 +100,40 @@ There is no address-to-balance/history search, SSE, analytics store,
 private-key verification, wallet-export checking or transaction submission.
 The UI has no placeholder navigation advertising those capabilities.
 
+## Live node health and error details
+
+The node panel now checks `/api/node-status?network=mainnet` every ten seconds
+independently of block/table refresh. It works on earlier dashboard pages and
+continues while table updates are paused. Hidden tabs suspend checks; visibility
+restores them. Requests have the existing five-second/64-KiB RPC bounds and no
+redirects or browser-controlled upstream URL. The website endpoint accepts only
+one optional `network` selector and is separate from native API v2.
+
+A recent recognized log failure displays a red "Synchronization error · retrying"
+notice. "Error details" reveals the native failure category, last error UTC,
+last stored block and (for transaction failures) the logged blob identifier,
+explicitly distinguished from a confirmed transaction hash. The bounded adapter
+recognizes the pinned daemon's transaction/object-response and block-verification
+failure messages; it does not classify every possible daemon error. No raw log,
+peer address, internal path or arbitrary exception text is returned.
+
+To enable details, configure server-only `RYO_DAEMON_LOG_PATH` as the absolute
+path of the same daemon's regular log file and `RYO_DAEMON_LOG_UTC_OFFSET` as its
+log timestamp offset, such as `+00:00`. The daemon writes local-time log headers;
+use UTC for stable operation or update the fixed offset if daylight saving
+changes. The application reads at most the last 64 KiB, ignores unfinished
+lines and safely reports missing/unreadable/invalid configuration. There is no
+persistent log archive, background whole-file scan or daemon write operation.
+
+Only errors from the previous two minutes are current. Observed chain progress
+clears older errors; ready/offline states take precedence. Separately, an unchanged
+height/hash for two minutes while a higher target is reported produces
+"Synchronization stalled", without inventing a validation failure. This timer
+starts with observations in the current web process; it is not daemon uptime or
+a network mining-rate measurement. Details unavailable/disabled are labeled.
+RPC failures retain a marked last observation for at most 60 seconds, then show
+unavailable. Existing chain data and chart inspection remain usable.
+
 ## Mempool and public inspection tools
 
 `/mempool` lists relayable transactions held by this node, with 50 rows per page,

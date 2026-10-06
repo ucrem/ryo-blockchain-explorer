@@ -49,6 +49,12 @@ retroactively.
 - Bounded same-origin read-only API access preserving raw native numeric tokens,
   plus unit/browser/accessibility and real native end-to-end smoke checks.
 
+### Fixed
+
+- Recovered the development node's historical sync stall after verified native
+  replay and a graceful restart preserving chain data; added the public
+  transaction's positive/altered-proof regression fixture. Core checks stay intact.
+
 ### Changed
 
 - Product metadata advances to 0.4.0; supported native/legacy route shapes and

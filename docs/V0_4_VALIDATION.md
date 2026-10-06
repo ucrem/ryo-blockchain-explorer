@@ -502,24 +502,39 @@ no native consensus/service/workflow or daemon behavior changed. The deeper
 initial Bulletproof/RingCT diagnostics and next isolation steps are recorded
 in [node diagnosis](NODE_SYNC_DIAGNOSTICS.md), without claiming a resolved sync.
 
-## Observed daemon synchronization failure
+## Daemon synchronization failure recovered
 
-During final verification on 2026-10-06, the unchanged pinned daemon stopped
-advancing at chain height 230,110 while continuing to run and reconnect. Its
-native log repeatedly reports transaction verification failure during
-`NOTIFY_RESPONSE_GET_OBJECTS`, with the transaction blob identifier logged as
-`tx_id`
-`d921a38e147c8d782c1000d1350cc400e045d828dba98fea04471b631651c45c`.
-RPC still reports a much newer peer target and `is_ready: false`. The cause is
-not established; this is not evidence of a browser-refresh failure or proof
-that a peer's transaction is invalid on the current consensus chain.
+The pinned daemon initially stopped after block 230,109 (chain height 230,110)
+with a repeated transaction/object-response verification error. Its initial
+batch also logged Bulletproof step-1 and RingCT semantic failures. Two public
+nodes returned identical full block/transaction bytes at the boundary. The exact
+logged blob maps natively to transaction
+`c133f8d2a67df074f683115156fd3eddb4481bef1b68666171932bb46950fce0`.
 
-The daemon has not been stopped, reset, rewound or patched, and validation has
-not been bypassed. The native core pin is unchanged. This runtime failure must
-be diagnosed before claiming current-tip synchronization or current-protocol
-production readiness. The new public pool/tool checks above validate reads of
-available local data; they do not resolve this daemon synchronization problem.
-No peer identifiers or node propagation records are committed.
+The same native verifier accepted all seven public transactions in an isolated
+process. The formerly rejected blob passed 300 serial/concurrent fresh checks;
+generated proofs across nine output counts passed and altered proofs failed.
+Under the owner's explicit unblock request, a graceful restart discarded the
+in-memory bad-semantics cache and resumed from the existing database. Block
+230,110 and following blocks then passed the unchanged native daemon. No
+rewind/reset, validation bypass, core patch or dependency upgrade was performed.
+
+The real browser saw tips 230,389 and 230,469 on successive live checks, then
+reader height 230,510, with zero page errors and the node panel showing
+"Synchronizing" (`build/v04-native-smoke/sync-recovery-browser-result.json`).
+The new public fixture independently checks native identifiers/serialization,
+positive RingCT semantics and altered-proof rejection in the permanent service
+test. The incremental native build and all five CTests passed in 26.07 seconds
+(`build/v04-sync-recovery-native-build.log`, `build/v04-sync-recovery-native-tests.log`).
+A later read of the recovered TX returned confirmed inclusion at block 230,110
+with 1,580 confirmations (`build/v04-native-smoke/recovered-transaction-v2.json`).
+Exact bytes/provenance and limits are documented in the
+[fixture guide](../tests/fixtures/README.md) and [recovery report](NODE_SYNC_DIAGNOSTICS.md).
+
+The operational stall is recovered. The original cryptographic rejection has
+not been reproduced, so its underlying cause and full current-tip parity remain
+unverified. The daemon continues syncing; precise node observation/peer records
+remain outside committed evidence.
 
 ## Limits and release gate
 

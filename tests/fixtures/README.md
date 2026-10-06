@@ -44,3 +44,20 @@ keys, wallet exports, node-local pool timestamps, or peer metadata are included.
 The captured ring members are candidates; none is labeled as the real spend.
 Add historical non-coinbase versions, payment-ID/subaddress disclosed-key cases,
 different ring sizes, raw blobs, and isolated pool data as they are verified.
+
+## Recovered historical sync boundary
+
+`ringct-sync-recovery-transaction.hex` was captured on 2026-10-06 through two
+public mainnet daemon RPC `/get_transactions` reads for transaction
+`c133f8d2a67df074f683115156fd3eddb4481bef1b68666171932bb46950fce0`.
+Both returned the same full 2,849 bytes and block height 230,110. Independent
+`get_block` reads returned the same block blob/hash
+`022e67fafd62c841bd1e29ead82a4d9d9b3218fae5f8b57caaec5677c9b42589`.
+RPC reads used HTTP and no secrets. Source peer addresses and observation records
+remain outside committed fixtures.
+
+The native test verifies transaction/blob identifiers, round-trip serialization,
+valid RingCT/Bulletproof semantics and rejection after altering the proof. This
+extends the earlier interpretation-only checks with a narrow native semantic
+verification regression; it does not prove the input-ring signatures or full
+block consensus. See [recovery evidence](../../docs/NODE_SYNC_DIAGNOSTICS.md).

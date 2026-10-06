@@ -5,6 +5,7 @@
 #include <fstream>
 #include <thread>
 #include <atomic>
+#include "ringct/rctSigs.h"
 
 using namespace ryo_explorer;
 static void check(bool value, const char* message) {
@@ -26,6 +27,23 @@ static void expect_failure(std::function<void()> operation, QueryError expected)
 int main(int argc, char** argv) {
     try {
         check(argc == 3, "Expected offline LMDB and RPC arguments.");
+        // Public mainnet transaction from the recovered sync boundary. Validate
+        // fresh native semantics, and ensure altering its proof is rejected.
+        const auto recovery_blob = fixture_blob("ringct-sync-recovery-transaction.hex");
+        cryptonote::transaction recovery_tx;
+        crypto::hash recovery_hash, recovery_prefix;
+        check(cryptonote::parse_and_validate_tx_from_blob(recovery_blob, recovery_tx, recovery_hash, recovery_prefix),
+              "Recovery fixture native parse failed.");
+        check(epee::string_tools::pod_to_hex(recovery_hash) == "c133f8d2a67df074f683115156fd3eddb4481bef1b68666171932bb46950fce0" &&
+              epee::string_tools::pod_to_hex(cryptonote::get_blob_hash(recovery_blob)) == "d921a38e147c8d782c1000d1350cc400e045d828dba98fea04471b631651c45c" &&
+              cryptonote::tx_to_blob(recovery_tx) == recovery_blob,
+              "Recovery transaction/blob identity or roundtrip failed.");
+        check(recovery_tx.rct_signatures.type == rct::RCTTypeBulletproof &&
+              recovery_tx.rct_signatures.p.bulletproofs.size() == 1 &&
+              rct::verRctSemanticsSimple(recovery_tx.rct_signatures), "Public recovery proof failed native semantics.");
+        auto altered_recovery = recovery_tx.rct_signatures;
+        altered_recovery.p.bulletproofs[0].t.bytes[0] ^= 1;
+        check(!rct::verRctSemanticsSimple(altered_recovery), "Altered recovery proof passed native semantics.");
         cryptonote::transaction ordinary;
         const auto ordinary_blob = fixture_blob("ringct-v3-transaction.hex");
         check(cryptonote::parse_and_validate_tx_from_blob(ordinary_blob, ordinary), "Native RingCT parse failed.");

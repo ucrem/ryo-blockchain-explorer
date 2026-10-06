@@ -7,16 +7,18 @@ export const plotBounds = {
   bottom: 248,
   width: 1000,
 };
-export function intervalPlot(points: IntervalPoint[], labelEveryBlock = false) {
-  const width = labelEveryBlock
-    ? Math.max(
-        1000,
-        124 +
-          points.length *
-            Math.max(80, (points.at(-1)?.height.length ?? 1) * 12),
-      )
-    : 1000;
-  const bounds = { ...plotBounds, width, right: width - 28 };
+export const plotHeight = 440;
+export function intervalPlot(
+  points: IntervalPoint[],
+  labelEveryBlock = false,
+  width = 1000,
+) {
+  const bounds = {
+    ...plotBounds,
+    width,
+    left: width < 600 ? 84 : 96,
+    right: width - 12,
+  };
   const slot = (bounds.right - bounds.left) / Math.max(1, points.length);
   const indexes = new Map(points.map((point, i) => [point.height, i]));
   const first = BigInt(points[0]?.height ?? "0"),

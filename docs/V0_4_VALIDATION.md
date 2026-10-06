@@ -302,6 +302,31 @@ operation and workflow triggers are unchanged.
 
 ![Native mainnet dashboard with search in the menu after scrolling](images/v0.4-mainnet-sticky-menu.png)
 
+## Fit the complete interval window in a stable plot
+
+The scrolling hour canvas could hide some returned bars: a real read at block
+190,439 supplied twelve intervals but only eleven axis labels were visible in
+the desktop viewport. The plot now fits its container instead of widening with
+point count, has a fixed 440-pixel height and shows every returned bar. Vertical
+hour labels preserve block numbers, the newest block stays last, and "N blocks
+shown" reports the exact native interval count. Time-window counts legitimately
+vary as the anchor advances; no padding, truncation, nominal target count or
+sampled/fake block is introduced. Inspection hold and return to live remain.
+
+A real mainnet window ending at 192,519 returned fifteen native intervals. All
+fifteen bar subpaths and fifteen block centers were visible on desktop and mobile,
+with zero horizontal overflow and the same 440-pixel height. The reported count
+was fifteen in both views. Evidence is
+`build/v04-native-smoke/fixed-interval-browser-result.json`; the tracked chart
+capture uses real mainnet data. The sync daemon stayed running.
+
+Build/TypeScript, ESLint, fifteen Node checks and thirteen production browser
+scenarios passed. New geometry/browser coverage exercises 4, 10 and 20 actual
+fixture intervals at desktop/mobile sizes, asserting unchanged plot dimensions,
+exact counts and every bar center within view. Chart/inspection checks also cover
+read-only native time windows, precise signed values and latest-block recovery.
+Native code and workflow triggers did not change.
+
 ## Limits and release gate
 
 Full-chain performance, live mapping growth/external writers, wider historical

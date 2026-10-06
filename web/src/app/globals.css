@@ -474,7 +474,7 @@ h2 {
 }
 .interval-plot {
   width: 100%;
-  overflow-x: auto;
+  overflow: hidden;
   scrollbar-width: none;
   margin-top: 12px;
 }
@@ -492,17 +492,17 @@ h2 {
 .interval-plot svg {
   display: block;
   width: 100%;
-  min-width: 700px;
-  height: 320px;
+  min-width: 0;
+  height: 440px;
 }
 .chart-y-axis {
   position: sticky;
   left: 0;
   width: 96px;
-  height: 320px;
-  margin-bottom: -320px;
+  height: 440px;
+  margin-bottom: -440px;
   z-index: 1;
-  background: var(--card);
+  background: linear-gradient(var(--card) 0 248px, transparent 248px);
   pointer-events: none;
 }
 .chart-y-axis svg {
@@ -1342,5 +1342,23 @@ html {
   }
   .header-search-slot .search-controls button {
     padding-inline: 8px;
+  }
+}
+
+.chart-block-count {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.chart-block-count b {
+  font-size: 14px;
+  color: var(--foreground);
+}
+.chart-block-tick {
+  font-size: 10px;
+}
+@media (max-width: 600px) {
+  .chart-y-axis .chart-tick {
+    font-size: 10px;
   }
 }

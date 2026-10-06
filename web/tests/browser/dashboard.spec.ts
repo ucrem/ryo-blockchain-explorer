@@ -111,6 +111,63 @@ test("interval chart has exact block/seconds axes, historical period controls, k
     chart.getByText(/Partial history for this period/),
   ).toBeVisible();
 });
+test("the fixed plot shows every native interval with the exact count for 4, 10 and 20 blocks", async ({
+  page,
+  request,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 1000 });
+    let dimensions: { width: number; height: number } | null = null;
+    for (const [mode, count] of [
+      ["interval-four", 4],
+      ["interval-ten", 10],
+      ["interval-twenty", 20],
+    ] as const) {
+      await request.get(`http://127.0.0.1:3101/__control?mode=${mode}`);
+      await page.goto("/");
+      const chart = page.locator(".interval-panel[aria-labelledby]");
+      const plot = chart.locator(".interval-plot");
+      await expect(chart.locator(".chart-block-count b")).toHaveText(
+        `${count} blocks shown`,
+      );
+      await expect(chart.locator("[data-block-height]")).toHaveCount(count);
+      await expect
+        .poll(() => plot.evaluate((el) => el.scrollWidth - el.clientWidth))
+        .toBeLessThan(2);
+      const measured = await chart.evaluate((el) => {
+        const viewport = el
+          .querySelector(".interval-plot")!
+          .getBoundingClientRect();
+        const axis = el.querySelector(".chart-y-axis")!.getBoundingClientRect();
+        const svg = el.querySelector<SVGSVGElement>("svg[role=img]")!;
+        const visible = [...el.querySelectorAll("[data-block-height]")].filter(
+          (label) => {
+            const center = new DOMPoint(
+              Number(label.getAttribute("x")),
+              120,
+            ).matrixTransform(svg.getScreenCTM()!);
+            return center.x >= axis.right && center.x <= viewport.right;
+          },
+        ).length;
+        const path = el.querySelector(".chart-bars")!.getAttribute("d")!;
+        return {
+          width: viewport.width,
+          height: viewport.height,
+          visible,
+          bars: (path.match(/M/g) ?? []).length,
+        };
+      });
+      expect(measured.visible).toBe(count);
+      expect(measured.bars).toBe(count);
+      if (dimensions)
+        expect({ width: measured.width, height: measured.height }).toEqual(
+          dimensions,
+        );
+      dimensions = { width: measured.width, height: measured.height };
+    }
+  }
+});
 test("hover inspection holds its native window through sync and returns to the latest block without a visible slider", async ({
   page,
   request,

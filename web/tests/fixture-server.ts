@@ -71,18 +71,32 @@ createServer((req, res) => {
         ? anchor + 1n
         : anchor;
     const end = Number(makeBlock(tip).timestamp_unix);
-    const count = (
-      { "1h": 12, "24h": 80, "7d": 120, "30d": 180 } as Record<string, number>
-    )[window];
+    const count =
+      window === "1h" &&
+      ["interval-four", "interval-ten", "interval-twenty"].includes(mode)
+        ? (
+            {
+              "interval-four": 4,
+              "interval-ten": 10,
+              "interval-twenty": 20,
+            } as Record<string, number>
+          )[mode]
+        : (
+            { "1h": 12, "24h": 80, "7d": 120, "30d": 180 } as Record<
+              string,
+              number
+            >
+          )[window];
+    const spacing = window === "1h" && count > 15 ? 120 : 240;
     const times = Array.from(
       { length: count },
-      (_, i) => end - (count - 1 - i) * 240,
+      (_, i) => end - (count - 1 - i) * spacing,
     );
     times[1] = times[0] - 30;
     const points = Array.from({ length: count }, (_, i) => {
       const height = tip - BigInt(count - 1 - i),
         time = times[i];
-      const previous = i === 0 ? time - 240 : times[i - 1];
+      const previous = i === 0 ? time - spacing : times[i - 1];
       const interval = time - previous;
       return {
         height: height.toString(),

@@ -115,6 +115,18 @@ test("interval windows preserve exact signed deltas, continuity, axes and bounde
   const single = intervalPlot([parsed.data.points[0]], true);
   assert.equal(single.xTicks.length, 1);
   assert.equal((single.path.match(/Z/g) ?? []).length, 1);
+  for (const count of [4, 10, 20]) {
+    const points = Array.from({ length: count }, (_, i) => ({
+      ...parsed.data.points[0],
+      height: (height + BigInt(i)).toString(),
+    }));
+    const fixed = intervalPlot(points, true, 312);
+    assert.equal(fixed.bounds.width, 312);
+    assert.equal((fixed.path.match(/M/g) ?? []).length, count);
+    assert.equal(fixed.xTicks.length, count);
+    assert.ok(fixed.x(points[0].height) > fixed.bounds.left);
+    assert.ok(fixed.x(points.at(-1)!.height) < fixed.bounds.right);
+  }
   for (const window of ["1h", "24h", "7d", "30d"])
     assert.equal(
       publicPath(

@@ -45,14 +45,16 @@ search and a developer API guide.
   on the focused chart and a block-detail link.
   Missing/genesis timestamps are omitted; negative and zero differences remain
   intact. The default hour labels every returned block in ascending height,
-  with one bar per interval and the newest at the right edge. An overflowing
-  chart starts at the right and scrolls to the newest block on live refresh;
-  hovering, tapping or keyboard inspection holds the displayed native window
-  and selected block while the dashboard continues receiving new data. A
-  top-right "Back to live" button returns to the latest window and right edge.
-  Native scrollbars are hidden and the former range input is removed; horizontal
-  gestures and keyboard inspection remain available. Switching periods resumes
-  following. Reduced-motion preferences disable smooth scrolling. Longer periods
+  with one bar per interval and the newest at the right edge. The plot fits its
+  container at a fixed 440-pixel height, displaying every returned bar instead
+  of a clipped horizontal subset. Hour labels are vertical and the native point
+  count is shown explicitly as "N blocks shown". Period counts can legitimately
+  change: a time window contains its actual intervals, not a fixed or estimated
+  number of blocks. Hovering, tapping or keyboard inspection holds the displayed
+  native window and selected block while the dashboard receives new data. A
+  top-right "Back to live" button selects the latest block and resumes following.
+  No horizontal scrollbar or range input is used. Switching periods resumes
+  following. Reduced-motion preferences disable slide animation. Longer periods
   keep sparse axis labels while plotting every bar. No target reference line is shown.
   A single usable interval can be displayed. The whole-second signed mean
   truncates division.

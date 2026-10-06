@@ -16,7 +16,7 @@ import {
   type IntervalWindow,
 } from "@/lib/contracts";
 import { integer, timestamp } from "@/lib/format";
-import { axisSeconds, intervalPlot } from "@/lib/interval-plot";
+import { axisSeconds, intervalPlot, plotHeight } from "@/lib/interval-plot";
 
 const periods: { value: IntervalWindow; label: string }[] = [
   { value: "1h", label: "Last hour" },
@@ -35,7 +35,7 @@ export function IntervalChart({
   network: string | null;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
-  const previousKey = useRef<string | null>(null);
+  const [width, setWidth] = useState(1000);
   const [window, setWindow] = useState<IntervalWindow>("1h");
   const [reply, setReply] = useState<{
     key: string;
@@ -103,8 +103,8 @@ export function IntervalChart({
 
   const points = data?.data.points ?? emptyPoints;
   const plot = useMemo(
-    () => intervalPlot(points, window === "1h"),
-    [points, window],
+    () => intervalPlot(points, window === "1h", width),
+    [points, window, width],
   );
   const index = inspecting ? inspection.index : points.length - 1;
   const point = points[index];
@@ -116,43 +116,30 @@ export function IntervalChart({
         : null,
     [points],
   );
-  useEffect(() => {
-    const element = viewport.current;
-    if (!element || !points.length || inspecting) return;
-    const changed =
-      previousKey.current !== null && previousKey.current !== displayKey;
-    element.scrollTo({
-      left: element.scrollWidth,
-      behavior:
-        changed && !matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "smooth"
-          : "instant",
-    });
-    previousKey.current = displayKey;
-  }, [displayKey, points, inspecting]);
   const hasPoints = points.length > 0;
   useEffect(() => {
     const element = viewport.current;
-    if (!element || inspecting) return;
+    if (!element) return;
     const observer = new ResizeObserver(() => {
-      element.scrollTo({ left: element.scrollWidth, behavior: "instant" });
+      if (element.clientWidth > 0) setWidth(element.clientWidth);
     });
     observer.observe(element);
     return () => observer.disconnect();
-  }, [hasPoints, inspecting]);
+  }, [hasPoints]);
   function inspect(index: number) {
     if (data) setInspection({ data, window, network, index });
   }
   function inspectPointer(event: PointerEvent<SVGSVGElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * plot.bounds.width;
-    const y = ((event.clientY - rect.top) / rect.height) * 320;
+    const y = ((event.clientY - rect.top) / rect.height) * plotHeight;
     // Axis labels and the fixed Y axis are not block hit targets.
     if (
       y < plot.bounds.top ||
       y > plot.bounds.bottom ||
       event.clientX <
-        (viewport.current?.getBoundingClientRect().left ?? 0) + 96 ||
+        (viewport.current?.getBoundingClientRect().left ?? 0) +
+          plot.bounds.left ||
       x < plot.bounds.left ||
       x > plot.bounds.right
     )
@@ -215,7 +202,10 @@ export function IntervalChart({
               {integer(mean!)}
               <span> s</span>
             </strong>
-            <span>Mean across {integer(points.length)} block intervals</span>
+            <span className="chart-block-count">
+              <b>{integer(points.length)} blocks shown</b>
+              <span>Mean interval · one bar per block</span>
+            </span>
           </div>
           <div
             ref={viewport}
@@ -241,23 +231,21 @@ export function IntervalChart({
               if (next === null) return;
               event.preventDefault();
               inspect(next);
-              const element = viewport.current;
-              if (element)
-                element.scrollTo({
-                  left:
-                    plot.x(points[next].height) *
-                      (element.scrollWidth / plot.bounds.width) -
-                    element.clientWidth / 2,
-                  behavior: "instant",
-                });
             }}
           >
-            <div className="chart-y-axis" aria-hidden="true">
-              <svg viewBox="0 0 96 320">
+            <div
+              className="chart-y-axis"
+              aria-hidden="true"
+              style={{ width: plot.bounds.left }}
+            >
+              <svg
+                viewBox={`0 0 ${plot.bounds.left} ${plotHeight}`}
+                style={{ width: plot.bounds.left }}
+              >
                 {plot.yTicks.map((tick) => (
                   <text
                     key={tick}
-                    x={84}
+                    x={plot.bounds.left - 12}
                     y={plot.y(tick) + 5}
                     textAnchor="end"
                     className="chart-tick"
@@ -266,8 +254,8 @@ export function IntervalChart({
                   </text>
                 ))}
                 <line
-                  x1={95}
-                  x2={95}
+                  x1={plot.bounds.left - 1}
+                  x2={plot.bounds.left - 1}
                   y1={plot.bounds.top}
                   y2={plot.bounds.bottom}
                   className="chart-axis"
@@ -282,8 +270,8 @@ export function IntervalChart({
               </svg>
             </div>
             <svg
-              viewBox={`0 0 ${plot.bounds.width} 320`}
-              style={{ width: `max(100%, ${plot.bounds.width}px)` }}
+              viewBox={`0 0 ${plot.bounds.width} ${plotHeight}`}
+              style={{ width: "100%" }}
               preserveAspectRatio="none"
               role="img"
               aria-label={`Observed block intervals. X axis: block number. Y axis: seconds since the previous block. ${points.length} intervals.`}
@@ -329,10 +317,19 @@ export function IntervalChart({
                   <text
                     key={tick}
                     x={plot.x(tick)}
-                    y={276}
-                    textAnchor="middle"
+                    y={window === "1h" ? plot.bounds.bottom + 18 : 276}
+                    textAnchor={window === "1h" ? "end" : "middle"}
+                    transform={
+                      window === "1h"
+                        ? `rotate(-90 ${plot.x(tick)} ${plot.bounds.bottom + 18})`
+                        : undefined
+                    }
                     data-block-height={tick}
-                    className="chart-tick"
+                    className={
+                      window === "1h"
+                        ? "chart-tick chart-block-tick"
+                        : "chart-tick"
+                    }
                   >
                     {integer(tick)}
                   </text>

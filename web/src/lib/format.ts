@@ -1,5 +1,3 @@
-import type { BlockSummary } from "./contracts";
-
 export function integer(value: string | bigint | number): string {
   return BigInt(value).toLocaleString("en-US");
 }
@@ -20,20 +18,4 @@ export function timestamp(value: string): string {
     .toISOString()
     .replace("T", " ")
     .replace(".000Z", " UTC");
-}
-export function intervals(items: BlockSummary[]) {
-  const result: { height: string; seconds: bigint }[] = [];
-  for (let i = items.length - 2; i >= 0; i--) {
-    const newer = items[i],
-      older = items[i + 1];
-    if (
-      older.timestamp_unix !== "0" &&
-      BigInt(newer.timestamp_unix) >= BigInt(older.timestamp_unix)
-    )
-      result.push({
-        height: newer.height,
-        seconds: BigInt(newer.timestamp_unix) - BigInt(older.timestamp_unix),
-      });
-  }
-  return result;
 }

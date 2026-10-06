@@ -117,6 +117,7 @@ def main():
                   network["data"]["tip_difficulty"] == "1" and network["data"]["units"]["atomic_decimals"] == 9,
                   "V2 native network values differ from genesis.")
             v2_routes = (("/api/v2/blocks", "BlockPageResponse"),
+                         ("/api/v2/block-intervals?window=1h", "BlockIntervalsResponse"),
                          ("/api/v2/blocks?limit=1", "BlockPageResponse"),
                          ("/api/v2/blocks/0", "BlockResponse"),
                          ("/api/v2/transactions/" + tx_hash, "TransactionResponse"))
@@ -125,6 +126,15 @@ def main():
                 check(status == 200, "V2 lookup failed.")
                 validate(data, schema)
                 check(data == examples[schema], "V2 genesis response differs from documented example.")
+            for window in ("24h", "7d", "30d"):
+                status, data = request("/api/v2/block-intervals?window=" + window + "&anchor=" + block_hash)
+                check(status == 200 and not data["data"]["points"], "Genesis interval window differs.")
+                validate(data, "BlockIntervalsResponse")
+            for suffix in ("?", "?window=", "?window=2h", "?window=1h&window=7d", "?anchor=x",
+                           "?anchor=" + block_hash + "&anchor=" + block_hash, "?window=%31h",
+                           "?window=1h&", "?viewkey=example", "?limit=1"):
+                check(request("/api/v2/block-intervals" + suffix)[0] == 400,
+                      "Invalid interval query accepted.")
             check(request("/api/v2/blocks/" + block_hash.upper()) == request("/api/v2/blocks/0"),
                   "V2 block height/hash/case lookup differs.")
             check(request("/api/v2/transactions/" + tx_hash.upper()) == request("/api/v2/transactions/" + tx_hash),

@@ -29,6 +29,37 @@ paths:
         '405': { $ref: '#/components/responses/MethodNotAllowed' }
         '409': { $ref: '#/components/responses/ChainChanged' }
         '503': { $ref: '#/components/responses/Unavailable' }
+  /api/v2/block-intervals:
+    get:
+      operationId: getBlockIntervals
+      summary: Read consecutive native timestamp differences in a selected period
+      description: |
+        Periods end at the selected native block, defaulting to this reader's tip.
+        Scans at most 50,000 consecutive block timestamps in one read snapshot;
+        points include their predecessor's timestamp, including negative differences.
+        Genesis/missing timestamps are omitted. Points are ordered by height.
+        No timestamp binary search, per-block transaction reads or auxiliary index.
+        history_limited reports a scan boundary still inside the selected period;
+        scanned_from_height and oldest_timestamp_unix expose the searched coverage.
+      parameters:
+        - name: window
+          in: query
+          schema: { type: string, enum: [1h, 24h, 7d, 30d], default: 1h }
+        - name: anchor
+          in: query
+          description: Optional block hash; a removed anchor returns 409.
+          schema: { type: string, pattern: '^[0-9a-fA-F]{64}$' }
+      responses:
+        '200':
+          description: Bounded native timestamp window
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BlockIntervalsResponse' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '405': { $ref: '#/components/responses/MethodNotAllowed' }
+        '409': { $ref: '#/components/responses/ChainChanged' }
+        '503': { $ref: '#/components/responses/Unavailable' }
   /api/v2/blocks:
     get:
       operationId: listBlocks
@@ -188,6 +219,82 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/ErrorResponse' }
   schemas:
+    SignedSeconds:
+      type: string
+      pattern: ^(0|-?[1-9][0-9]{0,19})$
+      maxLength: 21
+      description: Exact signed timestamp difference; magnitude is bounded to uint64 by the application.
+    BlockInterval:
+      type: object
+      additionalProperties: false
+      required:
+      - height
+      - timestamp_unix
+      - previous_timestamp_unix
+      - interval_seconds
+      properties:
+        height:
+          $ref: '#/components/schemas/UInt64'
+        timestamp_unix:
+          $ref: '#/components/schemas/UInt64'
+        previous_timestamp_unix:
+          $ref: '#/components/schemas/UInt64'
+        interval_seconds:
+          $ref: '#/components/schemas/SignedSeconds'
+    BlockIntervalsResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - data
+      - meta
+      properties:
+        meta:
+          $ref: '#/components/schemas/Meta'
+        data:
+          type: object
+          additionalProperties: false
+          required:
+          - anchor_height
+          - anchor_timestamp_unix
+          - start_timestamp_unix
+          - scanned_from_height
+          - oldest_timestamp_unix
+          - anchor_hash
+          - window_seconds
+          - scanned_count
+          - history_limited
+          - points
+          properties:
+            anchor_height:
+              $ref: '#/components/schemas/UInt64'
+            anchor_timestamp_unix:
+              $ref: '#/components/schemas/UInt64'
+            start_timestamp_unix:
+              $ref: '#/components/schemas/UInt64'
+            scanned_from_height:
+              $ref: '#/components/schemas/UInt64'
+            oldest_timestamp_unix:
+              $ref: '#/components/schemas/UInt64'
+            anchor_hash:
+              $ref: '#/components/schemas/Hash'
+            window_seconds:
+              type: integer
+              enum:
+              - 3600
+              - 86400
+              - 604800
+              - 2592000
+            scanned_count:
+              type: integer
+              minimum: 0
+              maximum: 50000
+            history_limited:
+              type: boolean
+            points:
+              type: array
+              maxItems: 50000
+              items:
+                $ref: '#/components/schemas/BlockInterval'
     UInt64:
       type: string
       pattern: '^(0|[1-9][0-9]{0,19})$'

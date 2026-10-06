@@ -8,28 +8,30 @@ step; the prepared release notes are in [releases/v0.4.0.md](releases/v0.4.0.md)
 
 The pinned official core remains `185dd1fa33ba88c88bb22df9069ad368c0f9a27e`, with
 the existing isolated Ubuntu 24.04 compatibility patch. The native implementation
-change is product/OpenAPI metadata from 0.3.0 to 0.4.0; service interpretation,
-core pin, read-only LMDB access and route shapes are unchanged.
+changes are product/OpenAPI metadata from 0.3.0 to 0.4.0 and an additive bounded
+timestamp-window method/route on BlockService. Core pin, cryptographic
+interpretation, read-only LMDB access and existing route contracts are preserved.
 
 The HTTP/benchmark-enabled build passed in the established Ubuntu 24.04 PRoot
 environment (GCC 13, Boost 1.83, OpenSSL 3), using the real pinned core archives.
-All five CTest checks passed in 28.85 seconds:
+All five CTest checks passed in 26.93 seconds with the interval-window extension:
 
 | Check | Result |
 | --- | --- |
 | Native mainnet genesis | Passed, 1.04 s |
-| Offline native LMDB/RPC | Passed, 3.81 s |
-| Native historical/RingCT/services/reorg/schema responses | Passed, 5.13 s |
-| OpenAPI/DTO schema and examples | Passed, 0.61 s |
-| Real HTTP v2/legacy/flags/bounds/concurrency/shutdown | Passed, 18.22 s |
+| Offline native LMDB/RPC | Passed, 3.46 s |
+| Native historical/RingCT/services/reorg/schema responses | Passed, 4.48 s |
+| OpenAPI/DTO schema and examples | Passed, 0.42 s |
+| Real HTTP v2/legacy/flags/bounds/concurrency/shutdown | Passed, 17.51 s |
 
-Local log: `build/v04-native-build.log` (ignored build artifact). Native fixtures
+Local logs: `build/v04-interval-native-build.log` and
+`build/v04-interval-native-tests.log` (ignored build artifacts). Native fixtures
 retain their documented synthetic-storage and consensus/signature limitations.
 The full native GitHub Action remains manual-only; no per-PR full build is added.
 The owner-authorized manual [native run 37370952211](https://github.com/ucrem/ryo-blockchain-explorer/actions/runs/37370952211)
 also passed on the implementation commit `7284564bca0f1608193e159127badc3e8b9c7589`.
-The subsequent visual revision changes frontend assets, layout, fonts and documentation;
-its native sources are identical to that validated commit.
+That manual run validates the foundation before the timestamp-window extension;
+the extended native sources and route are covered by the local checks above.
 
 ## Frontend build, resource and precision checks
 
@@ -39,7 +41,7 @@ Tailwind 4.3.3. Registry-resolved dependencies are pinned in the npm lockfile.
 
 - Clean lockfile installation succeeded; no API was needed at build time.
 - ESLint, route generation/TypeScript checks and the production build passed.
-- Fourteen Node tests passed: public native schema examples, exact values above
+- Fifteen Node tests passed: public native schema examples, exact values above
   2^53 and uint64 bounds, invalid/secret route queries, timestamp interpretation,
   trusted origins, raw numeric-token preservation, reorg status, redirect/content
   type/declared and streamed response-size rejection, concurrency and deadline.
@@ -51,6 +53,9 @@ Tailwind 4.3.3. Registry-resolved dependencies are pinned in the npm lockfile.
   The dashboard transaction case verifies bounded block-detail fan-out and row
   count, no detail reads for coinbase-only headers, exact fees and rejection of
   failed or mismatched block snapshots.
+  Interval cases verify exact signed deltas and predecessor continuity, malformed
+  DTO rejection, integer-preserving axes above 2^53, zero/negative ticks, visible
+  isolated points without lines across missing heights and bounded query shapes.
 - Production dependency audit reported zero vulnerabilities. The complete audit
   reported five high entries, all one developer-only `braces` advisory and its
   Next ESLint glob dependency chain. The advisory has no published patched version:
@@ -60,8 +65,8 @@ Tailwind 4.3.3. Registry-resolved dependencies are pinned in the npm lockfile.
 
 ## Production browser checks
 
-Nine Chromium Playwright scenarios passed against the production Next server
-in 26.8 seconds with the official-brand detail/search/JSON/live UI. Their isolated fixture
+Ten Chromium Playwright scenarios passed against the production Next server
+in 33.5 seconds with the official-brand detail/search/JSON/live UI. Their isolated fixture
 server uses explicitly synthetic headers and public genesis examples; it is never
 imported by application code.
 
@@ -86,6 +91,10 @@ The paired-table scenario checks full viewport width at 1,920 px, side-by-side
 panels, stacked mobile layout without page overflow, native fee precision,
 coinbase labels/detail links and isolated transaction failures/network mismatch.
 The live scenario also verifies that the transaction table follows the new tip.
+The chart scenario verifies block/seconds axes, all four period selections,
+large exact block labels, keyboard inspection, negative differences, point links,
+partial-coverage messaging and desktop light/dark/mobile accessibility. Selected
+historical periods persist and reload their anchor during live refresh.
 The existing JSON browser scenario passed again in 4.4 seconds, including
 light/dark/mobile accessibility. Production build and ESLint also passed. Native
 genesis pages were inspected to confirm explanations are absent from primary
@@ -196,9 +205,42 @@ The HTML detail page opened successfully; mobile panels stacked without page
 overflow, and no page errors or external-origin requests occurred. Ignored evidence
 is `build/v04-native-smoke/dual-tables-result.json`. The native daemon was left
 running as instructed. Build/TypeScript, ESLint, fourteen Node tests and nine
-production browser scenarios passed; native sources and workflows are unchanged.
+production browser scenarios passed. The paired-table revision did not change
+native sources or workflows.
 
 ![Paired block and confirmed-transaction tables using real mainnet data](images/v0.4-mainnet-tables.png)
+
+## Native historical interval windows
+
+The owner requested numbered block/seconds axes and 1h/24h/7d/30d controls. The
+new read-only route queries existing native timestamp metadata independently of
+table pagination, within one bounded LMDB read. Zero/missing timestamp pairs are
+omitted; exact signed differences, including negative values, are retained.
+The schema checker passed with eight operations and nine documented examples.
+Native tests cover genesis, signed backtracking, older anchors after append,
+removed anchors, scan bounds, allowlisted parameters and actual DTO responses.
+No new core pin, consensus implementation, database, index or periodic native
+worker is introduced. The full native Action remains manual-only.
+
+An anchored real mainnet query at block 143,304 scanned 50,000 timestamps and
+returned 6 points for 1h, 337 for 24h, 2,402 for 7d and 11,234 for 30d. All four
+responses were checked against the exact timestamp-difference equation. The
+recorded reads took 0.710, 0.062, 0.076 and 0.183 seconds on this host. These are
+one local sample, not a public capacity guarantee. Ignored evidence is under
+`build/v04-native-smoke/interval-{1h,24h,7d,30d}.json`.
+
+A production Chromium check selected all four periods using real native data,
+inspected points with the keyboard and verified mobile containment, with no
+page errors or external-origin requests. The graph plots every returned point,
+breaks lines across omitted heights and uses exact block labels and signed
+seconds. It displays the selected anchor date during historical sync rather than
+claiming those periods end at today's wall clock. The selected period survives
+live refresh. Build/TypeScript, ESLint, fifteen Node checks and ten full production
+browser scenarios passed. The chart/live scenarios were checked again after axis
+polish. Native API and frontend previews were updated; the daemon stayed running.
+Ignored browser evidence is `build/v04-native-smoke/interval-windows-browser-result.json`.
+
+![Native 30-day block interval window with numbered axes and period controls](images/v0.4-mainnet-interval-windows.png)
 
 ## Limits and release gate
 

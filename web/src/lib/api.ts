@@ -8,6 +8,9 @@ import {
   publicIdentifier,
   publicPath,
   transactionResponse,
+  blockIntervalsResponse,
+  intervalSeconds,
+  type IntervalWindow,
 } from "./contracts";
 import { ApiError, upstreamRead } from "./upstream";
 export { ApiError } from "./upstream";
@@ -52,6 +55,28 @@ async function readData<T>(
 }
 export function readNetwork() {
   return readData("network", networkResponse);
+}
+export async function readBlockIntervals(
+  window: IntervalWindow = "1h",
+  anchor?: string,
+) {
+  const query = new URLSearchParams({ window });
+  if (anchor) query.set("anchor", anchor);
+  const result = await readData(
+    "block-intervals",
+    blockIntervalsResponse,
+    query,
+  );
+  if (
+    result.data.window_seconds !== intervalSeconds[window] ||
+    (anchor && result.data.anchor_hash !== anchor.toLowerCase())
+  )
+    throw new ApiError(
+      503,
+      "unavailable",
+      "The chain reader returned a different interval window.",
+    );
+  return result;
 }
 export function readBlocks(value?: string) {
   const params = new URLSearchParams({ limit: "20" });

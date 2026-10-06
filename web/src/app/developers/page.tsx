@@ -5,6 +5,11 @@ import { Button } from "@/components/ui/button";
 export const metadata: Metadata = { title: "Developer API" };
 const routes = [
   [
+    "/api/v2/block-intervals?window=1h",
+    "Native block timestamp differences; 1h, 24h, 7d or 30d",
+    "/api/v2/block-intervals?window=1h",
+  ],
+  [
     "/api/v2/network",
     "Native reader chain state and configured network",
     "/api/v2/network",

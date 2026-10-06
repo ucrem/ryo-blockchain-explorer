@@ -14,7 +14,10 @@ async function main() {
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("request", (request) => origins.add(new URL(request.url()).origin));
     await page.goto(base);
-    await page.getByText("Genesis · time not recorded").waitFor();
+    await page
+      .getByRole("table", { name: "Recent blocks" })
+      .getByText("Genesis · time not recorded")
+      .waitFor();
     await page.getByText("Beginning of the chain").waitFor();
     await page.getByRole("link", { name: "Block 0", exact: true }).waitFor();
     const result = await page.request.get(`${base}/api/v2/network`);
@@ -43,7 +46,10 @@ async function main() {
     await page.getByRole("button", { name: "Toggle color theme" }).click();
     await page.locator("html.dark").waitFor();
     await page.reload();
-    await page.getByText("Genesis · time not recorded").waitFor();
+    await page
+      .getByRole("table", { name: "Recent blocks" })
+      .getByText("Genesis · time not recorded")
+      .waitFor();
     await page.evaluate(() => document.fonts.ready);
     // Wait for the theme and self-hosted fonts to finish painting before capture.
     await page.evaluate(

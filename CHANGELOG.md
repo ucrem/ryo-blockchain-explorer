@@ -17,6 +17,9 @@ retroactively.
   fonts, light/dark themes, mobile navigation and a developer API guide.
 - Native-reader chain status, exact quantities, recent block pages, reorg recovery
   and a truthful observed-header interval chart.
+- Labeled block-number/seconds axes and 1h/24h/7d/30d interval windows, backed by
+  a bounded native timestamp API, with exact signed differences and accessible
+  point inspection independent of table pagination.
 - Full-width desktop block and confirmed-transaction tables, stacking on mobile,
   with exact fees, labeled coinbase and a bounded native transaction preview.
 - Ten-second live tip observation on latest-block pages, with pause, hidden-tab

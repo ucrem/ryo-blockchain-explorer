@@ -1,7 +1,51 @@
 #include "BlockService.h"
 #include <limits>
+#include <algorithm>
 
 namespace ryo_explorer {
+BlockIntervalWindow BlockService::intervals(unsigned seconds, const std::string& anchor,
+                                           unsigned scan_limit) {
+    if ((seconds != 3600 && seconds != 86400 && seconds != 604800 && seconds != 2592000) ||
+        scan_limit == 0 || scan_limit > 50000)
+        throw QueryFailure(QueryError::invalid, "Invalid interval window.");
+    crypto::hash requested{};
+    if (!anchor.empty()) requested = parse_hash(anchor);
+    try {
+        QueryContext::Read read(context_);
+        auto& db = read.db();
+        BlockIntervalWindow result;
+        result.chain_height = db.height();
+        if (!result.chain_height) throw QueryFailure(QueryError::database, "Native chain is empty.");
+        result.anchor_height = result.chain_height - 1;
+        if (!anchor.empty() && !db.block_exists(requested, &result.anchor_height))
+            throw QueryFailure(QueryError::chain_changed, "Interval anchor changed.");
+        result.anchor_hash = db.get_block_hash_from_height(result.anchor_height);
+        result.anchor_timestamp = db.get_block_timestamp(result.anchor_height);
+        result.window_seconds = seconds;
+        result.start_timestamp = result.anchor_timestamp > seconds ? result.anchor_timestamp - seconds : 0;
+        result.scanned_from_height = result.anchor_height > scan_limit ? result.anchor_height - scan_limit + 1 : 1;
+        if (!result.anchor_height) result.scanned_from_height = 0;
+        // Timestamps need not be monotonic. Scan the bounded height range in full,
+        // filtering by the newer block's time, without a timestamp binary search.
+        uint64_t previous = db.get_block_timestamp(result.scanned_from_height ? result.scanned_from_height - 1 : 0);
+        for (uint64_t height = result.scanned_from_height; height <= result.anchor_height && height != 0; ++height) {
+            const auto current = db.get_block_timestamp(height);
+            ++result.scanned_count;
+            if (current && (!result.oldest_timestamp || current < result.oldest_timestamp))
+                result.oldest_timestamp = current;
+            if (current && previous && current >= result.start_timestamp && current <= result.anchor_timestamp) {
+                const auto delta = current >= previous ? std::to_string(current - previous) :
+                    "-" + std::to_string(previous - current);
+                result.points.push_back({height, current, previous, delta});
+            }
+            previous = current;
+        }
+        result.history_limited = result.scanned_from_height > 1 &&
+            result.oldest_timestamp >= result.start_timestamp;
+        return result;
+    } catch (const QueryFailure&) { throw; }
+      catch (const std::exception&) { throw QueryFailure(QueryError::database, "Native timestamp read failed."); }
+}
 BlockPage BlockService::list(unsigned limit, const std::string& cursor) {
     if (limit == 0 || limit > 20)
         throw QueryFailure(QueryError::invalid, "Limit must be between 1 and 20.");

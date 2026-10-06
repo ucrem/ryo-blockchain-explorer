@@ -35,6 +35,9 @@ historical block, and ordinary transaction. A modified block-1 container is used
 only to exercise confirmation/reorg state. It is explicitly synthetic and does
 not claim a valid mined block or a public-chain confirmation for that transaction.
 Temporary pool receive/relay values never enter public fixtures or responses.
+An appended storage-only block has a timestamp thirty seconds before its
+predecessor to verify signed interval arithmetic, window filtering, bounded
+coverage and removed-anchor handling. It is not a consensus-valid mining fixture.
 
 These fixtures contain public chain data only. No view keys, transaction private
 keys, wallet exports, node-local pool timestamps, or peer metadata are included.

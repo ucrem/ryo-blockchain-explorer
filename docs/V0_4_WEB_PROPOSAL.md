@@ -35,8 +35,15 @@ pool/network monitoring remain later milestones.
 The owner's layout request adds full-width desktop block/confirmed-transaction
 tables side by side, stacking on smaller screens. A bounded server-rendered
 transaction preview reuses existing headers and block details, includes labeled
-coinbase, preserves exact ordinary fees and follows live tip refresh. No new
-native endpoint, index, pool listing or browser cryptography is introduced.
+coinbase, preserves exact ordinary fees and follows live tip refresh. The transaction preview adds no native endpoint, index, pool listing or browser
+cryptography.
+The owner's chart request replaces the twenty-header sparkline with labeled
+block-number/seconds axes and 1h/24h/7d/30d controls. An additive API v2 route on
+the existing BlockService reads bounded native timestamps in one snapshot, with
+an optional block-hash anchor and explicit coverage. It preserves signed native
+differences and remains independent of pagination. The core pin, read-only LMDB
+architecture and existing route contracts remain compatible; no extra store is
+introduced. Client inspection and selected periods persist across live refresh.
 
 A server-only API client uses a configured fixed upstream origin, deadlines,
 response size bounds, no redirect following and no persistent caching. A

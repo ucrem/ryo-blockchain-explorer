@@ -29,10 +29,22 @@ search and a developer API guide.
   This observes blocks entering the local reader, including historical sync;
   it does not establish that a block was just mined or the node is synchronized.
   A changed tip refreshes both block and transaction tables together.
-- An interval chart derived only from adjacent headers on the displayed page.
-  Missing genesis timestamps and decreasing timestamps are excluded. At least
-  two usable intervals are needed; the whole-second mean truncates division.
-  Miner-supplied timestamps are not network-wide performance or synchronization.
+- A block-interval chart with block number on X and the exact signed timestamp
+  difference from its predecessor, in seconds, on Y. Period controls select 1h,
+  24h, 7d or 30d, ending at the latest available block; its height/date are shown
+  explicitly, including while the node is syncing historical blocks. The chart
+  reads a native window independently of the twenty-row block table. Every
+  returned point is plotted without downsampling, with labeled axes, rounded
+  grid ticks, pointer inspection, keyboard slider and a block-detail link.
+  Missing/genesis timestamps are omitted; negative and zero differences remain
+  intact. Lines break across omitted block heights. A single usable interval can
+  be displayed. The whole-second signed mean truncates division.
+  The selected period persists across live refresh; changed anchors reload it.
+  The native read scans at most 50,000 consecutive timestamps in one snapshot,
+  using a fixed period allowlist and optional block-hash anchor. Available
+  coverage is returned and a scan bound within the period is labeled partial.
+  Nonmonotonic timestamps are filtered by the newer block's time without a
+  timestamp binary search. No new database, index or persistent cache is used.
 - `/developers`: public route guide, exact units and privacy semantics, examples
   and a link to the backend's bundled OpenAPI JSON.
 - `/blocks/{height-or-hash}`: readable header details, previous/next block links,

@@ -3,6 +3,70 @@ import AxeBuilder from "@axe-core/playwright";
 test.beforeEach(async ({ request }) => {
   await request.get("http://127.0.0.1:3101/__control?mode=normal");
 });
+test("interval chart has exact block/seconds axes, historical period controls, keyboard inspection and coverage states", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/");
+  const chart = page.locator(".interval-panel");
+  await expect(
+    chart.getByRole("img", { name: /Observed block intervals/ }),
+  ).toBeVisible();
+  await expect(chart.getByText("Block number", { exact: true })).toBeVisible();
+  await expect(
+    chart.getByText("Seconds since previous block", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    chart.locator(".chart-tick").filter({ hasText: "9,007,199,254,741,023" }),
+  ).toBeVisible();
+  for (const [label, count] of [
+    ["Last hour", 12],
+    ["Last 24 hours", 80],
+    ["Last 7 days", 120],
+    ["Last 30 days", 180],
+  ] as const) {
+    await chart.getByRole("button", { name: label, exact: true }).click();
+    await expect(
+      chart.getByRole("button", { name: label, exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(chart.getByLabel("Inspect a block interval")).toHaveAttribute(
+      "max",
+      String(count - 1),
+    );
+  }
+  const slider = chart.getByLabel("Inspect a block interval");
+  await slider.focus();
+  await page.keyboard.press("Home");
+  await page.keyboard.press("ArrowRight");
+  await expect(
+    chart.getByText("-30 s since block", { exact: false }),
+  ).toBeVisible();
+  await expect(
+    chart.getByText("This block’s timestamp precedes its predecessor."),
+  ).toBeVisible();
+  await slider.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(slider).toHaveValue("2");
+  await expect(chart.locator(".chart-inspector a")).toHaveAttribute(
+    "href",
+    /^\/blocks\/[0-9]+$/,
+  );
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.getByRole("button", { name: "Toggle color theme" }).click();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await request.get("http://127.0.0.1:3101/__control?mode=interval-limited");
+  await page.goto("/");
+  await expect(
+    chart.getByText(/Partial history for this period/),
+  ).toBeVisible();
+});
 test("full-width desktop block and transaction tables stack on mobile and preserve native fee and failure semantics", async ({
   page,
   request,
@@ -77,6 +141,11 @@ test("live reader changes refresh blocks; unchanged tips, pause, outage and earl
           .reads,
     )
     .toBe(before.reads + 1);
+  await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
+  await expect(page.getByLabel("Inspect a block interval")).toHaveAttribute(
+    "max",
+    "119",
+  );
   await page
     .getByLabel("Search the Ryo blockchain", { exact: true })
     .fill("12345");
@@ -86,7 +155,16 @@ test("live reader changes refresh blocks; unchanged tips, pause, outage and earl
   await page.clock.runFor(10_100);
   await expect(metric).toContainText("9,007,199,254,741,024");
   await expect(
-    page.getByRole("table", { name: "Recent transactions" }).locator("tbody tr").first(),
+    page.getByRole("button", { name: "Last 7 days", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".chart-period-end").first()).toContainText(
+    "9,007,199,254,741,024",
+  );
+  await expect(
+    page
+      .getByRole("table", { name: "Recent transactions" })
+      .locator("tbody tr")
+      .first(),
   ).toContainText("9,007,199,254,741,024");
   await expect(
     page.getByRole("link", { name: "Block 9007199254741024", exact: true }),

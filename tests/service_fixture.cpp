@@ -72,6 +72,10 @@ int main(int argc, char** argv) {
         check(source_network.get().chain_height == 1 && source_network.get().tip.height == 0 &&
               source_network.get().tip_difficulty == 1, "Native network snapshot failed.");
         record(source_api, "/api/v2/network", "NetworkResponse");
+        record(source_api, "/api/v2/block-intervals?window=30d", "BlockIntervalsResponse");
+        check(source_blocks.intervals(3600).points.empty(), "Genesis acquired an interval.");
+        expect_failure([&] { source_blocks.intervals(1); }, QueryError::invalid);
+        expect_failure([&] { source_blocks.intervals(3600, "", 50001); }, QueryError::invalid);
         record(source_api, "/api/v2/blocks?limit=1", "BlockPageResponse");
         record(source_api, "/api/v2/blocks/0", "BlockResponse");
         const auto v2_genesis = record(source_api, "/api/v2/transactions/" +
@@ -158,15 +162,30 @@ int main(int argc, char** argv) {
         record(api, "/api/v2/blocks?cursor=" + anchored.next_cursor, "BlockPageResponse");
         auto appended = historical;
         appended.prev_id = old_result.hash; appended.nonce += 10;
+        appended.timestamp = historical.timestamp - 30;
         boost::get<cryptonote::txin_gen>(appended.miner_tx.vin[0]).height = 2;
         appended.miner_tx.invalidate_hashes(); appended.invalidate_hashes();
         writer.add_block(appended, cryptonote::get_object_blobsize(appended), 3, 8800000000000002ULL,
                          std::vector<cryptonote::transaction>{});
+        const auto interval_anchor = epee::string_tools::pod_to_hex(cryptonote::get_block_hash(appended));
+        const auto window = blocks.intervals(3600, interval_anchor);
+        check(window.points.size() == 1 && window.points[0].height == 2 &&
+              window.points[0].seconds == "-30" && window.points[0].previous_timestamp == historical.timestamp,
+              "Native negative timestamp difference was changed or hidden.");
+        const auto limited_intervals = blocks.intervals(2592000, interval_anchor, 1);
+        check(limited_intervals.scanned_count == 1 && limited_intervals.scanned_from_height == 2 && limited_intervals.history_limited,
+              "Native interval history bound failed.");
+        check(blocks.intervals(86400, epee::string_tools::pod_to_hex(old_result.hash)).points.empty(),
+              "Append changed an older interval anchor.");
+        record(api, "/api/v2/block-intervals?window=1h&anchor=" + interval_anchor, "BlockIntervalsResponse");
         const auto preserved_page = blocks.list(1, anchored.next_cursor);
         check(preserved_page.anchor_height == 1 && preserved_page.chain_height == 3 &&
               preserved_page.items[0].height == 0, "Append moved the anchored page.");
         cryptonote::block popped; std::vector<cryptonote::transaction> popped_txs;
         writer.pop_block(popped, popped_txs); // Remove synthetic appended block.
+        expect_failure([&] { blocks.intervals(3600, interval_anchor); }, QueryError::chain_changed);
+        check(api.get("/api/v2/block-intervals?anchor=" + interval_anchor).status == 409,
+              "Removed interval anchor did not return 409.");
         writer.pop_block(popped, popped_txs);
         expect_failure([&] { blocks.list(1, anchored.next_cursor); }, QueryError::chain_changed);
         check(api.get("/api/v2/blocks?cursor=" + anchored.next_cursor).status == 409,

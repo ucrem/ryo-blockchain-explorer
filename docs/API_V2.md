@@ -33,6 +33,7 @@ Python, external documentation assets or a runtime CDN.
 | GET route | Result |
 | --- | --- |
 | `/api/v2/network` | This reader's chain height/tip/difficulty, configured network/units/target interval, explorer and linked core versions |
+| `/api/v2/block-intervals?window=1h&anchor=...` | Exact consecutive timestamp differences for 1h, 24h, 7d or 30d ending at a native block; up to 50,000 timestamp reads |
 | `/api/v2/blocks?limit=10&cursor=...` | At most 20 newest-first block summaries anchored to a validated native tip |
 | `/api/v2/blocks/{id}` | Native header and coinbase-first transaction summaries |
 | `/api/v2/transactions/{hash}` | Confirmed or native-pool public metadata, extra/keys/payment IDs, inputs/outputs and ring candidates |
@@ -115,7 +116,7 @@ Errors are `{error: {code, message}}` with concise, non-echoing messages:
 | 409 | `chain_changed` | Replaced/removed anchor or inconsistent native snapshot |
 | 503 | `unavailable` | DB, query-capacity, serialization or resource failure |
 
-Only `/api/v2/blocks` accepts query parameters, and only when enabled. Duplicate,
+Only `/api/v2/blocks` and `/api/v2/block-intervals` accept query parameters, and only when enabled. Duplicate,
 unknown, empty, noncanonical, percent-encoded or fragment-bearing parameters are
 rejected. V2 targets reject non-ASCII bytes; legacy query rejection remains.
 Bodies are rejected even for GET. Recognizable v2 transport errors use the v2
@@ -131,6 +132,31 @@ outside the decimal-string DTO guarantee. Use an integer-preserving JSON parser
 when consuming it. `blob_hex` is native serialization, never reconstructed
 from JSON. Oversized responses fail as a whole; no partial success is returned.
 All responses use `Cache-Control: no-store`; no wildcard CORS is enabled.
+
+## Block interval windows (v0.4)
+
+`window` accepts exactly `1h`, `24h`, `7d` or `30d`, defaulting to `1h`.
+`anchor` optionally selects a native block hash; otherwise the current reader tip
+is used. A missing/removed anchor returns 409. Periods end at the anchor timestamp
+rather than wall-clock time, so an incomplete sync can inspect its actual history.
+The response includes the anchor, selected duration/start, searched height range,
+oldest scanned timestamp, count and `history_limited`, plus ascending-height points.
+
+Each point carries decimal-string `height`, `timestamp_unix`,
+`previous_timestamp_unix` and signed `interval_seconds`. The last field is exactly
+`timestamp(N) - timestamp(N-1)`, including negatives and zero; its magnitude is
+bounded to uint64. A point is included when the newer timestamp is within the
+inclusive period and both timestamps are nonzero. The predecessor can fall before
+the period boundary. Genesis/missing times are omitted, not interpreted as 1970.
+
+One native read scope scans at most 50,000 consecutive block timestamps plus the
+first predecessor, without decoding ordinary transactions. The height range is
+scanned in full, because timestamp ordering is not guaranteed. No time index,
+timestamp binary search, approximate target-based block counts or sampled points
+are substituted for actual timestamps. Coverage is limited to the returned height
+range; `history_limited` flags a scan boundary whose oldest recorded timestamp
+still lies within the selected period. It does not prove global timestamp ordering
+or network synchronization. Existing eight-MiB response and capacity bounds apply.
 
 ## Compatibility and validation limits
 

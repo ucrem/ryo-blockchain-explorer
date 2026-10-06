@@ -10,8 +10,10 @@ import {
   networkResponse,
   publicPath,
   uint64,
+  blockIntervalsResponse,
 } from "../src/lib/contracts";
-import { bytes, coins, integer, intervals, timestamp } from "../src/lib/format";
+import { intervalPlot, nearestInterval } from "../src/lib/interval-plot";
+import { bytes, coins, integer, timestamp } from "../src/lib/format";
 import { ApiError, upstreamOrigin, upstreamRead } from "../src/lib/upstream";
 
 import { viewPages, slicePage } from "../src/lib/view-pages";
@@ -50,6 +52,81 @@ test("public native examples parse; uint64 values never pass through floating po
   const hidden = structuredClone(examples.NetworkResponse);
   hidden.data.tip_difficulty = 9007199254740993;
   assert.equal(networkResponse.safeParse(hidden).success, false);
+});
+test("interval windows preserve exact signed deltas, continuity, axes and bounded query shapes", () => {
+  const genesis = blockIntervalsResponse.parse(examples.BlockIntervalsResponse);
+  assert.equal(genesis.data.points.length, 0);
+  const result = structuredClone(genesis);
+  const height = 9007199254740993n;
+  result.meta.chain_height = (height + 3n).toString();
+  Object.assign(result.data, {
+    anchor_height: (height + 2n).toString(),
+    anchor_timestamp_unix: "1030",
+    start_timestamp_unix: "0",
+    scanned_from_height: height.toString(),
+    scanned_count: 3,
+    oldest_timestamp_unix: "970",
+    points: [
+      {
+        height: height.toString(),
+        timestamp_unix: "1000",
+        previous_timestamp_unix: "950",
+        interval_seconds: "50",
+      },
+      {
+        height: (height + 1n).toString(),
+        timestamp_unix: "970",
+        previous_timestamp_unix: "1000",
+        interval_seconds: "-30",
+      },
+      {
+        height: (height + 2n).toString(),
+        timestamp_unix: "1030",
+        previous_timestamp_unix: "970",
+        interval_seconds: "60",
+      },
+    ],
+  });
+  const parsed = blockIntervalsResponse.parse(result);
+  const plot = intervalPlot(parsed.data.points, 240);
+  assert.equal(plot.first, height);
+  assert.equal(plot.last, height + 2n);
+  assert.ok(plot.y("-30") > plot.y("50"));
+  assert.ok(plot.yTicks.includes("0"));
+  assert.ok(plot.x(height + 1n) > plot.x(height));
+  assert.equal(nearestInterval(parsed.data.points, height + 1n), 1);
+  const invalid = structuredClone(result);
+  invalid.data.points[1].interval_seconds = "0";
+  assert.equal(blockIntervalsResponse.safeParse(invalid).success, false);
+  invalid.data.points[1].interval_seconds = "-0";
+  assert.equal(blockIntervalsResponse.safeParse(invalid).success, false);
+  invalid.data.anchor_height = "unsupported";
+  assert.equal(blockIntervalsResponse.safeParse(invalid).success, false);
+  const separated = intervalPlot(
+    [parsed.data.points[0], parsed.data.points[2]],
+    240,
+  );
+  assert.equal((separated.path.match(/M/g) ?? []).length, 2);
+  assert.equal((separated.path.match(/L/g) ?? []).length, 2);
+  for (const window of ["1h", "24h", "7d", "30d"])
+    assert.equal(
+      publicPath(
+        "block-intervals",
+        new URLSearchParams({ window, anchor: "a".repeat(64) }),
+      ),
+      true,
+    );
+  for (const query of [
+    "window=2h",
+    "window=1h&window=7d",
+    "anchor=x",
+    "viewkey=secret",
+    "limit=50000",
+  ])
+    assert.equal(
+      publicPath("block-intervals", new URLSearchParams(query)),
+      false,
+    );
 });
 test("dashboard transaction reads are bounded, exact and tied to the displayed native blocks", async () => {
   const genesis = blocksResponse.parse(examples.BlockPageResponse);
@@ -167,21 +244,13 @@ test("public route allowlist rejects secret queries, arbitrary targets and inval
     true,
   );
 });
-test("timestamp and interval interpretation excludes absent genesis time and decreasing timestamps", () => {
+test("timestamp and byte formatting preserve absent genesis time and exact uint64 quantities", () => {
   assert.equal(timestamp("0"), "Not recorded");
   assert.equal(
     timestamp("18446744073709551615"),
     "18,446,744,073,709,551,615 Unix seconds",
   );
   assert.equal(bytes("18446744073709551615"), "18,014,398,509,481,983.9 KiB");
-  const base = examples.NetworkResponse.data.tip;
-  const items = [
-    { ...base, height: "3", timestamp_unix: "1000" },
-    { ...base, height: "2", timestamp_unix: "760" },
-    { ...base, height: "1", timestamp_unix: "800" },
-    base,
-  ];
-  assert.deepEqual(intervals(items), [{ height: "3", seconds: 240n }]);
 });
 test("upstream origins are fixed HTTP(S) origins without credentials or paths", () => {
   assert.equal(

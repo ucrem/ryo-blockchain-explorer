@@ -207,5 +207,23 @@
       "code": "chain_changed",
       "message": "Chain changed; restart pagination."
     }
+  },
+  "BlockIntervalsResponse": {
+    "meta": {
+      "network": "mainnet",
+      "chain_height": "1"
+    },
+    "data": {
+      "anchor_height": "0",
+      "anchor_hash": "6eb04b6b8c68049a76206fe2805ede5f7465c03b7112850d3262a067b9914dac",
+      "anchor_timestamp_unix": "0",
+      "window_seconds": 3600,
+      "start_timestamp_unix": "0",
+      "scanned_from_height": "0",
+      "scanned_count": 0,
+      "oldest_timestamp_unix": "0",
+      "history_limited": false,
+      "points": []
+    }
   }
 }

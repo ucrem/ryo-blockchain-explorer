@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { IntervalChart } from "@/components/interval-chart";
+import { IntervalHistory } from "@/components/interval-history";
 import { LiveBlocks } from "@/components/live-blocks";
 import {
   RecentTransactions,
@@ -167,10 +167,20 @@ export default async function Dashboard({
         ))}
       </div>
       <div className="overview-grid">
-        <IntervalChart
-          items={page?.data.items ?? []}
-          target={network?.data.target_block_time_seconds ?? null}
-        />
+        <Suspense
+          fallback={
+            <section className="interval-panel">
+              <h2>Block intervals</h2>
+              <p className="table-note">Reading block intervals…</p>
+            </section>
+          }
+        >
+          <IntervalHistory
+            anchor={network?.data.tip.hash}
+            network={network?.meta.network}
+            target={network?.data.target_block_time_seconds ?? null}
+          />
+        </Suspense>
         <section className="chain-context" aria-labelledby="reader-title">
           <div className="eyebrow">NATIVE CHAIN DATA</div>
           <h2 id="reader-title">Chain reader</h2>

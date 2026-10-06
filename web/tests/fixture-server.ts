@@ -46,6 +46,70 @@ createServer((req, res) => {
     res.end('{"error":{"code":"unavailable","message":"Unavailable"}}');
     return;
   }
+  if (url.pathname === "/api/v2/block-intervals") {
+    if (mode === "genesis") {
+      const result = structuredClone(examples.BlockIntervalsResponse);
+      result.data.window_seconds = (
+        { "1h": 3600, "24h": 86400, "7d": 604800, "30d": 2592000 } as Record<
+          string,
+          number
+        >
+      )[url.searchParams.get("window") ?? "1h"];
+      res.end(JSON.stringify(result));
+      return;
+    }
+    const window = url.searchParams.get("window") ?? "1h";
+    const seconds = (
+      { "1h": 3600, "24h": 86400, "7d": 604800, "30d": 2592000 } as Record<
+        string,
+        number
+      >
+    )[window];
+    const tip = url.searchParams.has("anchor")
+      ? BigInt(`0x${url.searchParams.get("anchor")}`)
+      : mode === "advanced"
+        ? anchor + 1n
+        : anchor;
+    const end = Number(makeBlock(tip).timestamp_unix);
+    const count = (
+      { "1h": 12, "24h": 80, "7d": 120, "30d": 180 } as Record<string, number>
+    )[window];
+    const times = Array.from(
+      { length: count },
+      (_, i) => end - (count - 1 - i) * 240,
+    );
+    times[1] = times[0] - 30;
+    const points = Array.from({ length: count }, (_, i) => {
+      const height = tip - BigInt(count - 1 - i),
+        time = times[i];
+      const previous = i === 0 ? time - 240 : times[i - 1];
+      const interval = time - previous;
+      return {
+        height: height.toString(),
+        timestamp_unix: String(time),
+        previous_timestamp_unix: String(previous),
+        interval_seconds: String(interval),
+      };
+    });
+    res.end(
+      JSON.stringify({
+        meta: { network: "mainnet", chain_height: (tip + 1n).toString() },
+        data: {
+          anchor_height: tip.toString(),
+          anchor_hash: makeHash(tip),
+          anchor_timestamp_unix: String(end),
+          window_seconds: seconds,
+          start_timestamp_unix: String(end - seconds),
+          scanned_from_height: (tip - BigInt(count) + 1n).toString(),
+          scanned_count: count,
+          oldest_timestamp_unix: points[0].timestamp_unix,
+          history_limited: mode === "interval-limited",
+          points,
+        },
+      }),
+    );
+    return;
+  }
   const blockId = url.pathname.match(/^\/api\/v2\/blocks\/(.+)$/)?.[1];
   const txHash = url.pathname.match(/^\/api\/v2\/transactions\/(.+)$/)?.[1];
   if (blockId || txHash) {

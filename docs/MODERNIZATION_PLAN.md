@@ -50,7 +50,7 @@ move the current source tree mechanically or add empty service abstractions.
 | v0.1.0 | Selected native C++ foundation | Preserved provenance/history, independent public ucrem repo, Ubuntu 24.04 native library build, offline LMDB/RPC/genesis tests, discovery/privacy/build docs, CI, changelog/tag/GitHub Release |
 | v0.2.0 | Core/services/HTTP separation | Concrete block/transaction services and opt-in HTTP subset; captured supported contracts, explicit privacy/error differences, native fixture/storage-reorg/HTTP tests |
 | v0.3.0 | API v2 and OpenAPI | Typed public DTOs/errors/pagination/units, documented privacy-safe output, legacy API retained, schema/contract tests |
-| v0.4.0 | Next.js foundation/design system/dashboard | Next.js + TypeScript + Tailwind + shadcn/ui, Server Components by default, bundled assets, basic block/transaction HTML pages, public height/hash lookup, bounded live tip polling, accessibility/light/dark/mobile verification |
+| v0.4.0 | Next.js foundation/design system/dashboard | Next.js + TypeScript + Tailwind + shadcn/ui, Server Components by default, bundled assets, basic block/transaction HTML pages, public height/hash lookup, bounded live tip polling, native 1h/24h/7d/30d interval windows with numbered axes, accessibility/light/dark/mobile verification |
 | v0.5.0 | Extended block/transaction inspection | Expand native detail presentation and advanced inspection, with historical transaction coverage |
 | v0.6.0 | Advanced search/tools | Native lookup benchmarks and truthful coverage; configurable push; ring/key-image/output explanations; no public address-balance fiction |
 | v0.7.0 | Realtime chain/pool/network | SSE first, disconnect/reconnect and reorg handling, bounded clients, privacy-safe payloads |

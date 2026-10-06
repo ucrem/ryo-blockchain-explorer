@@ -47,6 +47,51 @@ ApiResponse ApiV2::get(const std::string& target) {
         const auto question = target.find('?');
         const auto path = target.substr(0, question);
         if (path == "/api/v2/openapi.json") return {200, specification_};
+        if (path == "/api/v2/block-intervals") {
+            unsigned seconds = 3600;
+            std::string anchor;
+            bool has_window = false, has_anchor = false;
+            if (question != std::string::npos) {
+                const auto query = target.substr(question + 1);
+                if (query.empty()) throw QueryFailure(QueryError::invalid, "Empty query.");
+                size_t start = 0;
+                while (start <= query.size()) {
+                    const auto end = query.find('&', start);
+                    const auto part = query.substr(start, end == std::string::npos ? end : end - start);
+                    const auto equals = part.find('=');
+                    if (equals == std::string::npos || equals == 0 || equals + 1 == part.size() ||
+                        part.find('=', equals + 1) != std::string::npos)
+                        throw QueryFailure(QueryError::invalid, "Invalid window query.");
+                    const auto key = part.substr(0, equals), value = part.substr(equals + 1);
+                    if (key == "window" && !has_window) {
+                        if (value == "1h") seconds = 3600;
+                        else if (value == "24h") seconds = 86400;
+                        else if (value == "7d") seconds = 604800;
+                        else if (value == "30d") seconds = 2592000;
+                        else throw QueryFailure(QueryError::invalid, "Invalid window.");
+                        has_window = true;
+                    } else if (key == "anchor" && !has_anchor) {
+                        parse_hash(value); anchor = value; has_anchor = true;
+                    } else throw QueryFailure(QueryError::invalid, "Unknown or duplicate window parameter.");
+                    if (end == std::string::npos) break;
+                    start = end + 1;
+                }
+            }
+            const auto window = blocks_.intervals(seconds, anchor);
+            json points = json::array();
+            for (const auto& point : window.points)
+                points.push_back({{"height", std::to_string(point.height)},
+                    {"timestamp_unix", std::to_string(point.timestamp)},
+                    {"previous_timestamp_unix", std::to_string(point.previous_timestamp)},
+                    {"interval_seconds", point.seconds}});
+            json data{{"anchor_height", std::to_string(window.anchor_height)},
+                {"anchor_hash", hex(window.anchor_hash)}, {"anchor_timestamp_unix", std::to_string(window.anchor_timestamp)},
+                {"window_seconds", window.window_seconds}, {"start_timestamp_unix", std::to_string(window.start_timestamp)},
+                {"scanned_from_height", std::to_string(window.scanned_from_height)},
+                {"scanned_count", window.scanned_count}, {"oldest_timestamp_unix", std::to_string(window.oldest_timestamp)},
+                {"history_limited", window.history_limited}, {"points", points}};
+            return {200, {{"data", data}, {"meta", meta(window.chain_height)}}};
+        }
         if (path == "/api/v2/network") {
             const auto snapshot = network_.get();
             // Units and target come from the pinned native configuration, not a new formula.

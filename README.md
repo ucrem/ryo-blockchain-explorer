@@ -114,5 +114,5 @@ The v0.4 implementation provides a responsive light/dark
 dashboard with paired full-width block/transaction tables, readable details, public height/hash search,
 embedded formatted JSON/raw views,
 native-reader chain status, ten-second live tip updates, recent block pagination, observed header
-intervals and developer API access. See
+interval windows with 1h/24h/7d/30d controls and developer API access. See
 [the scope](docs/V0_4_WEB_PROPOSAL.md) and [validation](docs/V0_4_VALIDATION.md).

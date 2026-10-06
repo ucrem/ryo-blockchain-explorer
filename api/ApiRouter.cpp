@@ -11,7 +11,8 @@ bool ApiRouter::valid_target(const std::string& target) const {
     if (is_v2(target)) {
         for (unsigned char c : target) if (c < 33 || c > 126) return false;
         if (question != std::string::npos)
-            return v2_.enabled() && target.substr(0, question) == "/api/v2/blocks";
+            return v2_.enabled() && (target.substr(0, question) == "/api/v2/blocks" ||
+                                    target.substr(0, question) == "/api/v2/block-intervals");
     } else if (question != std::string::npos) return false;
     return true;
 }

@@ -19,6 +19,33 @@ test("interval chart has exact block/seconds axes, historical period controls, k
   await expect(
     chart.locator(".chart-tick").filter({ hasText: "9,007,199,254,741,023" }),
   ).toBeVisible();
+  await expect(chart.locator(".chart-bars")).toHaveAttribute(
+    "data-bar-count",
+    "12",
+  );
+  await expect(chart.locator("[data-block-height]")).toHaveCount(12);
+  await expect(chart.locator(".chart-target, .chart-line")).toHaveCount(0);
+  await expect
+    .poll(() =>
+      chart
+        .locator(".interval-plot")
+        .evaluate((element) =>
+          Math.abs(
+            element.scrollWidth - element.clientWidth - element.scrollLeft,
+          ),
+        ),
+    )
+    .toBeLessThan(2);
+  const heights = await chart
+    .locator("[data-block-height]")
+    .evaluateAll((elements) =>
+      elements.map((element) => element.getAttribute("data-block-height")!),
+    );
+  expect(
+    heights.every(
+      (height, i) => i === 0 || BigInt(height) > BigInt(heights[i - 1]),
+    ),
+  ).toBe(true);
   for (const [label, count] of [
     ["Last hour", 12],
     ["Last 24 hours", 80],
@@ -55,6 +82,20 @@ test("interval chart has exact block/seconds axes, historical period controls, k
   await page.getByRole("button", { name: "Toggle color theme" }).click();
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect
+    .poll(() =>
+      chart
+        .locator(".interval-plot")
+        .evaluate((element) =>
+          Math.abs(
+            element.scrollWidth - element.clientWidth - element.scrollLeft,
+          ),
+        ),
+    )
+    .toBeLessThan(2);
+  const axis = await chart.locator(".chart-y-axis").boundingBox();
+  const viewport = await chart.locator(".interval-plot").boundingBox();
+  expect(axis!.x).toBeCloseTo(viewport!.x, 0);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -141,6 +182,33 @@ test("live reader changes refresh blocks; unchanged tips, pause, outage and earl
           .reads,
     )
     .toBe(before.reads + 1);
+  await expect(page.locator(".live-blocks")).toContainText("Last checked");
+  // An hour refresh follows the new rightmost bar even after inspecting older bars.
+  await page.locator(".interval-plot").evaluate((element) => {
+    element.scrollLeft = 0;
+  });
+  await request.get("http://127.0.0.1:3101/__control?mode=advanced");
+  await page.clock.runFor(10_100);
+  await expect(metric).toContainText("9,007,199,254,741,024");
+  await expect(page.locator("[data-block-height]").last()).toHaveAttribute(
+    "data-block-height",
+    "9007199254741024",
+  );
+  await page.clock.runFor(1000);
+  await expect
+    .poll(() =>
+      page
+        .locator(".interval-plot")
+        .evaluate((element) =>
+          Math.abs(
+            element.scrollWidth - element.clientWidth - element.scrollLeft,
+          ),
+        ),
+    )
+    .toBeLessThan(2);
+  await request.get("http://127.0.0.1:3101/__control?mode=normal");
+  await page.clock.runFor(10_100);
+  await expect(metric).toContainText("9,007,199,254,741,023");
   await page.getByRole("button", { name: "Last 7 days", exact: true }).click();
   await expect(page.getByLabel("Inspect a block interval")).toHaveAttribute(
     "max",

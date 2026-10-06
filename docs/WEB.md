@@ -28,8 +28,9 @@ search and a developer API guide.
   retaining the displayed data. Earlier cursor pages stay anchored and do not poll.
   This observes blocks entering the local reader, including historical sync;
   it does not establish that a block was just mined or the node is synchronized.
-  A changed tip refreshes both block and transaction tables together.
-- A block-interval chart with block number on X and the exact signed timestamp
+  A changed tip refreshes both block and transaction tables together. The live
+  controls show the UTC time and local block height of the last successful check.
+- A block-interval bar chart with block number on X and the exact signed timestamp
   difference from its predecessor, in seconds, on Y. Period controls select 1h,
   24h, 7d or 30d, ending at the latest available block; its height/date are shown
   explicitly, including while the node is syncing historical blocks. The chart
@@ -37,8 +38,12 @@ search and a developer API guide.
   returned point is plotted without downsampling, with labeled axes, rounded
   grid ticks, pointer inspection, keyboard slider and a block-detail link.
   Missing/genesis timestamps are omitted; negative and zero differences remain
-  intact. Lines break across omitted block heights. A single usable interval can
-  be displayed. The whole-second signed mean truncates division.
+  intact. The default hour labels every returned block in ascending height,
+  with one bar per interval and the newest at the right edge. An overflowing
+  chart starts at the right and scrolls to the newest block on live refresh;
+  reduced-motion preferences disable smooth scrolling. Longer periods keep
+  sparse axis labels while plotting every bar. No target reference line is shown.
+  A single usable interval can be displayed. The whole-second signed mean truncates division.
   The selected period persists across live refresh; changed anchors reload it.
   The native read scans at most 50,000 consecutive timestamps in one snapshot,
   using a fixed period allowlist and optional block-hash anchor. Available

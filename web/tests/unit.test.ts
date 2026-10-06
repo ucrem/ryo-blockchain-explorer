@@ -12,7 +12,7 @@ import {
   uint64,
   blockIntervalsResponse,
 } from "../src/lib/contracts";
-import { intervalPlot, nearestInterval } from "../src/lib/interval-plot";
+import { intervalPlot } from "../src/lib/interval-plot";
 import { bytes, coins, integer, timestamp } from "../src/lib/format";
 import { ApiError, upstreamOrigin, upstreamRead } from "../src/lib/upstream";
 
@@ -88,13 +88,12 @@ test("interval windows preserve exact signed deltas, continuity, axes and bounde
     ],
   });
   const parsed = blockIntervalsResponse.parse(result);
-  const plot = intervalPlot(parsed.data.points, 240);
+  const plot = intervalPlot(parsed.data.points, true);
   assert.equal(plot.first, height);
   assert.equal(plot.last, height + 2n);
   assert.ok(plot.y("-30") > plot.y("50"));
   assert.ok(plot.yTicks.includes("0"));
   assert.ok(plot.x(height + 1n) > plot.x(height));
-  assert.equal(nearestInterval(parsed.data.points, height + 1n), 1);
   const invalid = structuredClone(result);
   invalid.data.points[1].interval_seconds = "0";
   assert.equal(blockIntervalsResponse.safeParse(invalid).success, false);
@@ -104,10 +103,18 @@ test("interval windows preserve exact signed deltas, continuity, axes and bounde
   assert.equal(blockIntervalsResponse.safeParse(invalid).success, false);
   const separated = intervalPlot(
     [parsed.data.points[0], parsed.data.points[2]],
-    240,
+    true,
   );
   assert.equal((separated.path.match(/M/g) ?? []).length, 2);
-  assert.equal((separated.path.match(/L/g) ?? []).length, 2);
+  assert.equal((separated.path.match(/Z/g) ?? []).length, 2);
+  assert.deepEqual(
+    plot.xTicks,
+    parsed.data.points.map((point) => point.height),
+  );
+  assert.ok(plot.x(plot.last) > plot.bounds.right - plot.slot);
+  const single = intervalPlot([parsed.data.points[0]], true);
+  assert.equal(single.xTicks.length, 1);
+  assert.equal((single.path.match(/Z/g) ?? []).length, 1);
   for (const window of ["1h", "24h", "7d", "30d"])
     assert.equal(
       publicPath(

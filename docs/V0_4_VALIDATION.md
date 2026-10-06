@@ -231,8 +231,8 @@ one local sample, not a public capacity guarantee. Ignored evidence is under
 
 A production Chromium check selected all four periods using real native data,
 inspected points with the keyboard and verified mobile containment, with no
-page errors or external-origin requests. The graph plots every returned point,
-breaks lines across omitted heights and uses exact block labels and signed
+page errors or external-origin requests. The graph plots every returned interval
+as a bar and uses exact block labels and signed
 seconds. It displays the selected anchor date during historical sync rather than
 claiming those periods end at today's wall clock. The selected period survives
 live refresh. Build/TypeScript, ESLint, fifteen Node checks and ten full production
@@ -240,7 +240,22 @@ browser scenarios passed. The chart/live scenarios were checked again after axis
 polish. Native API and frontend previews were updated; the daemon stayed running.
 Ignored browser evidence is `build/v04-native-smoke/interval-windows-browser-result.json`.
 
-![Native 30-day block interval window with numbered axes and period controls](images/v0.4-mainnet-interval-windows.png)
+The hour view now labels every returned block, with ascending height from left
+to right, the newest bar last, horizontal scrolling and automatic following on
+live refresh. The Y axis stays visible while the bars scroll. The reference
+line was removed; the live controls show the time and height of the last
+successful reader check. Motion honors reduced-motion preferences.
+
+A real mainnet Chromium session displayed thirteen bars ending at block 152,403,
+then nineteen bars ending at 152,443 after an automatic refresh. In each case
+bar count matched the native interval count, all hour heights were labeled,
+and the scroll position reached the right edge. No page errors occurred. The
+native daemon was left running. Build/TypeScript, ESLint, all fifteen Node tests
+and all ten production Chromium scenarios passed after the bar conversion;
+chart/live checks also cover right-edge following and viewport resize.
+Ignored evidence is `build/v04-native-smoke/interval-bars-browser-result.json`.
+
+![Native last-hour interval bars with every block labeled](images/v0.4-mainnet-interval-windows.png)
 
 ## Limits and release gate
 

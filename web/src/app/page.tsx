@@ -178,7 +178,6 @@ export default async function Dashboard({
           <IntervalHistory
             anchor={network?.data.tip.hash}
             network={network?.meta.network}
-            target={network?.data.target_block_time_seconds ?? null}
           />
         </Suspense>
         <section className="chain-context" aria-labelledby="reader-title">

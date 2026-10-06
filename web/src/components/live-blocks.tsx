@@ -21,6 +21,10 @@ export function LiveBlocks({
   const [enabled, setEnabled] = useState(true);
   const [unavailable, setUnavailable] = useState(false);
   const [notice, setNotice] = useState("");
+  const [checked, setChecked] = useState<{
+    time: string;
+    height: string;
+  } | null>(null);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -50,7 +54,14 @@ export function LiveBlocks({
         const latest = networkResponse.parse(await response.json());
         if (disposed) return;
         setUnavailable(false);
-        if (latest.meta.network !== network || latest.data.tip.hash !== tipHash) {
+        setChecked({
+          time: new Date().toISOString().slice(11, 19),
+          height: latest.data.tip.height,
+        });
+        if (
+          latest.meta.network !== network ||
+          latest.data.tip.hash !== tipHash
+        ) {
           const advanced =
             latest.meta.network === network &&
             tipHeight !== null &&
@@ -106,6 +117,12 @@ export function LiveBlocks({
               ? "Updating blocks…"
               : notice || "Watching for new blocks"}
       </span>
+      {checked && (
+        <span className="live-status" aria-live="off">
+          Last checked {checked.time} UTC · local block{" "}
+          {integer(checked.height)}
+        </span>
+      )}
     </div>
   );
 }

@@ -3,11 +3,9 @@ import { readBlockIntervals } from "@/lib/api";
 export async function IntervalHistory({
   anchor,
   network,
-  target,
 }: {
   anchor?: string;
   network?: string;
-  target: number | null;
 }) {
   let initial = null;
   try {
@@ -21,7 +19,6 @@ export async function IntervalHistory({
       initial={initial}
       anchor={anchor ?? null}
       network={network ?? null}
-      target={target}
     />
   );
 }

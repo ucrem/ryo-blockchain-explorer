@@ -399,15 +399,25 @@ h2 {
   stroke: var(--border);
   stroke-width: 1;
 }
-.chart-target {
-  stroke: var(--muted-foreground);
-  stroke-width: 1;
-  stroke-dasharray: 5 5;
+@keyframes chart-slide {
+  from {
+    transform: translateX(var(--chart-step));
+  }
+  to {
+    transform: translateX(0);
+  }
 }
-.chart-line {
-  stroke: var(--chart);
-  stroke-width: 2.5;
-  stroke-linejoin: round;
+.chart-series {
+  animation: chart-slide 350ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chart-series {
+    animation: none;
+  }
+}
+.chart-bars {
+  fill: var(--chart);
+  opacity: 0.8;
 }
 .chart-point {
   fill: var(--chart);
@@ -469,6 +479,24 @@ h2 {
   width: 100%;
   min-width: 700px;
   height: 320px;
+}
+.chart-y-axis {
+  position: sticky;
+  left: 0;
+  width: 96px;
+  height: 320px;
+  margin-bottom: -320px;
+  z-index: 1;
+  background: var(--card);
+  pointer-events: none;
+}
+.chart-y-axis svg {
+  width: 96px;
+  min-width: 0;
+}
+.chart-x-caption {
+  text-align: center;
+  font-size: 12px;
 }
 .chart-tick {
   fill: var(--muted-foreground);

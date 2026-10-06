@@ -7,11 +7,22 @@ export const plotBounds = {
   bottom: 248,
   width: 1000,
 };
-export function intervalPlot(points: IntervalPoint[], target: number | null) {
+export function intervalPlot(points: IntervalPoint[], labelEveryBlock = false) {
+  const width = labelEveryBlock
+    ? Math.max(
+        1000,
+        124 +
+          points.length *
+            Math.max(80, (points.at(-1)?.height.length ?? 1) * 12),
+      )
+    : 1000;
+  const bounds = { ...plotBounds, width, right: width - 28 };
+  const slot = (bounds.right - bounds.left) / Math.max(1, points.length);
+  const indexes = new Map(points.map((point, i) => [point.height, i]));
   const first = BigInt(points[0]?.height ?? "0"),
     last = BigInt(points.at(-1)?.height ?? "0");
   let low = 0n,
-    high = BigInt(target ?? 1);
+    high = 1n;
   for (const point of points) {
     const value = BigInt(point.interval_seconds);
     if (value < low) low = value;
@@ -27,57 +38,46 @@ export function intervalPlot(points: IntervalPoint[], target: number | null) {
   low = low < 0n ? -((-low + step - 1n) / step) * step : (low / step) * step;
   high = ((high + step - 1n) / step) * step;
   const x = (height: string | bigint) =>
-    first === last
-      ? (plotBounds.left + plotBounds.right) / 2
-      : plotBounds.left +
-        (Number(((BigInt(height) - first) * 1000000n) / (last - first)) /
-          1000000) *
-          (plotBounds.right - plotBounds.left);
+    bounds.left + ((indexes.get(height.toString()) ?? 0) + 0.5) * slot;
   const y = (value: string | bigint) =>
     plotBounds.bottom -
     (Number(((BigInt(value) - low) * 1000000n) / (high - low)) / 1000000) *
       (plotBounds.bottom - plotBounds.top);
-  const commands = points.map((point, i) => {
-    const start =
-      i === 0 || BigInt(point.height) !== BigInt(points[i - 1].height) + 1n;
-    const isolated =
-      start &&
-      (i === points.length - 1 ||
-        BigInt(points[i + 1].height) !== BigInt(point.height) + 1n);
-    const px = x(point.height),
-      py = y(point.interval_seconds);
-    return isolated
-      ? `M${(px - 1).toFixed(2)},${py.toFixed(2)}L${(px + 1).toFixed(2)},${py.toFixed(2)}`
-      : `${start ? "M" : "L"}${px.toFixed(2)},${py.toFixed(2)}`;
-  });
+  const barWidth = Math.max(0.01, slot * 0.7);
+  const baseline = y("0");
+  // One closed subpath per block keeps large native windows inexpensive to render.
+  const path = points
+    .map((point) => {
+      const left = x(point.height) - barWidth / 2;
+      const top = Math.min(baseline, y(point.interval_seconds));
+      const height = Math.max(
+        0.8,
+        Math.abs(y(point.interval_seconds) - baseline),
+      );
+      return `M${left.toFixed(2)},${top.toFixed(2)}h${barWidth.toFixed(2)}v${height.toFixed(2)}h-${barWidth.toFixed(2)}Z`;
+    })
+    .join(" ");
   const tickCount = last.toString().length > 12 ? 2 : 4;
-  const xTicks = [
-    ...new Set(
-      Array.from({ length: tickCount + 1 }, (_, i) =>
-        (first + ((last - first) * BigInt(i)) / BigInt(tickCount)).toString(),
-      ),
-    ),
-  ];
+  const xTicks = labelEveryBlock
+    ? points.map((point) => point.height)
+    : [
+        ...new Set(
+          Array.from(
+            { length: Math.min(points.length, tickCount + 1) },
+            (_, i) =>
+              points[
+                Math.round(
+                  (i * (points.length - 1)) /
+                    Math.min(points.length - 1, tickCount || 1),
+                ) || 0
+              ]?.height,
+          ).filter((height): height is string => height !== undefined),
+        ),
+      ];
   const yTicks: string[] = [];
   for (let value = low; value <= high; value += step)
     yTicks.push(value.toString());
-  return { x, y, first, last, path: commands.join(" "), xTicks, yTicks };
-}
-export function nearestInterval(points: IntervalPoint[], height: bigint) {
-  let low = 0,
-    high = points.length - 1;
-  while (low < high) {
-    const mid = Math.floor((low + high) / 2);
-    if (BigInt(points[mid].height) < height) low = mid + 1;
-    else high = mid;
-  }
-  if (
-    low > 0 &&
-    height - BigInt(points[low - 1].height) <
-      BigInt(points[low].height) - height
-  )
-    return low - 1;
-  return low;
+  return { x, y, first, last, path, xTicks, yTicks, bounds, slot };
 }
 export function axisSeconds(value: string) {
   const negative = value.startsWith("-"),

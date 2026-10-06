@@ -1,5 +1,11 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,12 +15,7 @@ import {
   type IntervalWindow,
 } from "@/lib/contracts";
 import { integer, timestamp } from "@/lib/format";
-import {
-  axisSeconds,
-  intervalPlot,
-  nearestInterval,
-  plotBounds,
-} from "@/lib/interval-plot";
+import { axisSeconds, intervalPlot } from "@/lib/interval-plot";
 
 const periods: { value: IntervalWindow; label: string }[] = [
   { value: "1h", label: "Last hour" },
@@ -27,13 +28,13 @@ export function IntervalChart({
   initial,
   anchor,
   network,
-  target,
 }: {
   initial: BlockIntervalsResponse | null;
   anchor: string | null;
   network: string | null;
-  target: number | null;
 }) {
+  const viewport = useRef<HTMLDivElement>(null);
+  const previousKey = useRef<string | null>(null);
   const [window, setWindow] = useState<IntervalWindow>("1h");
   const [reply, setReply] = useState<{
     key: string;
@@ -90,7 +91,10 @@ export function IntervalChart({
   }, [window, initial, anchor, network, key]);
 
   const points = data?.data.points ?? emptyPoints;
-  const plot = useMemo(() => intervalPlot(points, target), [points, target]);
+  const plot = useMemo(
+    () => intervalPlot(points, window === "1h"),
+    [points, window],
+  );
   const index =
     selection?.key === key
       ? Math.min(selection.index, points.length - 1)
@@ -104,6 +108,29 @@ export function IntervalChart({
         : null,
     [points],
   );
+  useEffect(() => {
+    const element = viewport.current;
+    if (!element || !points.length) return;
+    const changed = previousKey.current !== null && previousKey.current !== key;
+    element.scrollTo({
+      left: element.scrollWidth,
+      behavior:
+        changed && !matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "smooth"
+          : "instant",
+    });
+    previousKey.current = key;
+  }, [key, points]);
+  const hasPoints = points.length > 0;
+  useEffect(() => {
+    const element = viewport.current;
+    if (!element) return;
+    const observer = new ResizeObserver(() => {
+      element.scrollTo({ left: element.scrollWidth, behavior: "instant" });
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [hasPoints]);
   const loading = !data && !error;
   return (
     <section className="interval-panel" aria-labelledby="interval-title">
@@ -145,111 +172,110 @@ export function IntervalChart({
             <span>Mean across {integer(points.length)} block intervals</span>
           </div>
           <div
+            ref={viewport}
             className="interval-plot"
             tabIndex={0}
             role="region"
             aria-label="Block interval plot"
           >
-            <svg
-              viewBox="0 0 1000 320"
-              preserveAspectRatio="none"
-              role="img"
-              aria-label={`Observed block intervals. X axis: block number. Y axis: seconds since the previous block. ${points.length} intervals.`}
-              onPointerMove={(event) => {
-                const rect = event.currentTarget.getBoundingClientRect();
-                const coordinate =
-                  ((event.clientX - rect.left) / rect.width) * plotBounds.width;
-                const fraction = Math.max(
-                  0,
-                  Math.min(
-                    1,
-                    (coordinate - plotBounds.left) /
-                      (plotBounds.right - plotBounds.left),
-                  ),
-                );
-                const height =
-                  plot.first +
-                  ((plot.last - plot.first) *
-                    BigInt(Math.round(fraction * 1000000))) /
-                    1000000n;
-                setSelection({ key, index: nearestInterval(points, height) });
-              }}
-            >
-              {plot.yTicks.map((tick) => (
-                <g key={tick}>
-                  <line
-                    x1={plotBounds.left}
-                    x2={plotBounds.right}
-                    y1={plot.y(tick)}
-                    y2={plot.y(tick)}
-                    className={tick === "0" ? "chart-axis" : "chart-grid"}
-                  />
+            <div className="chart-y-axis" aria-hidden="true">
+              <svg viewBox="0 0 96 320">
+                {plot.yTicks.map((tick) => (
                   <text
-                    x={plotBounds.left - 12}
+                    key={tick}
+                    x={84}
                     y={plot.y(tick) + 5}
                     textAnchor="end"
                     className="chart-tick"
                   >
                     {axisSeconds(tick)}
                   </text>
+                ))}
+                <line
+                  x1={95}
+                  x2={95}
+                  y1={plot.bounds.top}
+                  y2={plot.bounds.bottom}
+                  className="chart-axis"
+                />
+                <text
+                  transform="translate(22,134) rotate(-90)"
+                  textAnchor="middle"
+                  className="chart-axis-label"
+                >
+                  Seconds since previous block
+                </text>
+              </svg>
+            </div>
+            <svg
+              viewBox={`0 0 ${plot.bounds.width} 320`}
+              style={{ width: `max(100%, ${plot.bounds.width}px)` }}
+              preserveAspectRatio="none"
+              role="img"
+              aria-label={`Observed block intervals. X axis: block number. Y axis: seconds since the previous block. ${points.length} intervals.`}
+              onPointerMove={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect();
+                const coordinate =
+                  ((event.clientX - rect.left) / rect.width) *
+                  plot.bounds.width;
+                const index = Math.max(
+                  0,
+                  Math.min(
+                    points.length - 1,
+                    Math.floor((coordinate - plot.bounds.left) / plot.slot),
+                  ),
+                );
+                setSelection({ key, index });
+              }}
+            >
+              {plot.yTicks.map((tick) => (
+                <g key={tick}>
+                  <line
+                    x1={plot.bounds.left}
+                    x2={plot.bounds.right}
+                    y1={plot.y(tick)}
+                    y2={plot.y(tick)}
+                    className={tick === "0" ? "chart-axis" : "chart-grid"}
+                  />
                 </g>
               ))}
               <line
-                x1={plotBounds.left}
-                x2={plotBounds.left}
-                y1={plotBounds.top}
-                y2={plotBounds.bottom}
+                x1={plot.bounds.left}
+                x2={plot.bounds.left}
+                y1={plot.bounds.top}
+                y2={plot.bounds.bottom}
                 className="chart-axis"
               />
               <line
-                x1={plotBounds.left}
-                x2={plotBounds.right}
-                y1={plotBounds.bottom}
-                y2={plotBounds.bottom}
+                x1={plot.bounds.left}
+                x2={plot.bounds.right}
+                y1={plot.bounds.bottom}
+                y2={plot.bounds.bottom}
                 className="chart-axis"
               />
-              {target && (
-                <line
-                  x1={plotBounds.left}
-                  x2={plotBounds.right}
-                  y1={plot.y(BigInt(target))}
-                  y2={plot.y(BigInt(target))}
-                  className="chart-target"
+              <g
+                key={key}
+                className="chart-series"
+                style={{ "--chart-step": `${plot.slot}px` } as CSSProperties}
+              >
+                <path
+                  d={plot.path}
+                  className="chart-bars"
+                  data-bar-count={points.length}
                 />
-              )}
-              <path d={plot.path} fill="none" className="chart-line" />
-              {plot.xTicks.map((tick, i) => (
-                <text
-                  key={tick}
-                  x={plot.x(tick)}
-                  y={276}
-                  textAnchor={
-                    i === 0
-                      ? "start"
-                      : i === plot.xTicks.length - 1
-                        ? "end"
-                        : "middle"
-                  }
-                  className="chart-tick"
-                >
-                  {integer(tick)}
-                </text>
-              ))}
-              <text
-                x={534}
-                y={310}
-                textAnchor="middle"
-                className="chart-axis-label"
-              >
-                Block number
-              </text>
-              <text
-                transform="translate(22,134) rotate(-90)"
-                textAnchor="middle"
-                className="chart-axis-label"
-              >
-                Seconds since previous block
-              </text>
+                {plot.xTicks.map((tick) => (
+                  <text
+                    key={tick}
+                    x={plot.x(tick)}
+                    y={276}
+                    textAnchor="middle"
+                    data-block-height={tick}
+                    className="chart-tick"
+                  >
+                    {integer(tick)}
+                  </text>
+                ))}
+              </g>
               {point && (
                 <circle
                   cx={plot.x(point.height)}
@@ -262,6 +288,7 @@ export function IntervalChart({
               )}
             </svg>
           </div>
+          <p className="chart-x-caption">Block number</p>
           <div className="chart-inspector">
             <label htmlFor="interval-point">Inspect a block interval</label>
             <input
@@ -291,11 +318,6 @@ export function IntervalChart({
               </p>
             )}
           </div>
-          {target && (
-            <p className="chart-period-end">
-              Dashed line: target interval {integer(target)} s
-            </p>
-          )}
         </>
       ) : (
         <div className="chart-empty" aria-busy={loading}>
@@ -323,7 +345,7 @@ export function IntervalChart({
         </p>
       )}
       <p className="chart-footnote">
-        Each point is the timestamp of block N minus the timestamp of block N−1.
+        Each bar is the timestamp of block N minus the timestamp of block N−1.
       </p>
     </section>
   );

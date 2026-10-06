@@ -7,6 +7,11 @@ search and a developer API guide.
 
 ## What is available
 
+- The menu stays at the top during page scrolling. The single global search moves
+  into it only after its original page location leaves the visible area and
+  returns when scrolling back. Draft, input focus/caret and page position are
+  preserved. Desktop and mobile menus retain navigation/theme controls; a
+  reserved page slot prevents content jumps. Search still submits GET only.
 - `/`: native-reader network and chain status, exact tip height/difficulty,
   configured block target, recent block summaries and anchored earlier pages.
 - Full-width desktop layout pairs the block and confirmed-transaction tables;

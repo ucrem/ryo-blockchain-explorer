@@ -281,6 +281,27 @@ changes, latest-block recovery, button placement, hidden/removed scroll controls
 keyboard/period behavior and accessibility. Native sources and workflows did
 not change in this revision.
 
+## Sticky menu and scroll-only header search
+
+The header remains at the top while scrolling. One search form moves into its
+header slot after the original page location leaves view, then returns on upward
+scroll. The reserved slot keeps content position stable; draft, focus and caret
+selection survive movement. Compact desktop/mobile layouts retain theme and
+navigation access, with labeled input and submit button and no duplicate IDs.
+No typing/scroll event sends a lookup; the existing public GET submission stays
+unchanged.
+
+A real production mainnet Chromium session verified the page/header/page cycle,
+exact scroll position 500, preserved draft `154675` and caret range `[1, 3]`, one
+search landmark and no overflow or page errors. The mobile docked field remained
+144 pixels wide. Evidence is `build/v04-native-smoke/sticky-menu-browser-result.json`.
+Build/TypeScript and ESLint passed; eleven existing browser scenarios passed and
+the new scroll/search regression checks draft/focus/caret, positioning, mobile
+navigation, GET submission, restoration and accessibility. Native code, sync
+operation and workflow triggers are unchanged.
+
+![Native mainnet dashboard with search in the menu after scrolling](images/v0.4-mainnet-sticky-menu.png)
+
 ## Limits and release gate
 
 Full-chain performance, live mapping growth/external writers, wider historical

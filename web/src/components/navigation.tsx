@@ -21,6 +21,7 @@ export function Navigation() {
             EXPLORER
           </span>
         </a>
+        <div id="header-search-slot" className="header-search-slot" />
         <nav className="desktop-navigation" aria-label="Main navigation">
           <NavLinks />
         </nav>

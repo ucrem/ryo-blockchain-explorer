@@ -181,6 +181,62 @@ test("hover inspection holds its native window through sync and returns to the l
   await expect(plot).toHaveAttribute("aria-valuemax", "79");
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
+test("scroll docks one search in the sticky menu, preserving draft and focus on desktop and mobile", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const search = page.getByLabel("Search the Ryo blockchain", { exact: true });
+  const header = page.locator(".site-header");
+  await expect(header.getByRole("search")).toHaveCount(0);
+  await expect(page.locator("main").getByRole("search")).toHaveCount(1);
+  await search.fill("12345");
+  await search.evaluate((element: HTMLInputElement) =>
+    element.setSelectionRange(1, 3),
+  );
+  await page.evaluate(() => window.scrollTo(0, 500));
+  await expect(header.getByRole("search")).toHaveCount(1);
+  await expect(page.getByRole("search")).toHaveCount(1);
+  await expect(search).toHaveValue("12345");
+  await expect(search).toBeFocused();
+  expect(
+    await search.evaluate((element: HTMLInputElement) => [
+      element.selectionStart,
+      element.selectionEnd,
+    ]),
+  ).toEqual([1, 3]);
+  expect((await header.boundingBox())!.y).toBe(0);
+  expect(await page.evaluate(() => window.scrollY)).toBe(500);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(header.getByRole("search")).toHaveCount(0);
+  await expect(page.locator("main").getByRole("search")).toHaveCount(1);
+  await expect(search).toHaveValue("12345");
+  await expect(search).toBeFocused();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.scrollTo(0, 500));
+  await expect(header.getByRole("search")).toHaveCount(1);
+  expect((await header.boundingBox())!.y).toBe(0);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  const field = (await search.boundingBox())!;
+  expect(field.width).toBeGreaterThan(90);
+  expect(field.x + field.width).toBeLessThan(390);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.getByLabel("Open navigation").click();
+  await expect(
+    page.getByRole("navigation", { name: "Mobile navigation" }),
+  ).toBeVisible();
+  await page.getByLabel("Open navigation").click();
+  await search.fill("0");
+  await search.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "Block 0", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("main").getByRole("search")).toHaveCount(1);
+});
 test("full-width desktop block and transaction tables stack on mobile and preserve native fee and failure semantics", async ({
   page,
   request,

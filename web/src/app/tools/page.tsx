@@ -10,6 +10,7 @@ import type { ViewQuery } from "@/lib/view-pages";
 import { integer } from "@/lib/format";
 import { ResourceFailure, DetailRow } from "@/components/detail";
 import { Button } from "@/components/ui/button";
+import { ToolGuide } from "@/components/tool-guide";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Public inspection tools" };
 const tools = [
@@ -221,51 +222,54 @@ export default async function Tools({
         ))}
       </nav>
       {selected && (
-        <section className="tool-form-panel">
-          <h2>{tools.find((tool) => tool.id === selected.tool)!.title}</h2>
-          <form action="/tools" method="get" className="tool-form">
-            <input type="hidden" name="tool" value={selected.tool} />
-            {selected.tool === "output" && (
+        <div className="tool-workspace">
+          <section className="tool-form-panel">
+            <h2>{tools.find((tool) => tool.id === selected.tool)!.title}</h2>
+            <form action="/tools" method="get" className="tool-form">
+              <input type="hidden" name="tool" value={selected.tool} />
+              {selected.tool === "output" && (
+                <label>
+                  Transaction hash
+                  <input
+                    name="transaction"
+                    required
+                    maxLength={64}
+                    pattern="[0-9a-fA-F]{64}"
+                    autoComplete="off"
+                    defaultValue={selected.transaction ?? ""}
+                  />
+                </label>
+              )}
               <label>
-                Transaction hash
+                {selected.tool === "address"
+                  ? "Public Ryo address"
+                  : selected.tool === "key-image"
+                    ? "Public key image"
+                    : "Public output key"}
                 <input
-                  name="transaction"
+                  name="value"
                   required
-                  maxLength={64}
-                  pattern="[0-9a-fA-F]{64}"
+                  maxLength={selected.tool === "address" ? 200 : 64}
+                  pattern={
+                    selected.tool === "address"
+                      ? "[1-9A-HJ-NP-Za-km-z]{40,200}"
+                      : "[0-9a-fA-F]{64}"
+                  }
                   autoComplete="off"
-                  defaultValue={selected.transaction ?? ""}
+                  defaultValue={selected.value ?? ""}
                 />
               </label>
-            )}
-            <label>
-              {selected.tool === "address"
-                ? "Public Ryo address"
-                : selected.tool === "key-image"
-                  ? "Public key image"
-                  : "Public output key"}
-              <input
-                name="value"
-                required
-                maxLength={selected.tool === "address" ? 200 : 64}
-                pattern={
-                  selected.tool === "address"
-                    ? "[1-9A-HJ-NP-Za-km-z]{40,200}"
-                    : "[0-9a-fA-F]{64}"
-                }
-                autoComplete="off"
-                defaultValue={selected.value ?? ""}
-              />
-            </label>
-            <p className="table-note">
-              Enter public data only. Never paste a private view, spend or
-              transaction key or a wallet export.
-            </p>
-            <Button type="submit">
-              {selected.tool === "address" ? "Inspect address" : "Check"}
-            </Button>
-          </form>
-        </section>
+              <p className="table-note">
+                Enter public data only. Never paste a private view, spend or
+                transaction key or a wallet export.
+              </p>
+              <Button type="submit">
+                {selected.tool === "address" ? "Inspect address" : "Check"}
+              </Button>
+            </form>
+          </section>
+          <ToolGuide tool={selected.tool} />
+        </div>
       )}
       {result}
     </>

@@ -22,6 +22,10 @@ retroactively.
 
 ### Added
 
+- Contextual usage guides for every public inspection tool, including public
+  identifier sources, transaction-page shortcuts, key distinctions and result
+  limits while the reader is synchronizing.
+
 - Native SHA-256/file/copy/real-ZMQ compatibility checks and SDK patch-guard
   regression coverage. Full native CI remains manual-only.
 

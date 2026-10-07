@@ -176,6 +176,22 @@ These checks do not request private keys, accept wallet exports, disclose hidden
 amounts, prove recipient ownership or infer balances. An absent key image is
 limited to this reader's confirmed chain; pending spends are not checked.
 
+Selecting a tool reveals a contextual usage guide beside its form (stacked on
+mobile). Each guide explains its purpose, where to obtain the requested public
+data, the transaction-page shortcuts and how to interpret positive, negative and
+incomplete-reader results. Address inspection explains how to obtain public
+view/spend keys from a receiving address, including Kurz's shared public key.
+Output inspection distinguishes the one-time output key from address view keys
+and transaction public keys. Key-image guidance points to spend inputs and
+explains the confirmed-chain scope. All guides distinguish public from private
+keys and explicitly mark private-key output decoding as unavailable. The tool
+chooser has no expanded guide before selection.
+
+Screenshots: [key image](images/tool-guide-key-image.png),
+[output key](images/tool-guide-output.png),
+[address](images/tool-guide-address.png) and
+[mobile address guide](images/tool-guide-address-mobile.png).
+
 ## Install and run on native Linux
 
 Use Node.js 24 LTS (tested 24.21.0) and npm (tested 11.19.0). The lockfile pins the
@@ -312,6 +328,15 @@ chain instance. It checks the known native genesis hash, actual version, raw
 serialized bytes, bundled OpenAPI and absence of browser errors/external origins.
 See [v0.4 validation evidence](V0_4_VALIDATION.md). The full native Action remains
 manual-only, and no new automatic frontend build Action is added.
+
+The contextual tool-guide update passed lint, TypeScript checking and an isolated
+Webpack production build. The existing focused public-tools browser scenario
+passed its form/result, secret-parameter rejection and accessibility checks.
+Additional browser inspection verified that all three guides appear only after
+selection, have no horizontal overflow at 390 px, and have no axe violations in
+desktop light/dark or mobile light views after theme transitions settle. No
+browser errors occurred. The development preview uses the verified production
+build; the syncing daemon and native API were not restarted for this UI update.
 
 
 ## Detail and search behavior

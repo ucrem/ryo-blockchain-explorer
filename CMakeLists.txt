@@ -66,6 +66,11 @@ endif()
 include(CTest)
 if(BUILD_TESTING)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_executable(ryo_receive_fixture tests/receive_fixture.cpp verification/ReceiveVerifier.cpp)
+    target_link_libraries(ryo_receive_fixture PRIVATE ryo_explorer_core)
+    add_test(NAME ryo_native_receive COMMAND ryo_receive_fixture
+        "${CMAKE_CURRENT_BINARY_DIR}/receive-fixtures.json" "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures"
+        "${CMAKE_CURRENT_SOURCE_DIR}/web/tests/fixtures/receive.json")
     add_executable(ryo_genesis_fixture tests/genesis_fixture.cpp)
     target_link_libraries(ryo_genesis_fixture PRIVATE ryo_explorer_core)
     add_test(NAME ryo_mainnet_genesis COMMAND ryo_genesis_fixture

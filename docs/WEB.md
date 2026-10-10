@@ -97,8 +97,39 @@ search and a developer API guide.
   accessible SVG description and truthful unavailable/reorg/genesis states.
 
 There is no address-to-balance/history search, SSE, analytics store,
-private-key verification, wallet-export checking or transaction submission.
+wallet-export checking or transaction submission. Received-output verification
+for one TX is the owner-authorized local capability described below.
 The UI has no placeholder navigation advertising those capabilities.
+
+## Local received-output verification
+
+`/tools/receive` accepts a public TX hash plus a receiving address and private
+view key locally. It is accessible from the Tools chooser and transaction
+details; only `?tx=<public hash>` may prefill its URL. The UI first validates the
+address with native Ryo, refusing Kurz/shared view-spend keys before enabling
+private input. HTTPS or localhost is required to enable the secret field. The
+LAN HTTP preview exposes the interface but leaves private input disabled.
+
+A disposable worker reuses the pinned Ryo C++ parser, native transaction hash,
+output derivation, ECDH decoder and commitment checks through bundled WASM.
+Standard/integrated/subaddresses, per-output additional keys, multiple historical
+TX public keys, native v1-v3 clear/RingCT Full/Simple/Bulletproof containers and
+mainnet/testnet/stagenet address checks are covered. The worker does not verify
+consensus, signatures or range proofs, scan an address history or infer balance.
+
+The address/key/results are never inputs to a server action, API or GET form.
+Only public raw TX bytes are fetched by hash; wrong keys fail before that fetch.
+Amounts preserve all nine decimals and uint64 precision. No match differs from
+key mismatch, absent reader data, unsupported structures and failed commitments.
+Each result links to current inclusion/confirmations without implying a local
+cryptographic inclusion proof. Inputs/results clear on cancellation or explicit
+clear; the key clears on use, page exit and unmount. Browser strings cannot offer
+guaranteed memory erasure. The guide explains private view-key retrieval,
+subaddress key use, change outputs, amount/balance limits and browser/site trust.
+
+See [the approved boundary, build and validation](LOCAL_RECEIVE_VERIFICATION.md).
+Ordinary web builds use the committed assets with license/provenance notices;
+no Emscripten or Ryo SDK installation is needed to operate the website.
 
 ## Live node health and error details
 
@@ -175,6 +206,22 @@ network mismatch separately; invalid checksum/format has an explicit result.
 These checks do not request private keys, accept wallet exports, disclose hidden
 amounts, prove recipient ownership or infer balances. An absent key image is
 limited to this reader's confirmed chain; pending spends are not checked.
+
+Selecting a tool reveals a contextual usage guide beside its form (stacked on
+mobile). Each guide explains its purpose, where to obtain the requested public
+data, the transaction-page shortcuts and how to interpret positive, negative and
+incomplete-reader results. Address inspection explains how to obtain public
+view/spend keys from a receiving address, including Kurz's shared public key.
+Output inspection distinguishes the one-time output key from address view keys
+and transaction public keys. Key-image guidance points to spend inputs and
+explains the confirmed-chain scope. All guides distinguish public from private
+keys and link received-amount decoding to its dedicated local tool. The tool
+chooser has no expanded guide before selection.
+
+Screenshots: [key image](images/tool-guide-key-image.png),
+[output key](images/tool-guide-output.png),
+[address](images/tool-guide-address.png) and
+[mobile address guide](images/tool-guide-address-mobile.png).
 
 ## Install and run on native Linux
 
@@ -272,8 +319,9 @@ an anchored page. If the two reads report different networks, the block list is
 withheld and a refresh error is shown. Dashboard error states remain an HTTP 200
 HTML page with explicit alerts; the API preserves its documented error statuses.
 
-No analytics/tracker, remote icon/image/script/font CDN, browser chain fetch or
-private-key handling is introduced. Theme selection is stored locally by
+No analytics/tracker or remote icon/image/script/font CDN is introduced.
+The received-output tool alone fetches public transaction bytes by hash and
+processes a private view key locally; public server routes still reject secrets. Theme selection is stored locally by
 `next-themes`. Site and reverse-proxy access logging is operator controlled;
 these settings are not a claim that the hosting infrastructure keeps no logs.
 
@@ -312,6 +360,15 @@ chain instance. It checks the known native genesis hash, actual version, raw
 serialized bytes, bundled OpenAPI and absence of browser errors/external origins.
 See [v0.4 validation evidence](V0_4_VALIDATION.md). The full native Action remains
 manual-only, and no new automatic frontend build Action is added.
+
+The contextual tool-guide update passed lint, TypeScript checking and an isolated
+Webpack production build. The existing focused public-tools browser scenario
+passed its form/result, secret-parameter rejection and accessibility checks.
+Additional browser inspection verified that all three guides appear only after
+selection, have no horizontal overflow at 390 px, and have no axe violations in
+desktop light/dark or mobile light views after theme transitions settle. No
+browser errors occurred. The development preview uses the verified production
+build; the syncing daemon and native API were not restarted for this UI update.
 
 
 ## Detail and search behavior

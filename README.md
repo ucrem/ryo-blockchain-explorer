@@ -81,7 +81,8 @@ full-chain/reorg correctness, production readiness, or completed analytics.
 
 The v0.4 frontend uses Next.js, TypeScript, Tailwind CSS, and shadcn/ui, with
 Server Components by default. Public mempool/key-image/output/address inspection
-is available; secret-based verification and advanced analytics remain future
+is available; one-TX received-output verification now reuses native Ryo in a
+local browser worker. Full wallet/history tools and advanced analytics remain future
 milestones. LMDB remains authoritative;
 there is no mandatory PostgreSQL, Redis, additional service infrastructure,
 tracking, external runtime CDN, or speculative Proof of Stake functionality.
@@ -120,3 +121,9 @@ supply/payout, hashrate estimates, median size and local pool metrics supplement
 an optional node-sync panel. Dedicated mempool and public inspection pages
 include native ring/payment-ID summaries and contextual verification results. See [the reference comparison](docs/DASHBOARD_REFERENCE_AUDIT.md),
 [the scope](docs/V0_4_WEB_PROPOSAL.md) and [validation](docs/V0_4_VALIDATION.md).
+
+The dedicated **Tools → Verify received outputs** page recognizes outputs and
+decodes amounts for a TX hash, receiving address and private view key locally.
+Only the public TX hash is requested from the server. HTTPS/localhost is required
+for key input; Kurz/shared view-spend keys are refused. This is not an address
+balance/history or consensus proof. See [local verification](docs/LOCAL_RECEIVE_VERIFICATION.md).

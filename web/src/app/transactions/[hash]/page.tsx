@@ -79,6 +79,7 @@ export default async function TransactionPage({
         api={`/api/v2/transactions/${t.hash}`}
         raw={`/api/v2/raw/transaction/${t.hash}`}
       />
+      <p className="receive-entry"><a className="text-link" href={`/tools/receive?tx=${t.hash}`}>Verify received outputs</a> · Recognize your outputs and decode their amounts locally with your address and private view key.</p>
       <dl className="detail-grid">
         <DetailRow label="Transaction hash" wide>
           <code className="full-hash">{t.hash}</code>

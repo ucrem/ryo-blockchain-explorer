@@ -22,6 +22,15 @@ retroactively.
 
 ### Added
 
+- Local received-output verification with pinned native Ryo WASM: recognize one
+  transaction's outputs and decode exact amounts using an address/private view
+  key kept in the browser, with commitment checks, contextual guidance, unsafe
+  Kurz/shared-key refusal and native/browser parity/privacy coverage.
+
+- Contextual usage guides for every public inspection tool, including public
+  identifier sources, transaction-page shortcuts, key distinctions and result
+  limits while the reader is synchronizing.
+
 - Native SHA-256/file/copy/real-ZMQ compatibility checks and SDK patch-guard
   regression coverage. Full native CI remains manual-only.
 

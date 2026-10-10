@@ -9,6 +9,8 @@ const eslintConfig = defineConfig([
   { rules: { "@next/next/no-html-link-for-pages": "off" } },
   // Override default ignores of eslint-config-next.
   globalIgnores([
+    // Generated, pinned Emscripten runtime; source is checked separately.
+    "public/crypto/ryo-receive.mjs",
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",

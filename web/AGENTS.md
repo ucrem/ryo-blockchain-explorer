@@ -12,5 +12,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 Follow the root `AGENTS.md`. Full native CI stays manual-only. Preserve exact
 native decimal strings, public-data provenance, secret isolation and the fixed
-server-only API origin. Do not add browser cryptography or fake production data.
+server-only API origin. The owner-authorized local receive tool may reuse pinned native Ryo through the
+bundled disposable WebAssembly worker; see docs/LOCAL_RECEIVE_VERIFICATION.md.
+Do not introduce JavaScript cryptographic primitives, server secret inputs or fake
+production data.
 Use `docs/WEB.md` for operation and checks; do not merge without owner instruction.

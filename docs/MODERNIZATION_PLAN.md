@@ -28,7 +28,9 @@ The dashboard also pairs full-width block and confirmed-transaction tables using
 existing bounded native reads, with mobile stacking and live updates.
 The owner additionally authorized a paginated public mempool, ring/payment-ID
 summaries and native public key-image/output/address inspection tools in v0.4.
-Wallet-export/private-key verification remains a separate later capability.
+Wallet-export verification remains a separate later capability. The owner
+approved advancing one-TX local received-output verification on 2026-10-10;
+see [its narrow boundary](LOCAL_RECEIVE_VERIFICATION.md).
 v0.5 follows with richer detail inspection, presentation and wider historical validation.
 
 ## Target data flow
@@ -58,7 +60,7 @@ move the current source tree mechanically or add empty service abstractions.
 | v0.6.0 | Advanced search/tools | Native lookup benchmarks and truthful coverage; configurable push; ring/key-image/output explanations; no public address-balance fiction |
 | v0.7.0 | Realtime chain/pool/network | SSE first, disconnect/reconnect and reorg handling, bounded clients, privacy-safe payloads |
 | v0.8.0 | Network intelligence/analytics/emission | Measured aggregates/history, observed block intervals, current reward/emission validation; justify any storage addition |
-| v0.9.0 | Local verification; WASM if justified | Synthetic disclosed-key and historical fixture parity, no secret network traffic, explicit unsupported-version behavior |
+| v0.9.0 | Local verification; WASM if justified | Synthetic disclosed-key and historical fixture parity, no secret network traffic, explicit unsupported-version behavior; one-TX receive flow advanced by ADR-028 |
 | v1.0.0 | Production release | Security/performance/operational validation, upgrade guidance, supported deployment and complete release gates |
 
 Dates are intentionally not promised. Each release is independently testable,

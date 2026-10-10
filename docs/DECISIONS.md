@@ -51,3 +51,18 @@ paginate HTML rows without adding an index or browser chain fetch. A missing has
 and an unavailable lookup have different UI states. Candidate ring metadata never
 identifies a spend, and output public keys never imply recipient balances. Wider
 historical presentation and advanced tools remain future milestones.
+
+## ADR-028: owner-authorized local received-output decoding
+
+On 2026-10-10 the owner requested the receiving-address/private-view-key tool
+after reviewing the local-only flow. Advance this focused part of the local
+verification milestone in the existing tools PR. The pinned native Ryo C++
+parser/hash/derivation/ECDH/commitment paths compile to a small bundled WASM
+module in a bounded disposable worker; no new JS cryptographic primitives,
+secret-bearing API, native fallback form, chain scan or wallet export is added.
+Reject unsafe Kurz/shared key inputs before requesting a private key. Only
+public raw transaction bytes are fetched using the TX hash; decoded amounts
+and address/key remain local. Results describe one TX, not balance/history or
+consensus. See [the implementation boundary and evidence](LOCAL_RECEIVE_VERIFICATION.md).
+The initial no-browser-crypto web foundation now has this specific approved
+exception. Full native CI stays manual-only and the PR remains for owner merge.

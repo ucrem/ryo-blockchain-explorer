@@ -1,0 +1,38 @@
+{
+  "ryo_revision": "185dd1fa33ba88c88bb22df9069ad368c0f9a27e",
+  "emscripten": "6.0.12",
+  "boost_headers": "1.83.0",
+  "memory_bytes": 67108864,
+  "reviewed_patches_sha256": {
+    "ryo-native-warnings.patch": "6ef1517cb1596913b3591dcc4df7af556d200aa4ae9dbd0e21152671f43d8c52",
+    "ryo-point-identity.patch": "506408d27f36b23cd28c9bd52e74f1e98d6f305317ff3d4b8c90e0ebb4fbe982",
+    "ryo-ubuntu24.patch": "9e9247f53a7fa89e5443a0915f2256e4ed9204d47b7174adf7c560c958357126"
+  },
+  "sdk_sources_sha256": {
+    "src/crypto/crypto.cpp": "27175ebbf90beb5c38a090b7b4892b38b6e65c9fe83c8c66d9d5f7c9243a32b7",
+    "src/crypto/crypto-ops.c": "c2e9af21e55b22319851db1b580e87954029c17e12b84d847189b882487e2eb6",
+    "src/crypto/crypto-ops-data.c": "58ebc8863f0f8cc33b9dcfc39894de903eca112d7eba8ee2d182596e29cae6b1",
+    "src/crypto/keccak.c": "7abd6188a53f20951f30e74e7a641648029969aeec89355c9f5d6a624415ce87",
+    "src/crypto/hash.c": "7b2443807fbf2120cbacb05197a40d6b9b19609301140c091a84c03ab7804d46",
+    "src/common/base58.cpp": "14da1f0b4a7b21882f7caa43af05a9b751b1c7f84466465e2d2400ea24eb16d0",
+    "src/common/string.cpp": "ea04870b0589549aa917e884e926f5618123be22450797c383f1ae49bad07ef7",
+    "src/ringct/rctOps.cpp": "11ab9140ce394f6dc965f88f72a2c12a1b7a23c2b52c74c9d09173d7a523d0e9",
+    "src/ringct/rctTypes.cpp": "3f94368d3da44b387e6b3269975882bc4d34b1746fd9ebac4b64994ecc89f0c3",
+    "src/cryptonote_basic/cryptonote_basic_impl.cpp": "4efb85f797371c57b7346af2cf18b1639e28f40977dad325137747c614c8778c",
+    "src/cryptonote_basic/cryptonote_format_utils.cpp": "40d951c84928d45d4cf3e743546437d8b934db9710c21529f35d8258f9c979d3",
+    "contrib/epee/src/hex.cpp": "bba1b887b5b5fc7b0cc4ef1c763ba1f54cca80cf4baf1884c444f10aa5c29f66",
+    "contrib/epee/src/memwipe.c": "3db5e5f38f8376c5142aca44b0654e897a46caa6fc5b10f5079506334884c884"
+  },
+  "explorer_sources_sha256": {
+    "verification/ReceiveVerifier.cpp": "e9e8a4ab6ac8eb7e27f0a1f22326eebc6730c831319ddf7f31ced20286dffeaf",
+    "verification/WasmEntry.cpp": "8810c479356cf428a88a2361153a2ae62593bd54d6135498cc01ec864d0b5ff2",
+    "verification/ReceiveVerifier.h": "37111b2173fdadb6184660217671e591e284d58f8ecb8e9c373a84d3fffd2072",
+    "scripts/build-receive-wasm.sh": "759d68749af6f1bdede577781865b4686164ddd44427cdfb9ce99d37c9b564d1",
+    "third_party/json/json.hpp": "c8ad28099a675b2c5a3de1c538f54e2fffc468ce13bfeec232bd55d17b02ee78"
+  },
+  "assets_sha256": {
+    "ryo-receive.mjs": "4a72bfd48a448190b5ea17fafca5a3d3491252ab174df1d12c11cd75063e3529",
+    "ryo-receive.wasm": "c8f98a8e771bf37f13a891c7b9b32536142c7150b15ce4b5d3d5d8fd9dba6c4f",
+    "LICENSES.txt": "eddcba997997ceb33367a092c047ad0a590b423d6f9a934a9ff07f212817f76a"
+  }
+}

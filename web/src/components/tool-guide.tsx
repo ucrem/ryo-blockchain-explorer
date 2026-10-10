@@ -148,8 +148,7 @@ export function ToolGuide({ tool }: { tool: ToolQuery["tool"] }) {
         <p>
           These forms accept public data only. A private view key is a wallet
           secret used to recognize received outputs; it is different from the
-          public view key displayed by Address inspector. Private-key output
-          decoding is not implemented here. Keep private view, spend and
+          public view key displayed by Address inspector. To decode received amounts, use the separate <a className="text-link" href="/tools/receive">Verify received outputs</a> tool, which processes a private view key locally. Keep private view, spend and
           transaction keys, recovery seeds and wallet exports out of these forms.
         </p>
       </div>

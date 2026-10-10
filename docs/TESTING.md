@@ -217,3 +217,28 @@ its PoW vector cases with `RYO_USE_SOFTWARE_AES=1`. The separately built
 crypto vectors and selected proof/point tests remain useful alongside these
 checks; append `:sha256.*` to the unit-test filter above for native SHA-256 cases.
 See [maintenance evidence](NATIVE_WARNING_CLEANUP.md).
+
+## Local received-output parity and privacy
+
+`ryo_native_receive` adds the eighth native CTest when HTTP is enabled. It
+generates deterministic disclosed synthetic v1/v2/v3 transaction containers,
+compares amounts with native `decodeRct`/`decodeRctSimple`, and compares the
+whole corpus against `web/tests/fixtures/receive.json`. The signatures/range
+proofs are placeholders, not consensus-valid chain fixtures. Existing real
+genesis/v3 bytes are native parse/hash/no-match references only.
+
+`npm test` in `web` replays the same 31 cases through the bundled WASM and
+checks source/asset hashes, exact uint64 totals, safe failures and input bounds.
+`tests/browser/receive.spec.ts` exercises actual workers against the isolated
+fixture server: amounts/other-recipient hiding, wrong-key/no-request behavior,
+Kurz refusal, corrupted data, cancellation/deadline, storage/request/console
+privacy, JavaScript-disabled submission absence and mobile accessibility.
+Only disclosed synthetic keys are used; never replace them with real keys or
+wallet exports. See [build and validation](LOCAL_RECEIVE_VERIFICATION.md).
+
+To regenerate the received-output screenshots using these test containers, set
+`RYO_CAPTURE_DOCS` to an absolute documentation image directory and run the
+focused `received outputs decode` Playwright scenario. Screenshots also run
+dark/result-table and mobile accessibility/overflow assertions. The private
+field is empty in all images; the synthetic address/amounts are labeled in the
+linked documentation, not presented as real payments.

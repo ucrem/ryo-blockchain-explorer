@@ -1,6 +1,6 @@
 // Isolated browser-test fixture: synthetic headers, not consensus-valid blocks.
 // This server is never imported by application code or included in production.
-import { createServer } from "node:http";
+import { createServer, type IncomingHttpHeaders } from "node:http";
 import { readFileSync, writeFileSync } from "node:fs";
 const logPath = new URL(
   "../../build/v04-node-health-fixture.log",
@@ -15,6 +15,8 @@ const examples = JSON.parse(
 );
 let mode = "normal";
 let reads = 0;
+let observed: { url: string; headers: IncomingHttpHeaders; body: string }[] = [];
+const receiveFixtures = JSON.parse(readFileSync(new URL("./fixtures/receive.json", import.meta.url), "utf8"));
 const anchor = 9007199254741023n;
 const makeHash = (height: bigint) => height.toString(16).padStart(64, "0");
 const makeBlock = (height: bigint) => {
@@ -41,10 +43,14 @@ createServer((req, res) => {
     if (url.searchParams.has("mode")) {
       mode = url.searchParams.get("mode")!;
       reads = 0;
+      observed = [];
     }
-    res.end(JSON.stringify({ reads }));
+    res.end(JSON.stringify({ reads, observed }));
     return;
   }
+  const observation = { url: req.url!, headers: req.headers, body: "" };
+  observed.push(observation);
+  req.on("data", (chunk) => { observation.body += chunk.toString(); });
   if (url.pathname === "/get_info") {
     if (mode === "node-outage") {
       res.statusCode = 503;
@@ -84,6 +90,22 @@ createServer((req, res) => {
   if (mode === "outage") {
     res.statusCode = 503;
     res.end('{"error":{"code":"unavailable","message":"Unavailable"}}');
+    return;
+  }
+  if (url.pathname.startsWith("/api/v2/raw/transaction/")) {
+    const hash = url.pathname.split("/").at(-1);
+    const fixture = receiveFixtures.find((item: { request: { hash?: string } }) => item.request.hash === hash);
+    if (fixture) {
+      const raw = mode === "receive-wrong-blob"
+        ? receiveFixtures.find((item: { name: string }) => item.name === "v2-kind0").request.blob_hex
+        : fixture.request.blob_hex;
+      res.end(JSON.stringify({ meta: { ...examples.NetworkResponse.meta,
+        network: mode === "receive-wrong-network" ? "testnet" : "mainnet" },
+        data: { hash, native_json: "{}", blob_hex: raw } }));
+    } else {
+      res.statusCode = 404;
+      res.end('{"error":{"code":"not_found","message":"Transaction not found."}}');
+    }
     return;
   }
   if (url.pathname === "/api/v2/mempool") {

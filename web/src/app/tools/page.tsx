@@ -12,7 +12,7 @@ import { ResourceFailure, DetailRow } from "@/components/detail";
 import { Button } from "@/components/ui/button";
 import { ToolGuide } from "@/components/tool-guide";
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Public inspection tools" };
+export const metadata: Metadata = { title: "Inspection tools" };
 const tools = [
   {
     id: "key-image",
@@ -204,11 +204,12 @@ export default async function Tools({
       </div>
       <div className="page-heading">
         <div>
-          <h1>Public inspection tools</h1>
-          <p>Check public blockchain identifiers using native Ryo.</p>
+          <h1>Inspection tools</h1>
+          <p>Inspect public identifiers or verify received outputs locally using native Ryo.</p>
         </div>
       </div>
       <nav className="tool-selector" aria-label="Inspection tools">
+        <a className="tool-choice" href="/tools/receive"><h2>Verify received outputs</h2><p>Use a receiving address and private view key locally to recognize TX outputs and decode their amounts.</p></a>
         {tools.map((tool) => (
           <a
             key={tool.id}

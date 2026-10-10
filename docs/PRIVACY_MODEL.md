@@ -134,8 +134,9 @@ privacy and is not required for the baseline.
 The v0.4 website reads native public API v2 on the Next.js server. Its bounded
 same-origin adapter forwards no browser cookies, authorization, arbitrary target
 origins, secret-bearing query parameters or write operations. Theme preference
-is stored locally; fonts, icons and scripts are bundled. No browser crypto,
-private-key input, tracker or synthetic production data is added. The dashboard
+is stored locally; fonts, icons and scripts are bundled. The owner-authorized received-output tool adds a private view-key field only
+in its local disposable native WASM worker; the public forms and APIs retain
+their secret-input rejection. No tracker or synthetic production data is added. The dashboard
 describes the reader's chain and miner-supplied intervals, without asserting
 network-wide synchronization or identifying real spends. See [WEB.md](WEB.md)
 for exact bounds and operator-controlled deployment/logging limitations.
@@ -175,3 +176,27 @@ does not silently remove endpoints. New v2/frontend designs must not inherit the
 legacy secret-in-URL contract. Security reporting instructions are in
 [SECURITY.md](../SECURITY.md); future API changes are governed by
 [DECISIONS.md](DECISIONS.md).
+
+## Implemented local receive flow (owner approved 2026-10-10)
+
+The dedicated `/tools/receive` page follows the narrow boundary in
+[LOCAL_RECEIVE_VERIFICATION.md](LOCAL_RECEIVE_VERIFICATION.md). Its private
+field has no name, native form action, server action or submission fallback;
+JavaScript-disabled pages leave it disabled. Address validation precedes key
+entry and refuses Kurz/shared spend-view addresses. Private input requires
+HTTPS or localhost, and a mismatched key fails before requesting public bytes.
+
+Only the public TX hash is sent to the same-origin raw-transaction adapter.
+Neither address, key, derived secrets nor decoded amounts are sent or persisted
+in application storage, cookies, URLs, clipboard, logs or analytics. The key
+is uncontrolled/transient, cleared on use/clear/cancel/page exit/unmount, and
+workers terminate after each operation or deadline. Native adapter buffers
+receive best-effort wiping even on exceptions. JavaScript strings and original
+SDK internal temporaries cannot be promised erased; browser/site compromise
+is outside the no-server-secret property. The view key remains sensitive.
+
+The local result recognizes outputs and validates their decoded amount
+commitments, including change. It does not prove spendability, wallet balance,
+a sender relationship, payment ID decryption, signatures, consensus or full
+address history. Current chain/pool inclusion remains the public reader's
+statement. No recipient attribution is added to public transaction DTOs.
